@@ -1,0 +1,162 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  phone         String   @unique
+  password_hash String
+  role          String   // "admin", "alumni", "student"
+  verify_status String   // "approved", "pending", "rejected"
+  created_at    DateTime @default(now())
+  profile       AlumniProfile?
+}
+
+model AlumniProfile {
+  id                  String   @id @default(uuid())
+  user_id             String   @unique
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  batch_year          Int
+  house               String   // "Vivekananda", "Brahmananda", etc.
+  bio                 String   @db.Text
+  profession_category String
+  company             String
+  city                String
+  country             String   @default("India")
+  linkedin_url        String
+  show_email          Boolean  @default(true)
+  show_phone          Boolean  @default(false)
+  certificate_url     String?
+}
+
+model Mentorship {
+  id         String    @id @default(uuid())
+  mentor_id  String
+  mentee_id  String
+  status     String    // "active", "completed", "declined", "pending"
+  goals      String    @db.Text
+  start_date DateTime  @default(now())
+  end_date   DateTime?
+  created_at DateTime  @default(now())
+
+  @@index([mentor_id])
+  @@index([mentee_id])
+}
+
+model Donation {
+  id                   String   @id @default(uuid())
+  donor_id             String
+  amount_paise         Int
+  cause                String
+  razorpay_id          String   @unique
+  payment_status       String   // "approved", "pending", "rejected"
+  receipt_url          String
+  show_on_leaderboard  Boolean  @default(true)
+  created_at           DateTime @default(now())
+
+  @@index([donor_id])
+}
+
+model Event {
+  id           String   @id @default(uuid())
+  title        String
+  description  String   @db.Text
+  event_date   DateTime
+  location     String
+  event_type   String   // "physical", "virtual", "hybrid"
+  online_link  String
+  max_capacity Int      @default(100)
+  created_by   String
+  created_at   DateTime @default(now())
+}
+
+model RSVP {
+  id           String   @id @default(uuid())
+  event_id     String
+  user_id      String
+  guest_count  Int      @default(0)
+  dietary_pref String   @default("Vegetarian")
+  created_at   DateTime @default(now())
+
+  @@unique([event_id, user_id])
+}
+
+model Post {
+  id         String   @id @default(uuid())
+  author_id  String
+  group_id   String   // "grp-all" or "grp-[batch_year]"
+  content    String   @db.Text
+  media_urls String[]
+  post_type  String   // "text", "photo"
+  is_pinned  Boolean  @default(false)
+  likes      String[] // user IDs
+  created_at DateTime @default(now())
+
+  @@index([group_id])
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  post_id    String
+  author_id  String
+  content    String   @db.Text
+  created_at DateTime @default(now())
+
+  @@index([post_id])
+}
+
+model Job {
+  id                 String   @id @default(uuid())
+  posted_by          String
+  title              String
+  company            String
+  location           String
+  type               String   // "Full-time", "Internship", "Contract", "Remote"
+  description        String   @db.Text
+  skills             String[]
+  referral_available Boolean  @default(true)
+  contact_email      String
+  expires_at         DateTime
+  created_at         DateTime @default(now())
+  applications       String[] // user IDs who applied
+}
+
+model News {
+  id           String   @id @default(uuid())
+  title        String
+  slug         String   @unique
+  body         String   @db.Text
+  category     String   // "Institutional News", "Alumni Spotlight", etc.
+  media_url    String?
+  author_name  String
+  published_at DateTime @default(now())
+  is_featured  Boolean  @default(false)
+}
+
+model Heritage {
+  id          String @id @default(uuid())
+  title       String
+  description String @db.Text
+  decade      String // "1920s", "1940s", etc.
+  media_url   String
+  category    String // "Campus", "Dormitories", etc.
+  year        Int
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  title      String
+  body       String
+  type       String   // "info", "success", "alert"
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+}
