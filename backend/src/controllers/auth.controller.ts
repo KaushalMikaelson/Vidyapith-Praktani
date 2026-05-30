@@ -10,12 +10,21 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
   try {
     const { email, password, full_name, mobile, batch_year, house, profession, company, city, certificate_name } = req.body;
 
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email: email.toLowerCase() }, { phone: mobile }] }
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() }
     });
 
-    if (existingUser) {
-      res.status(400).json({ error: "An account with this email or mobile already exists." });
+    if (existingEmail) {
+      res.status(400).json({ error: "An account with this email already exists." });
+      return;
+    }
+
+    const existingPhone = await prisma.user.findFirst({
+      where: { phone: mobile }
+    });
+
+    if (existingPhone) {
+      res.status(400).json({ error: "An account with this mobile number already exists." });
       return;
     }
 
@@ -25,7 +34,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     // Create user and profile in a transaction
     const newUser = await prisma.user.create({
       data: {
-        email: email.toLowerCase(),
+        email: email.trim().toLowerCase(),
         phone: mobile,
         password_hash,
         role: 'alumni',
@@ -69,7 +78,7 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
   try {
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: email.trim().toLowerCase() },
       include: { profile: true }
     });
 

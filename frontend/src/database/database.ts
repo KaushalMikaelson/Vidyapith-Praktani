@@ -138,6 +138,42 @@ export interface HeritageItem {
   year: number;
 }
 
+// Safe localStorage wrapper to prevent private-mode, headless-testing, or SSR crashes
+const safeStorage = {
+  isAvailable(): boolean {
+    try {
+      const key = '__storage_test__';
+      localStorage.setItem(key, key);
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  
+  memoryStore: {} as Record<string, string>,
+
+  getItem(key: string): string | null {
+    if (this.isAvailable()) {
+      return localStorage.getItem(key);
+    }
+    return this.memoryStore[key] || null;
+  },
+
+  setItem(key: string, value: string): void {
+    if (this.isAvailable()) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn("localStorage setItem failed, falling back to in-memory store", e);
+        this.memoryStore[key] = value;
+      }
+    } else {
+      this.memoryStore[key] = value;
+    }
+  }
+};
+
 const STORAGE_KEYS = {
   USERS: 'rkmv_users',
   EVENTS: 'rkmv_events',
@@ -155,9 +191,7 @@ const STORAGE_KEYS = {
 export const RKMV_DB = {
   // Initialize Database
   init() {
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      this.seed();
-    }
+    RKMV_DB.seed();
   },
 
   // Seed Data Generation
@@ -603,53 +637,68 @@ export const RKMV_DB = {
       }
     ];
 
-    // Save all to localStorage
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(comments));
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
-    localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify(rsvps));
-    localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(donations));
-    localStorage.setItem(STORAGE_KEYS.MENTORSHIPS, JSON.stringify(mentorships));
-    localStorage.setItem(STORAGE_KEYS.NOTIFS, JSON.stringify(notifications));
-    localStorage.setItem(STORAGE_KEYS.JOBS, JSON.stringify(jobs));
-    localStorage.setItem(STORAGE_KEYS.NEWS, JSON.stringify(news));
-    localStorage.setItem(STORAGE_KEYS.HERITAGE, JSON.stringify(heritage));
+    // Save to safe storage only if the key is not already present,
+    // which protects existing user data while initializing new/missing tables.
+    const checkAndSet = (key: string, defaultData: unknown) => {
+      if (!safeStorage.getItem(key)) {
+        safeStorage.setItem(key, JSON.stringify(defaultData));
+      }
+    };
+
+    checkAndSet(STORAGE_KEYS.USERS, users);
+    checkAndSet(STORAGE_KEYS.POSTS, posts);
+    checkAndSet(STORAGE_KEYS.COMMENTS, comments);
+    checkAndSet(STORAGE_KEYS.EVENTS, events);
+    checkAndSet(STORAGE_KEYS.RSVPS, rsvps);
+    checkAndSet(STORAGE_KEYS.DONATIONS, donations);
+    checkAndSet(STORAGE_KEYS.MENTORSHIPS, mentorships);
+    checkAndSet(STORAGE_KEYS.NOTIFS, notifications);
+    checkAndSet(STORAGE_KEYS.JOBS, jobs);
+    checkAndSet(STORAGE_KEYS.NEWS, news);
+    checkAndSet(STORAGE_KEYS.HERITAGE, heritage);
   },
 
   // Helper Methods for Reading & Synchronizing States
   getData<T>(key: string): T[] {
-    return JSON.parse(localStorage.getItem(key) || '[]') as T[];
+    try {
+      const data = safeStorage.getItem(key);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch (e) {
+      console.error(`Error reading key ${key} from storage:`, e);
+      return [];
+    }
   },
 
   saveData<T>(key: string, data: T[]) {
-    localStorage.setItem(key, JSON.stringify(data));
+    safeStorage.setItem(key, JSON.stringify(data));
   },
 
   // Users Database Methods
-  getUsers(): User[] { return this.getData<User>(STORAGE_KEYS.USERS); },
+  getUsers(): User[] { return RKMV_DB.getData<User>(STORAGE_KEYS.USERS); },
   
   getApprovedAlumni(): User[] {
-    return this.getUsers().filter(u => u.verify_status === 'approved' && u.role !== 'admin');
+    return RKMV_DB.getUsers().filter(u => u.verify_status === 'approved' && u.role !== 'admin');
   },
 
   getUserById(id: string): User | undefined {
-    return this.getUsers().find(u => u.id === id);
+    return RKMV_DB.getUsers().find(u => u.id === id);
   },
 
   addUser(user: User): User {
-    const users = this.getUsers();
+    const users = RKMV_DB.getUsers();
     users.push(user);
-    this.saveData(STORAGE_KEYS.USERS, users);
+    RKMV_DB.saveData(STORAGE_KEYS.USERS, users);
     return user;
   },
 
   updateUser(id: string, updatedFields: Partial<User>): User | null {
-    const users = this.getUsers();
+    const users = RKMV_DB.getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx !== -1) {
       users[idx] = { ...users[idx], ...updatedFields };
-      this.saveData(STORAGE_KEYS.USERS, users);
+      RKMV_DB.saveData(STORAGE_KEYS.USERS, users);
       return users[idx];
     }
     return null;
@@ -657,27 +706,31 @@ export const RKMV_DB = {
 
   // Search alumni
   searchAlumni(query: string, filters: { batchYear?: string; house?: string; city?: string } = {}): User[] {
-    let alumni = this.getApprovedAlumni();
+    let alumni = RKMV_DB.getApprovedAlumni();
     
     if (query) {
       const q = query.toLowerCase();
       alumni = alumni.filter(a => 
-        a.full_name.toLowerCase().includes(q) ||
-        a.profession.toLowerCase().includes(q) ||
-        a.company.toLowerCase().includes(q) ||
-        a.bio.toLowerCase().includes(q) ||
-        a.city.toLowerCase().includes(q)
+        (a.full_name || '').toLowerCase().includes(q) ||
+        (a.profession || '').toLowerCase().includes(q) ||
+        (a.company || '').toLowerCase().includes(q) ||
+        (a.bio || '').toLowerCase().includes(q) ||
+        (a.city || '').toLowerCase().includes(q)
       );
     }
 
     if (filters.batchYear) {
-      alumni = alumni.filter(a => a.batch_year === parseInt(filters.batchYear!));
+      const yearVal = parseInt(filters.batchYear);
+      if (!isNaN(yearVal)) {
+        alumni = alumni.filter(a => a.batch_year === yearVal);
+      }
     }
     if (filters.house) {
       alumni = alumni.filter(a => a.house === filters.house);
     }
     if (filters.city) {
-      alumni = alumni.filter(a => a.city && a.city.toLowerCase().includes(filters.city!.toLowerCase()));
+      const cityLower = filters.city.toLowerCase();
+      alumni = alumni.filter(a => a.city && a.city.toLowerCase().includes(cityLower));
     }
 
     return alumni;
@@ -685,7 +738,7 @@ export const RKMV_DB = {
 
   // Forums Posting System
   getPosts(groupId: string = "grp-all"): Post[] {
-    const posts = this.getData<Post>(STORAGE_KEYS.POSTS);
+    const posts = RKMV_DB.getData<Post>(STORAGE_KEYS.POSTS);
     return posts
       .filter(p => groupId === "grp-all" ? true : p.group_id === groupId)
       .sort((a, b) => {
@@ -696,14 +749,14 @@ export const RKMV_DB = {
   },
 
   addPost(post: Post): Post {
-    const posts = this.getData<Post>(STORAGE_KEYS.POSTS);
+    const posts = RKMV_DB.getData<Post>(STORAGE_KEYS.POSTS);
     posts.unshift(post);
-    this.saveData(STORAGE_KEYS.POSTS, posts);
+    RKMV_DB.saveData(STORAGE_KEYS.POSTS, posts);
     return post;
   },
 
   toggleLikePost(postId: string, userId: string): Post | null {
-    const posts = this.getData<Post>(STORAGE_KEYS.POSTS);
+    const posts = RKMV_DB.getData<Post>(STORAGE_KEYS.POSTS);
     const idx = posts.findIndex(p => p.id === postId);
     if (idx !== -1) {
       const likes = posts[idx].likes || [];
@@ -714,68 +767,68 @@ export const RKMV_DB = {
         likes.splice(userIdx, 1);
       }
       posts[idx].likes = likes;
-      this.saveData(STORAGE_KEYS.POSTS, posts);
+      RKMV_DB.saveData(STORAGE_KEYS.POSTS, posts);
       return posts[idx];
     }
     return null;
   },
 
   getComments(postId: string): Comment[] {
-    const comments = this.getData<Comment>(STORAGE_KEYS.COMMENTS);
+    const comments = RKMV_DB.getData<Comment>(STORAGE_KEYS.COMMENTS);
     return comments
       .filter(c => c.post_id === postId)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   },
 
   addComment(comment: Comment): Comment {
-    const comments = this.getData<Comment>(STORAGE_KEYS.COMMENTS);
+    const comments = RKMV_DB.getData<Comment>(STORAGE_KEYS.COMMENTS);
     comments.push(comment);
-    this.saveData(STORAGE_KEYS.COMMENTS, comments);
+    RKMV_DB.saveData(STORAGE_KEYS.COMMENTS, comments);
     return comment;
   },
 
   // Events System
   getEvents(): Event[] {
-    const events = this.getData<Event>(STORAGE_KEYS.EVENTS);
+    const events = RKMV_DB.getData<Event>(STORAGE_KEYS.EVENTS);
     return events.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   },
 
   addEvent(event: Event): Event {
-    const events = this.getData<Event>(STORAGE_KEYS.EVENTS);
+    const events = RKMV_DB.getData<Event>(STORAGE_KEYS.EVENTS);
     events.push(event);
-    this.saveData(STORAGE_KEYS.EVENTS, events);
+    RKMV_DB.saveData(STORAGE_KEYS.EVENTS, events);
     return event;
   },
 
   getRSVPs(eventId: string): RSVP[] {
-    const rsvps = this.getData<RSVP>(STORAGE_KEYS.RSVPS);
+    const rsvps = RKMV_DB.getData<RSVP>(STORAGE_KEYS.RSVPS);
     return rsvps.filter(r => r.event_id === eventId);
   },
 
   hasUserRSVPed(eventId: string, userId: string): boolean {
-    const rsvps = this.getData<RSVP>(STORAGE_KEYS.RSVPS);
+    const rsvps = RKMV_DB.getData<RSVP>(STORAGE_KEYS.RSVPS);
     return rsvps.some(r => r.event_id === eventId && r.user_id === userId);
   },
 
   addRSVP(rsvp: RSVP): RSVP {
-    const rsvps = this.getData<RSVP>(STORAGE_KEYS.RSVPS);
+    const rsvps = RKMV_DB.getData<RSVP>(STORAGE_KEYS.RSVPS);
     const idx = rsvps.findIndex(r => r.event_id === rsvp.event_id && r.user_id === rsvp.user_id);
     if (idx === -1) {
       rsvps.push(rsvp);
     } else {
       rsvps[idx] = rsvp;
     }
-    this.saveData(STORAGE_KEYS.RSVPS, rsvps);
+    RKMV_DB.saveData(STORAGE_KEYS.RSVPS, rsvps);
     return rsvp;
   },
 
   // Donations System
   getDonations(): Donation[] {
-    return this.getData<Donation>(STORAGE_KEYS.DONATIONS).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return RKMV_DB.getData<Donation>(STORAGE_KEYS.DONATIONS).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   },
 
   getDonationLeaderboard(): { user: User; total_amount: number }[] {
-    const donations = this.getDonations();
+    const donations = RKMV_DB.getDonations();
     const donorTotals: { [key: string]: number } = {};
     donations
       .filter(d => d.payment_status === 'approved' && d.show_on_leaderboard)
@@ -783,51 +836,49 @@ export const RKMV_DB = {
         donorTotals[d.donor_id] = (donorTotals[d.donor_id] || 0) + d.amount_paise;
       });
 
-    return Object.entries(donorTotals)
-      .map(([donorId, total]) => {
-        const user = this.getUserById(donorId)!;
-        return {
-          user,
-          total_amount: total
-        };
-      })
-      .filter(item => item.user !== undefined)
-      .sort((a, b) => b.total_amount - a.total_amount);
+    const leaderboardList: { user: User; total_amount: number }[] = [];
+    for (const [donorId, total] of Object.entries(donorTotals)) {
+      const user = RKMV_DB.getUserById(donorId);
+      if (user) {
+        leaderboardList.push({ user, total_amount: total });
+      }
+    }
+    return leaderboardList.sort((a, b) => b.total_amount - a.total_amount);
   },
 
   addDonation(donation: Donation): Donation {
-    const donations = this.getData<Donation>(STORAGE_KEYS.DONATIONS);
+    const donations = RKMV_DB.getData<Donation>(STORAGE_KEYS.DONATIONS);
     donations.unshift(donation);
-    this.saveData(STORAGE_KEYS.DONATIONS, donations);
+    RKMV_DB.saveData(STORAGE_KEYS.DONATIONS, donations);
     return donation;
   },
 
   // Mentorship System
   getMentorships(): Mentorship[] {
-    return this.getData<Mentorship>(STORAGE_KEYS.MENTORSHIPS);
+    return RKMV_DB.getData<Mentorship>(STORAGE_KEYS.MENTORSHIPS);
   },
 
   addMentorship(mentorship: Mentorship): Mentorship {
-    const mentorships = this.getMentorships();
+    const mentorships = RKMV_DB.getMentorships();
     mentorships.push(mentorship);
-    this.saveData(STORAGE_KEYS.MENTORSHIPS, mentorships);
+    RKMV_DB.saveData(STORAGE_KEYS.MENTORSHIPS, mentorships);
     return mentorship;
   },
 
   // Jobs Board System (Module 7)
   getJobs(): JobListing[] {
-    return this.getData<JobListing>(STORAGE_KEYS.JOBS).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return RKMV_DB.getData<JobListing>(STORAGE_KEYS.JOBS).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   },
 
   addJob(job: JobListing): JobListing {
-    const jobs = this.getJobs();
+    const jobs = RKMV_DB.getJobs();
     jobs.unshift(job);
-    this.saveData(STORAGE_KEYS.JOBS, jobs);
+    RKMV_DB.saveData(STORAGE_KEYS.JOBS, jobs);
     return job;
   },
 
   applyForJob(jobId: string, userId: string): JobListing | null {
-    const jobs = this.getJobs();
+    const jobs = RKMV_DB.getData<JobListing>(STORAGE_KEYS.JOBS);
     const idx = jobs.findIndex(j => j.id === jobId);
     if (idx !== -1) {
       const apps = jobs[idx].applications || [];
@@ -835,7 +886,7 @@ export const RKMV_DB = {
         apps.push(userId);
       }
       jobs[idx].applications = apps;
-      this.saveData(STORAGE_KEYS.JOBS, jobs);
+      RKMV_DB.saveData(STORAGE_KEYS.JOBS, jobs);
       return jobs[idx];
     }
     return null;
@@ -843,41 +894,41 @@ export const RKMV_DB = {
 
   // News & Heritage Hub System (Module 6)
   getNews(): NewsPost[] {
-    return this.getData<NewsPost>(STORAGE_KEYS.NEWS).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    return RKMV_DB.getData<NewsPost>(STORAGE_KEYS.NEWS).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
   },
 
   addNews(post: NewsPost): NewsPost {
-    const news = this.getNews();
+    const news = RKMV_DB.getNews();
     news.unshift(post);
-    this.saveData(STORAGE_KEYS.NEWS, news);
+    RKMV_DB.saveData(STORAGE_KEYS.NEWS, news);
     return post;
   },
 
   getHeritage(): HeritageItem[] {
-    return this.getData<HeritageItem>(STORAGE_KEYS.HERITAGE).sort((a, b) => a.year - b.year);
+    return RKMV_DB.getData<HeritageItem>(STORAGE_KEYS.HERITAGE).sort((a, b) => a.year - b.year);
   },
 
   // Notifications System
   getNotifications(userId: string): Notification[] {
-    const notifs = this.getData<Notification>(STORAGE_KEYS.NOTIFS);
+    const notifs = RKMV_DB.getData<Notification>(STORAGE_KEYS.NOTIFS);
     return notifs
       .filter(n => n.user_id === userId)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   },
 
   addNotification(notif: Notification): Notification {
-    const notifs = this.getData<Notification>(STORAGE_KEYS.NOTIFS);
+    const notifs = RKMV_DB.getData<Notification>(STORAGE_KEYS.NOTIFS);
     notifs.unshift(notif);
-    this.saveData(STORAGE_KEYS.NOTIFS, notifs);
+    RKMV_DB.saveData(STORAGE_KEYS.NOTIFS, notifs);
     return notif;
   },
 
   markNotificationsAsRead(userId: string) {
-    const notifs = this.getData<Notification>(STORAGE_KEYS.NOTIFS);
+    const notifs = RKMV_DB.getData<Notification>(STORAGE_KEYS.NOTIFS);
     notifs.forEach(n => {
       if (n.user_id === userId) n.read = true;
     });
-    this.saveData(STORAGE_KEYS.NOTIFS, notifs);
+    RKMV_DB.saveData(STORAGE_KEYS.NOTIFS, notifs);
   }
 };
 

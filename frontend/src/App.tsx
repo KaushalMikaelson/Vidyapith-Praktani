@@ -120,42 +120,6 @@ export default function App() {
     }
   };
 
-  const autofillDemo = (role: 'admin' | 'alumni' | 'student') => {
-    if (role === 'admin') {
-      setLoginEmail("swami@rkmv.org");
-      setLoginPass("admin123");
-    } else if (role === 'alumni') {
-      setLoginEmail("aurobindo@google.com");
-      setLoginPass("alumni123");
-    } else {
-      setLoginEmail("tatha.m@student.org");
-      setLoginPass("student123");
-    }
-  };
-
-  const quickDemoLogin = async (role: 'admin' | 'alumni' | 'student') => {
-    let email = '';
-    let pass = '';
-    if (role === 'admin') {
-      email = "swami@rkmv.org";
-      pass = "admin123";
-    } else if (role === 'alumni') {
-      email = "aurobindo@google.com";
-      pass = "alumni123";
-    } else {
-      email = "tatha.m@student.org";
-      pass = "student123";
-    }
-    
-    showToast(`Initiating quick login for ${role} demo...`, "info");
-    const res = await login(email, pass);
-    if (res.success) {
-      showToast("Signed in successfully! Welcome back.", "success");
-    } else {
-      showToast(res.error || "Incorrect login credentials.", "danger");
-    }
-  };
-
   const getHouseColor = (house: string) => {
     const colors: { [key: string]: string } = {
       "Vivekananda House": "#f37021",
@@ -274,13 +238,6 @@ export default function App() {
                         <span>Sign In</span>
                         <ArrowRight size={14} />
                       </button>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-quick"
-                        onClick={() => quickDemoLogin('alumni')}
-                      >
-                        <span>Quick Demo Login</span>
-                      </button>
                     </div>
 
                     {/* Student Portal */}
@@ -298,13 +255,6 @@ export default function App() {
                         <span>Sign In</span>
                         <ArrowRight size={14} />
                       </button>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-quick"
-                        onClick={() => quickDemoLogin('student')}
-                      >
-                        <span>Quick Demo Login</span>
-                      </button>
                     </div>
 
                     {/* Admin Portal */}
@@ -321,13 +271,6 @@ export default function App() {
                       >
                         <span>Sign In</span>
                         <ArrowRight size={14} />
-                      </button>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-quick"
-                        onClick={() => quickDemoLogin('admin')}
-                      >
-                        <span>Quick Demo Login</span>
                       </button>
                     </div>
                   </div>
