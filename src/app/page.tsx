@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, User } from '../database/database';
+import { User } from '../database/database';
 import { Layout } from '../components/Layout';
+import { apiFetch } from '../utils/api';
 
 // Screens
 import { FeedScreen } from '../screens/FeedScreen';
@@ -67,8 +68,12 @@ export default function App() {
 
   useEffect(() => {
     if (selectedProfileId) {
-      const u = RKMV_DB.getUserById(selectedProfileId);
-      if (u) setSelectedProfile(u);
+      apiFetch(`/directory/profile/${selectedProfileId}`)
+        .then(data => setSelectedProfile(data))
+        .catch(err => {
+          showToast(err.message, 'danger');
+          setSelectedProfileId(null);
+        });
     } else {
       setSelectedProfile(null);
     }
@@ -134,37 +139,60 @@ export default function App() {
     return colors[house] || "rgba(255,255,255,0.15)";
   };
 
-  const handleProfileConnect = (id: string, name: string) => {
-    showToast(`Connection request sent to ${name}!`, "success");
-    setSelectedProfileId(null);
-
-    if (currentUser) {
-      RKMV_DB.addNotification({
-        id: 'not-' + Math.random().toString(36).substr(2, 9),
-        user_id: id,
-        title: "New Connection Request",
-        body: `${currentUser.full_name} wants to connect with you.`,
-        type: "info",
-        read: false,
-        created_at: new Date().toISOString()
+  const handleProfileConnect = async (id: string, name: string) => {
+    try {
+      await apiFetch('/directory/connect', {
+        method: 'POST',
+        body: JSON.stringify({ targetId: id })
       });
+      showToast(`Connection request sent to ${name}!`, "success");
+      setSelectedProfileId(null);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
     }
   };
 
   const renderActiveScreen = () => {
     switch (activeScreen) {
       case 'feed':
-        return <FeedScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+      case 'discover':
+      case 'batch':
+      case 'memories':
+      case 'reunions':
+      case 'archives':
+      case 'saved':
+      case 'settings':
+      case 'explore':
+      case 'notes':
+        return (
+          <FeedScreen 
+            showToast={showToast} 
+            onViewProfile={setSelectedProfileId} 
+            screenMode={activeScreen} 
+          />
+        );
+      case 'profile':
+        return (
+          <FeedScreen 
+            showToast={showToast} 
+            onViewProfile={setSelectedProfileId} 
+            screenMode="profile" 
+            forceProfileId={currentUser?.id} 
+          />
+        );
       case 'directory':
         return <DirectoryScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
-      case 'donations':
-        return <DonationsScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
-      case 'events':
-        return <EventsScreen showToast={showToast} />;
-      case 'news':
-        return <NewsScreen showToast={showToast} />;
+      case 'careers':
       case 'jobs':
         return <JobsScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+      case 'mentorship':
+        return <MentorshipScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+      case 'events':
+        return <EventsScreen showToast={showToast} />;
+      case 'donations':
+        return <DonationsScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+      case 'news':
+        return <NewsScreen showToast={showToast} />;
       case 'admin':
         return <AdminScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
       default:

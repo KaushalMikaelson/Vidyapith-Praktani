@@ -22,6 +22,8 @@ model AlumniProfile {
   id                  String   @id @default(uuid())
   user_id             String   @unique
   user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name           String
+  profile_photo       String?
   batch_year          Int
   house               String   // "Vivekananda", "Brahmananda", etc.
   bio                 String   @db.Text

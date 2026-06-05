@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, User, Notification } from '../database/database';
 import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface AdminScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -14,34 +15,46 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
   const { refreshSession } = useAuth();
   
   // Database States
-  const [users, setUsers] = useState<User[]>(RKMV_DB.getUsers());
+  // Database States
+  const [pendingList, setPendingList] = useState<User[]>([]);
+  const [verifiedCount, setVerifiedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [donationTotal, setDonationTotal] = useState(0);
   const [certPreviewUser, setCertPreviewUser] = useState<User | null>(null);
 
-  const pendingList = users.filter(u => u.verify_status === 'pending');
-  const verifiedCount = users.filter(u => u.verify_status === 'approved' && u.role !== 'admin').length;
-  
-  const donations = RKMV_DB.getDonations();
-  const donationTotal = donations
-    .filter(d => d.payment_status === 'approved')
-    .reduce((sum, d) => sum + d.amount_paise, 0) / 100;
+  const loadAdminData = async () => {
+    try {
+      const pending = await apiFetch('/admin/pending-users');
+      setPendingList(pending);
 
-  const handleResolveVerification = (id: string, name: string, status: 'approved' | 'rejected') => {
-    RKMV_DB.updateUser(id, { verify_status: status });
-    showToast(`Applicant ${name} has been successfully ${status}!`, status === 'approved' ? 'success' : 'danger');
+      const directory = await apiFetch('/directory');
+      setVerifiedCount(directory.length);
+      setTotalCount(directory.length + pending.length);
 
-    // Send notification
-    RKMV_DB.addNotification({
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
-      user_id: id,
-      title: status === 'approved' ? "Verification Approved!" : "Registration Declined",
-      body: status === 'approved' ? "Welcome! The administrative committee has approved your alumni status. Explore Vidyapith Connect!" : "The committee declined your uploaded certificate. Contact support to resolve.",
-      type: status === 'approved' ? "success" : "alert",
-      read: false,
-      created_at: new Date().toISOString()
-    });
+      const leaderboard = await apiFetch('/donations/leaderboard');
+      const total = leaderboard.reduce((sum: number, item: any) => sum + item.total_amount, 0) / 100;
+      setDonationTotal(total);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
+  };
 
-    setUsers(RKMV_DB.getUsers());
-    refreshSession();
+  React.useEffect(() => {
+    loadAdminData();
+  }, []);
+
+  const handleResolveVerification = async (id: string, name: string, status: 'approved' | 'rejected') => {
+    try {
+      await apiFetch('/auth/resolve-queue', {
+        method: 'POST',
+        body: JSON.stringify({ id, status })
+      });
+      showToast(`Applicant ${name} has been successfully ${status}!`, status === 'approved' ? 'success' : 'danger');
+      loadAdminData();
+      refreshSession();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   return (
@@ -62,7 +75,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
             <Users size={22} />
           </div>
           <div className="admin-stat-info">
-            <span className="admin-stat-number" style={{ display: 'block', fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>{users.length}</span>
+            <span className="admin-stat-number" style={{ display: 'block', fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>{totalCount}</span>
             <span className="admin-stat-label" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Registered</span>
           </div>
         </div>

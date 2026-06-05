@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, JobListing } from '../database/database';
 import { Briefcase, Search, PlusCircle, AlertCircle, X, Check, Mail } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface JobsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -34,27 +35,31 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
   const [applyMemo, setApplyMemo] = useState('');
 
-  const loadJobsData = () => {
-    let list = RKMV_DB.getJobs();
-    
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(j => 
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.description.toLowerCase().includes(q)
-      );
-    }
-    
-    if (filterType) {
-      list = list.filter(j => j.type === filterType);
-    }
+  const loadJobsData = async () => {
+    try {
+      let list = await apiFetch('/jobs');
+      
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter((j: any) => 
+          j.title.toLowerCase().includes(q) ||
+          j.company.toLowerCase().includes(q) ||
+          j.description.toLowerCase().includes(q)
+        );
+      }
+      
+      if (filterType) {
+        list = list.filter((j: any) => j.type === filterType);
+      }
 
-    if (filterReferral) {
-      list = list.filter(j => j.referral_available);
-    }
+      if (filterReferral) {
+        list = list.filter((j: any) => j.referral_available);
+      }
 
-    setJobs(list);
+      setJobs(list);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   useEffect(() => {
@@ -63,7 +68,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
 
   if (!currentUser) return null;
 
-  const handlePostJob = (e: React.FormEvent) => {
+  const handlePostJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobTitle.trim() || !jobCompany.trim() || !jobLocation.trim() || !jobDesc.trim()) {
       showToast("Please fill in all required fields.", "danger");
@@ -72,33 +77,34 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
 
     const skillsArr = jobSkills.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-    const newJob: JobListing = {
-      id: 'job-' + Math.random().toString(36).substr(2, 9),
-      posted_by: currentUser.id,
-      title: jobTitle.trim(),
-      company: jobCompany.trim(),
-      location: jobLocation.trim(),
-      type: jobType,
-      description: jobDesc.trim(),
-      skills: skillsArr.length > 0 ? skillsArr : ['Communication', 'Logical Reasoning'],
-      referral_available: referralAvailable,
-      contact_email: contactEmail.trim() || currentUser.email,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      created_at: new Date().toISOString(),
-      applications: []
-    };
+    try {
+      await apiFetch('/jobs', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: jobTitle.trim(),
+          company: jobCompany.trim(),
+          location: jobLocation.trim(),
+          type: jobType,
+          description: jobDesc.trim(),
+          skills: skillsArr.length > 0 ? skillsArr : ['Communication', 'Logical Reasoning'],
+          referralAvailable: referralAvailable,
+          contactEmail: contactEmail.trim() || currentUser.email
+        })
+      });
 
-    RKMV_DB.addJob(newJob);
-    showToast("Job opportunity posted successfully!", "success");
+      showToast("Job opportunity posted successfully!", "success");
 
-    setPostModalVisible(false);
-    setJobTitle('');
-    setJobCompany('');
-    setJobLocation('');
-    setJobDesc('');
-    setJobSkills('');
-    setContactEmail('');
-    loadJobsData();
+      setPostModalVisible(false);
+      setJobTitle('');
+      setJobCompany('');
+      setJobLocation('');
+      setJobDesc('');
+      setJobSkills('');
+      setContactEmail('');
+      loadJobsData();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   const openApplyModal = (job: JobListing) => {
@@ -107,26 +113,20 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
     setApplyModalVisible(true);
   };
 
-  const handleApplySubmit = (e: React.FormEvent) => {
+  const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedJob) return;
 
-    RKMV_DB.applyForJob(selectedJob.id, currentUser.id);
-    showToast(`Application successfully filed for ${selectedJob.title}!`, "success");
-    setApplyModalVisible(false);
-
-    // Notify job owner
-    RKMV_DB.addNotification({
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
-      user_id: selectedJob.posted_by,
-      title: "New Job Application",
-      body: `${currentUser.full_name} applied for your ${selectedJob.title} opening at ${selectedJob.company}.`,
-      type: "success",
-      read: false,
-      created_at: new Date().toISOString()
-    });
-
-    loadJobsData();
+    try {
+      await apiFetch(`/jobs/${selectedJob.id}/apply`, {
+        method: 'POST'
+      });
+      showToast(`Application successfully filed for ${selectedJob.title}!`, "success");
+      setApplyModalVisible(false);
+      loadJobsData();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   return (
@@ -154,7 +154,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
             </div>
           ) : (
             jobs.map(job => {
-              const poster = RKMV_DB.getUserById(job.posted_by);
+              const poster = (job as any).poster;
               const alreadyApplied = job.applications?.includes(currentUser.id) || false;
 
               return (

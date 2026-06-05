@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, User, Mentorship } from '../database/database';
 import { GraduationCap, Sparkles, X, Plus } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface MentorshipScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -22,23 +23,16 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
   const [requestGoals, setRequestGoals] = useState('');
   const [requestTime, setRequestTime] = useState('3 Months');
 
-  const loadMentorship = () => {
-    let list = RKMV_DB.getApprovedAlumni();
-    
-    if (selectedField) {
-      if (selectedField === 'Software Engineering') {
-        list = list.filter(m => m.profession.toLowerCase().includes('architect') || m.profession.toLowerCase().includes('software') || m.profession.toLowerCase().includes('tech'));
-      } else if (selectedField === 'Healthcare & Medicine') {
-        list = list.filter(m => m.profession.toLowerCase().includes('cardiologist') || m.profession.toLowerCase().includes('doctor') || m.profession.toLowerCase().includes('surgeon'));
-      } else if (selectedField === 'Civil Services') {
-        list = list.filter(m => m.profession.toLowerCase().includes('officer') || m.profession.toLowerCase().includes('service') || m.profession.toLowerCase().includes('ifs') || m.profession.toLowerCase().includes('ias'));
-      } else if (selectedField === 'Entrepreneurship') {
-        list = list.filter(m => m.profession.toLowerCase().includes('founder') || m.profession.toLowerCase().includes('ceo') || m.profession.toLowerCase().includes('consultant'));
-      }
+  const loadMentorship = async () => {
+    try {
+      const mentorsList = await apiFetch(`/mentorship/mentors?expertiseField=${selectedField}`);
+      setMentors(mentorsList);
+      
+      const pairings = await apiFetch('/mentorship/pairings');
+      setActiveMentorships(pairings);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
     }
-
-    setMentors(list);
-    setActiveMentorships(RKMV_DB.getMentorships());
   };
 
   useEffect(() => {
@@ -52,44 +46,31 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
     setRequestModalVisible(true);
   };
 
-  const handleRequestMentorship = (e: React.FormEvent) => {
+  const handleRequestMentorship = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestGoals.trim()) {
       showToast("Please provide your mentorship goals.", "danger");
       return;
     }
 
-    const newPair: Mentorship = {
-      id: 'ment-' + Math.random().toString(36).substr(2, 9),
-      mentor_id: selectedMentorId,
-      mentee_id: currentUser.id,
-      status: "active", // Simulate auto-acceptance
-      goals: requestGoals.trim(),
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: null,
-      created_at: new Date().toISOString()
-    };
+    try {
+      await apiFetch('/mentorship/request', {
+        method: 'POST',
+        body: JSON.stringify({
+          mentorId: selectedMentorId,
+          goals: requestGoals.trim()
+        })
+      });
+      showToast("Mentorship requested and accepted successfully!", "success");
 
-    RKMV_DB.addMentorship(newPair);
-    showToast("Mentorship requested and accepted successfully!", "success");
-
-    // Reset and close
-    setRequestModalVisible(false);
-    setRequestGoals('');
-    setRequestTime('3 Months');
-    
-    // Trigger notification to mentor
-    RKMV_DB.addNotification({
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
-      user_id: selectedMentorId,
-      title: "New Mentee Paired",
-      body: `${currentUser.full_name} has requested your mentorship guidance.`,
-      type: "success",
-      read: false,
-      created_at: new Date().toISOString()
-    });
-
-    loadMentorship();
+      // Reset and close
+      setRequestModalVisible(false);
+      setRequestGoals('');
+      setRequestTime('3 Months');
+      loadMentorship();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   const getSkillsForMentor = (mentorId: string) => {

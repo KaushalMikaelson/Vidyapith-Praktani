@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, Donation } from '../database/database';
 import { Heart, X, CreditCard, ShieldCheck, Download, Award, Flame } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface DonationsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -34,10 +35,13 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
   const [otpCode, setOtpCode] = useState('');
   const [generatedDonation, setGeneratedDonation] = useState<Donation | null>(null);
 
-  const loadDonationData = () => {
-    const list = RKMV_DB.getDonations();
-    setActiveDonations(list);
-    setLeaderboard(RKMV_DB.getDonationLeaderboard());
+  const loadDonationData = async () => {
+    try {
+      const list = await apiFetch('/donations/leaderboard');
+      setLeaderboard(list);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   useEffect(() => {
@@ -74,7 +78,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
     setCheckoutStage('otp');
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otpCode.length < 6) {
       showToast("Please enter a valid 6-digit verification code.", "danger");
@@ -82,35 +86,24 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
     }
 
     const donationVal = parseInt(checkoutAmount);
-    const newDonation: Donation = {
-      id: 'don-' + Math.random().toString(36).substr(2, 9),
-      donor_id: currentUser.id,
-      amount_paise: donationVal * 100,
-      cause: checkoutCause,
-      razorpay_id: 'pay_' + Math.random().toString(36).substr(2, 12).toUpperCase(),
-      payment_status: 'approved',
-      receipt_url: `receipt_Exempt80G_${Math.floor(Math.random() * 10000)}.pdf`,
-      show_on_leaderboard: showLeaderboard,
-      created_at: new Date().toISOString()
-    };
 
-    RKMV_DB.addDonation(newDonation);
-    setGeneratedDonation(newDonation);
-    showToast("Contribution accepted! Joy Sri Ramakrishna! 🙏", "success");
-
-    // Push notification to user
-    RKMV_DB.addNotification({
-      id: 'not-' + Math.random().toString(36).substr(2, 9),
-      user_id: currentUser.id,
-      title: "Donation Successful",
-      body: `Donated ₹${donationVal.toLocaleString('en-IN')} to ${checkoutCause}. 80G tax receipt ready.`,
-      type: "success",
-      read: false,
-      created_at: new Date().toISOString()
-    });
-
-    setCheckoutStage('receipt');
-    loadDonationData();
+    try {
+      const res = await apiFetch('/donations/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: donationVal,
+          cause: checkoutCause,
+          showOnLeaderboard: showLeaderboard
+        })
+      });
+      
+      setGeneratedDonation(res.donation);
+      showToast("Contribution accepted! Joy Sri Ramakrishna! 🙏", "success");
+      setCheckoutStage('receipt');
+      loadDonationData();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   const downloadReceipt = (filename: string) => {

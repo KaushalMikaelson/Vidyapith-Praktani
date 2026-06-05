@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, User, Notification } from '../database/database';
+import { User, Notification } from '../database/database';
+import { apiFetch } from '../utils/api';
 import { 
-  MessageSquare, Users, Calendar, GraduationCap, Heart, 
-  BookOpen, Briefcase, ShieldCheck, Bell, BellOff, LogOut, 
-  Menu, X, Search, ChevronDown, User as UserIcon
+  Home, Compass, FileText, Film, Award, Users, BookOpen, Briefcase, 
+  Calendar, Bookmark, User as UserIcon, Settings, ShieldCheck, Bell, BellOff, LogOut, Menu, X, Search, ChevronDown, Heart,
+  Camera, Archive, HelpCircle
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -29,6 +30,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [notifDropdownVisible, setNotifDropdownVisible] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [profileDropdownVisible, setProfileDropdownVisible] = useState(false);
 
@@ -37,17 +39,36 @@ export const Layout: React.FC<LayoutProps> = ({
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Sync notifications
-  const loadNotifications = () => {
+  const loadNotifications = async () => {
     if (currentUser) {
-      const notifs = RKMV_DB.getNotifications(currentUser.id);
-      setNotifications(notifs);
-      setUnreadNotifCount(notifs.filter(n => !n.read).length);
+      try {
+        const notifs = await apiFetch('/notifications');
+        setNotifications(notifs);
+        setUnreadNotifCount(notifs.filter((n: Notification) => !n.read).length);
+      } catch (err) {
+        console.error("Failed to load notifications:", err);
+      }
+    }
+  };
+
+  const loadPendingCount = async () => {
+    if (currentUser && currentUser.role === 'admin') {
+      try {
+        const pendingUsers = await apiFetch('/admin/pending-users');
+        setPendingCount(pendingUsers.length);
+      } catch (err) {
+        console.error("Failed to load pending users:", err);
+      }
     }
   };
 
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 5000); // Poll notifications
+    loadPendingCount();
+    const interval = setInterval(() => {
+      loadNotifications();
+      loadPendingCount();
+    }, 5000); // Poll notifications and pending count
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -70,21 +91,24 @@ export const Layout: React.FC<LayoutProps> = ({
 
   if (!currentUser) return null;
 
-  // Navigation Items setup
+  // Sticky Left Navigation Items setup (SaaS Design)
   const navItems = [
-    { id: 'feed', label: 'Community Feed', icon: MessageSquare },
-    { id: 'directory', label: 'Alumni Directory', icon: Users },
-    { id: 'events', label: 'Events & RSVPs', icon: Calendar },
-    { id: 'mentorship', label: 'Mentorship Hub', icon: GraduationCap },
-    { id: 'donations', label: 'Donations Portal', icon: Heart },
-    { id: 'news', label: 'News & Heritage', icon: BookOpen },
-    { id: 'jobs', label: 'Career Board', icon: Briefcase },
+    { id: 'feed', label: 'Home', icon: Home },
+    { id: 'discover', label: 'Discover Alumni', icon: Compass },
+    { id: 'batch', label: 'My Batch', icon: Users },
+    { id: 'memories', label: 'Memories', icon: Camera },
+    { id: 'directory', label: 'Alumni Directory', icon: BookOpen },
+    { id: 'careers', label: 'Careers', icon: Briefcase },
+    { id: 'reunions', label: 'Reunions', icon: Award },
+    { id: 'mentorship', label: 'Mentorship', icon: HelpCircle },
+    { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'archives', label: 'School Archives', icon: Archive },
+    { id: 'saved', label: 'Saved Posts', icon: Bookmark },
+    { id: 'profile', label: 'Profile', icon: UserIcon },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  // Admin badge counter
-  const pendingCount = RKMV_DB.getUsers().filter(u => u.verify_status === 'pending').length;
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value;
     setSearchQuery(q);
     if (!q.trim()) {
@@ -92,9 +116,13 @@ export const Layout: React.FC<LayoutProps> = ({
       setSearchDropdownVisible(false);
       return;
     }
-    const matches = RKMV_DB.searchAlumni(q).slice(0, 5);
-    setSearchResults(matches);
-    setSearchDropdownVisible(true);
+    try {
+      const matches = await apiFetch(`/directory?search=${encodeURIComponent(q)}`);
+      setSearchResults(matches.slice(0, 5));
+      setSearchDropdownVisible(true);
+    } catch (err) {
+      console.error("Search failed:", err);
+    }
   };
 
   const selectSearchResult = (userId: string) => {
@@ -103,50 +131,50 @@ export const Layout: React.FC<LayoutProps> = ({
     setSelectedProfileId(userId);
   };
 
-  const markAllNotificationsRead = () => {
-    RKMV_DB.markNotificationsAsRead(currentUser.id);
-    showToast("All alerts marked as read.", "success");
-    loadNotifications();
+  const markAllNotificationsRead = async () => {
+    try {
+      await apiFetch('/notifications/read-all', { method: 'POST' });
+      showToast("All alerts marked as read.", "success");
+      loadNotifications();
+    } catch (err: any) {
+      showToast(err.message || "Failed to mark notifications read.", "danger");
+    }
   };
 
-  const handleNotifClick = (notif: Notification) => {
-    const allNotifs = RKMV_DB.getData<Notification>('rkmv_notifs');
-    const idx = allNotifs.findIndex(n => n.id === notif.id);
-    if (idx !== -1) {
-      allNotifs[idx].read = true;
-      RKMV_DB.saveData('rkmv_notifs', allNotifs);
+  const handleNotifClick = async (notif: Notification) => {
+    try {
+      await apiFetch(`/notifications/${notif.id}/read`, { method: 'POST' });
       loadNotifications();
       
-      // If it is a registration alert, navigate to admin dashboard
       if (notif.title.includes("Registration") && currentUser.role === 'admin') {
         setActiveScreen('admin');
         setNotifDropdownVisible(false);
       }
+    } catch (err: any) {
+      console.error("Failed to mark notification read:", err);
     }
   };
 
   return (
     <div className="app-layout">
       {/* Sidebar Navigation */}
-      <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar" style={{
-        transform: sidebarOpen ? 'translateX(0)' : undefined
-      }}>
+      <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-header">
           <div className="logo-box">
             <span className="logo-emblem">🏵️</span>
             <div className="logo-text">
-              <h1 className="logo-title">Vidyapith</h1>
-              <span className="logo-subtitle">Connect</span>
+              <h1 className="logo-title" style={{ color: 'var(--text-primary)' }}>Vidyapith</h1>
+              <span className="logo-subtitle" style={{ fontSize: '0.68rem' }}>Alumni</span>
             </div>
           </div>
-          <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)} style={{ display: 'block' }}>
+          <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
         </div>
 
         <div className="sidebar-user-quick">
           <div className="user-avatar-wrap">
-            <img src={currentUser.profile_photo} alt={currentUser.full_name} className="quick-user-avatar" />
+            <img src={currentUser.profile_photo} alt={currentUser.full_name} className="quick-user-avatar" style={{ border: '2px solid var(--primary-color)' }} />
             <span className="status-indicator online"></span>
           </div>
           <div className="user-quick-info">
@@ -158,22 +186,26 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <nav className="sidebar-nav">
+          {/* Main Vidyapith Navs */}
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isSelected = activeScreen === item.id || (item.id === 'profile' && activeScreen === 'profile_view');
             return (
               <button 
                 key={item.id}
-                className={`nav-item ${activeScreen === item.id ? 'active' : ''}`} 
+                className={`nav-item ${isSelected ? 'active' : ''}`} 
                 onClick={() => {
                   setActiveScreen(item.id);
                   setSidebarOpen(false);
                 }}
               >
-                <Icon size={20} />
+                <Icon size={20} style={{ color: isSelected ? 'var(--primary-color)' : 'inherit' }} />
                 <span>{item.label}</span>
               </button>
             );
           })}
+
+          <div style={{ height: '1px', background: 'var(--border-color)', margin: '10px 0' }} />
 
           {currentUser.role === 'admin' && (
             <button 
@@ -208,14 +240,14 @@ export const Layout: React.FC<LayoutProps> = ({
         {/* Top Header */}
         <header className="app-header">
           <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(true)} style={{ display: 'block' }}>
+            <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(true)}>
               <Menu size={22} />
             </button>
             <div className="header-search-bar" ref={searchRef}>
               <Search className="search-icon" size={18} />
               <input 
                 type="text" 
-                placeholder="Search alumni by name, batch, house..." 
+                placeholder="Search alumni, batches, memories, jobs, events..." 
                 value={searchQuery}
                 onChange={handleSearch}
                 onFocus={() => searchQuery.trim() && setSearchDropdownVisible(true)}
@@ -306,7 +338,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="profile-menu-dropdown" style={{ display: 'block' }}>
                   <a href="#" className="profile-menu-item" onClick={(e) => {
                     e.preventDefault();
-                    setSelectedProfileId(currentUser.id);
+                    setActiveScreen('profile');
                     setProfileDropdownVisible(false);
                   }}>
                     <UserIcon size={14} />
@@ -342,6 +374,45 @@ export const Layout: React.FC<LayoutProps> = ({
           {children}
         </section>
       </main>
+
+      {/* Mobile Bottom Navigation Bar (Instagram-inspired) */}
+      <div className="mobile-bottom-nav">
+        <button 
+          className={`mobile-nav-item ${activeScreen === 'feed' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('feed')}
+        >
+          <Home size={22} />
+          <span>Home</span>
+        </button>
+        <button 
+          className={`mobile-nav-item ${activeScreen === 'discover' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('discover')}
+        >
+          <Compass size={22} />
+          <span>Discover</span>
+        </button>
+        <button 
+          className={`mobile-nav-item ${activeScreen === 'memories' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('memories')}
+        >
+          <Camera size={22} />
+          <span>Memories</span>
+        </button>
+        <button 
+          className={`mobile-nav-item ${activeScreen === 'saved' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('saved')}
+        >
+          <Bookmark size={22} />
+          <span>Saved</span>
+        </button>
+        <button 
+          className={`mobile-nav-item ${activeScreen === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('profile')}
+        >
+          <UserIcon size={22} />
+          <span>Profile</span>
+        </button>
+      </div>
     </div>
   );
 };

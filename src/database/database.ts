@@ -31,7 +31,7 @@ export interface Post {
   group_id: string;
   content: string;
   media_urls: string[];
-  post_type: 'text' | 'photo';
+  post_type: 'text' | 'photo' | 'video' | 'article' | 'notes' | 'code' | 'link' | 'placement' | 'carousel' | 'achievement' | 'career' | 'mentorship' | 'event' | 'story' | 'announcement' | 'spotlight' | 'tribute';
   is_pinned: boolean;
   likes: string[]; // array of user IDs
   created_at: string;

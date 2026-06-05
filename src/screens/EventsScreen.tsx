@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, Event, RSVP } from '../database/database';
 import { Calendar, PlusCircle, Video, Users, MapPin, CheckCircle, X } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface EventsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -29,14 +30,18 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const [evtLocation, setEvtLocation] = useState('');
   const [evtCapacity, setEvtCapacity] = useState('100');
 
-  const loadEvents = () => {
-    const list = RKMV_DB.getEvents();
-    const now = new Date();
+  const loadEvents = async () => {
+    try {
+      const list = await apiFetch('/events');
+      const now = new Date();
 
-    if (activeTab === 'upcoming') {
-      setEvents(list.filter(e => new Date(e.event_date) >= now));
-    } else {
-      setEvents(list.filter(e => new Date(e.event_date) < now));
+      if (activeTab === 'upcoming') {
+        setEvents(list.filter((e: any) => new Date(e.event_date) >= now));
+      } else {
+        setEvents(list.filter((e: any) => new Date(e.event_date) < now));
+      }
+    } catch (err: any) {
+      showToast(err.message, 'danger');
     }
   };
 
@@ -55,56 +60,59 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
     setRsvpModalVisible(true);
   };
 
-  const handleRSVPSubmit = (e: React.FormEvent) => {
+  const handleRSVPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newRsvp: RSVP = {
-      id: 'rsvp-' + Math.random().toString(36).substr(2, 9),
-      event_id: rsvpEventId,
-      user_id: currentUser.id,
-      guest_count: parseInt(rsvpGuests),
-      dietary_pref: rsvpDiet,
-      created_at: new Date().toISOString()
-    };
-
-    RKMV_DB.addRSVP(newRsvp);
-    showToast("RSVP registered successfully! Ticket generated.", "success");
-    setRsvpModalVisible(false);
-    loadEvents();
+    try {
+      await apiFetch(`/events/${rsvpEventId}/rsvp`, {
+        method: 'POST',
+        body: JSON.stringify({
+          guestCount: parseInt(rsvpGuests),
+          dietaryPref: rsvpDiet
+        })
+      });
+      showToast("RSVP registered successfully! Ticket generated.", "success");
+      setRsvpModalVisible(false);
+      loadEvents();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
-  const handleCreateEventSubmit = (e: React.FormEvent) => {
+  const handleCreateEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!evtTitle.trim() || !evtDesc.trim() || !evtDate || !evtLocation.trim()) {
       showToast("Please fill all required fields.", "danger");
       return;
     }
 
-    const newEvt: Event = {
-      id: 'evt-' + Math.random().toString(36).substr(2, 9),
-      title: evtTitle.trim(),
-      description: evtDesc.trim(),
-      event_date: new Date(evtDate).toISOString(),
-      location: evtLocation.trim(),
-      event_type: evtType,
-      online_link: evtType === 'virtual' ? evtLocation.trim() : '',
-      max_capacity: parseInt(evtCapacity) || 100,
-      created_by: currentUser.id,
-      created_at: new Date().toISOString()
-    };
-
-    RKMV_DB.addEvent(newEvt);
-    showToast("Community gathering published successfully!", "success");
-    
-    // Reset and close
-    setCreateModalVisible(false);
-    setEvtTitle('');
-    setEvtDesc('');
-    setEvtDate('');
-    setEvtType('physical');
-    setEvtLocation('');
-    setEvtCapacity('100');
-    loadEvents();
+    try {
+      await apiFetch('/events', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: evtTitle.trim(),
+          description: evtDesc.trim(),
+          eventDate: new Date(evtDate).toISOString(),
+          location: evtLocation.trim(),
+          eventType: evtType,
+          onlineLink: evtType === 'virtual' ? evtLocation.trim() : '',
+          maxCapacity: parseInt(evtCapacity) || 100
+        })
+      });
+      showToast("Community gathering published successfully!", "success");
+      
+      // Reset and close
+      setCreateModalVisible(false);
+      setEvtTitle('');
+      setEvtDesc('');
+      setEvtDate('');
+      setEvtType('physical');
+      setEvtLocation('');
+      setEvtCapacity('100');
+      loadEvents();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   const formatEventDate = (isoString: string) => {
@@ -163,8 +171,8 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
         ) : (
           events.map(evt => {
             const isPast = new Date(evt.event_date) < new Date();
-            const isRSVPed = RKMV_DB.hasUserRSVPed(evt.id, currentUser.id);
-            const rsvpCount = RKMV_DB.getRSVPs(evt.id).length;
+            const isRSVPed = (evt as any).rsvps?.some((r: any) => r.user_id === currentUser.id) || false;
+            const rsvpCount = (evt as any).rsvps?.length || 0;
 
             return (
               <div key={evt.id} className="glass-panel event-card">

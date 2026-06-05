@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, User } from '../database/database';
 import { Search, Calendar, Home, MapPin, UserPlus, Check, Users } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface DirectoryScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -19,14 +20,19 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [alumniList, setAlumniList] = useState<User[]>([]);
   const [connectionSentIds, setConnectionSentIds] = useState<string[]>([]);
 
-  const loadDirectory = () => {
-    const filters: { batchYear?: string; house?: string; city?: string } = {};
-    if (filterBatch) filters.batchYear = filterBatch;
-    if (filterHouse) filters.house = filterHouse;
-    if (filterCity) filters.city = filterCity;
+  const loadDirectory = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (searchQuery) queryParams.append('search', searchQuery);
+      if (filterBatch) queryParams.append('batchYear', filterBatch);
+      if (filterHouse) queryParams.append('house', filterHouse);
+      if (filterCity) queryParams.append('city', filterCity);
 
-    const results = RKMV_DB.searchAlumni(searchQuery, filters);
-    setAlumniList(results);
+      const results = await apiFetch(`/directory?${queryParams.toString()}`);
+      setAlumniList(results);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   useEffect(() => {
@@ -55,20 +61,16 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     return colors[house] || "rgba(255,255,255,0.15)";
   };
 
-  const handleConnectRequest = (id: string, name: string) => {
-    setConnectionSentIds(prev => [...prev, id]);
-    showToast(`Connection request sent to ${name}!`, 'success');
-
-    if (currentUser) {
-      RKMV_DB.addNotification({
-        id: 'not-' + Math.random().toString(36).substr(2, 9),
-        user_id: id,
-        title: "New Connection Request",
-        body: `${currentUser.full_name} wants to connect with you.`,
-        type: "info",
-        read: false,
-        created_at: new Date().toISOString()
+  const handleConnectRequest = async (id: string, name: string) => {
+    try {
+      await apiFetch('/directory/connect', {
+        method: 'POST',
+        body: JSON.stringify({ targetId: id })
       });
+      setConnectionSentIds(prev => [...prev, id]);
+      showToast(`Connection request sent to ${name}!`, 'success');
+    } catch (err: any) {
+      showToast(err.message, 'danger');
     }
   };
 

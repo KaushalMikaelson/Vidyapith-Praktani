@@ -1,0 +1,128 @@
+import { Response } from 'express';
+import { prisma } from '../config/db.js';
+import { AuthenticatedRequest } from '../middlewares/auth.js';
+
+// List approved alumni mentors
+export const listMentors = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { expertiseField } = req.query;
+
+    const whereCondition: any = {
+      verify_status: 'approved',
+      role: 'alumni'
+    };
+
+    const users = await prisma.user.findMany({
+      where: whereCondition,
+      include: { profile: true }
+    });
+
+    // Map and filter by expertise on backend
+    let formattedMentors = users.map(u => {
+      return {
+        id: u.id,
+        full_name: u.profile?.full_name || "Vidyapith Alumnus",
+        email: u.email,
+        mobile: u.phone,
+        batch_year: u.profile?.batch_year || 0,
+        house: u.profile?.house || "",
+        role: u.role,
+        verify_status: u.verify_status,
+        profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+        bio: u.profile?.bio || "",
+        profession: u.profile?.profession_category || "",
+        company: u.profile?.company || "",
+        city: u.profile?.city || "",
+        country: u.profile?.country || "India",
+        linkedin_url: u.profile?.linkedin_url || "",
+        created_at: u.created_at
+      };
+    });
+
+    if (expertiseField) {
+      const field = (expertiseField as string).toLowerCase();
+      if (field === 'software engineering') {
+        formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('architect') || m.profession.toLowerCase().includes('software') || m.profession.toLowerCase().includes('tech'));
+      } else if (field === 'healthcare & medicine') {
+        formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('cardiologist') || m.profession.toLowerCase().includes('doctor') || m.profession.toLowerCase().includes('surgeon'));
+      } else if (field === 'civil services') {
+        formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('officer') || m.profession.toLowerCase().includes('service') || m.profession.toLowerCase().includes('ifs') || m.profession.toLowerCase().includes('ias'));
+      } else if (field === 'entrepreneurship') {
+        formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('founder') || m.profession.toLowerCase().includes('ceo') || m.profession.toLowerCase().includes('consultant'));
+      }
+    }
+
+    res.status(200).json(formattedMentors);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// List pairings for current user
+export const listPairings = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized access." });
+      return;
+    }
+
+    const pairings = await prisma.mentorship.findMany({
+      where: {
+        OR: [
+          { mentor_id: userId },
+          { mentee_id: userId }
+        ]
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.status(200).json(pairings);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Request a mentorship pairing (auto-approved for prototype flow)
+export const requestMentorship = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { mentorId, goals } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized access." });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    });
+
+    const studentName = user?.profile?.full_name || "A student";
+
+    const newPair = await prisma.mentorship.create({
+      data: {
+        mentor_id: mentorId,
+        mentee_id: userId,
+        status: 'active', // prototype auto-approval
+        goals,
+        start_date: new Date()
+      }
+    });
+
+    // Notify mentor
+    await prisma.notification.create({
+      data: {
+        user_id: mentorId,
+        title: "New Mentee Paired",
+        body: `${studentName} has requested your mentorship guidance.`,
+        type: "success"
+      }
+    });
+
+    res.status(201).json({ success: true, mentorship: newPair });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};

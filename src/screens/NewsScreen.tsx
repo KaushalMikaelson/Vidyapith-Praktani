@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { RKMV_DB, NewsPost, HeritageItem } from '../database/database';
 import { QuoteWidget } from '../components/QuoteWidget';
 import { BookOpen, PlusCircle, Calendar, Film, X } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 interface NewsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -27,14 +28,19 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
   // Retro photo preview state
   const [selectedPhoto, setSelectedPhoto] = useState<HeritageItem | null>(null);
 
-  const loadNewsData = () => {
-    setNews(RKMV_DB.getNews());
-    
-    let herList = RKMV_DB.getHeritage();
-    if (activeDecade !== 'All') {
-      herList = herList.filter(item => item.decade === activeDecade);
+  const loadNewsData = async () => {
+    try {
+      const newsList = await apiFetch('/news');
+      setNews(newsList);
+      
+      let herList = await apiFetch('/heritage');
+      if (activeDecade !== 'All') {
+        herList = herList.filter((item: any) => item.decade === activeDecade);
+      }
+      setHeritage(herList);
+    } catch (err: any) {
+      showToast(err.message, 'danger');
     }
-    setHeritage(herList);
   };
 
   useEffect(() => {
@@ -43,33 +49,33 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
 
   if (!currentUser) return null;
 
-  const handleComposeSubmit = (e: React.FormEvent) => {
+  const handleComposeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsTitle.trim() || !newsBody.trim()) {
       showToast("Title and Body are required.", "danger");
       return;
     }
 
-    const newPost: NewsPost = {
-      id: 'news-' + Math.random().toString(36).substr(2, 9),
-      title: newsTitle.trim(),
-      slug: newsTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      body: newsBody.trim(),
-      category: newsCategory,
-      media_url: newsPhotoUrl.trim() || undefined,
-      author_name: currentUser.full_name,
-      published_at: new Date().toISOString(),
-      is_featured: false
-    };
+    try {
+      await apiFetch('/news', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: newsTitle.trim(),
+          body: newsBody.trim(),
+          category: newsCategory,
+          mediaUrl: newsPhotoUrl.trim() || undefined
+        })
+      });
+      showToast("News article published successfully!", "success");
 
-    RKMV_DB.addNews(newPost);
-    showToast("News article published successfully!", "success");
-
-    setComposeModalVisible(false);
-    setNewsTitle('');
-    setNewsBody('');
-    setNewsPhotoUrl('');
-    loadNewsData();
+      setComposeModalVisible(false);
+      setNewsTitle('');
+      setNewsBody('');
+      setNewsPhotoUrl('');
+      loadNewsData();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
   };
 
   const decades = ['All', '1920s', '1940s', '1960s', '1980s', '2000s', '2020s'];
