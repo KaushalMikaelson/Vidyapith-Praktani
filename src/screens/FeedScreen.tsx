@@ -10,7 +10,7 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote
+  Users, Camera, ChevronDown, Quote, UserPlus
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
@@ -727,28 +727,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     const secondAuthor = (secondPost as any)?.author || currentUser;
 
     return (
-      <div className="heritage-page home-feed-redesign">
-        <aside className="feed-left-panel">
-          <section className="mini-profile-card">
-            <div className="mini-cover"></div>
-            <img src={currentUser.profile_photo} alt={currentUser.full_name} />
-            <h2>{currentUser.full_name}</h2>
-            <p>Class of {currentUser.batch_year} · Science Stream</p>
-            <span>Batch '{String(currentUser.batch_year).slice(-2)} - Falcons</span>
-          </section>
-          <nav className="feed-side-menu">
-            {[['My Profile', UserIcon], ['My Batch', Users], ['Events', Calendar], ['Alumni Directory', BookOpen], ['Memories', Camera]].map(([label, Icon]: any) => (
-              <button key={label}><Icon size={22} /> {label}</button>
-            ))}
-          </nav>
-          <section className="heritage-widget">
-            <h3><Flame size={18} /> Trending Alumni</h3>
-            <p><strong>Sarah Kapoor</strong><br /><span>Class of 2008</span></p>
-            <p><strong>James Cole</strong><br /><span>Class of 1995</span></p>
-          </section>
-        </aside>
-
-        <main className="feed-main-panel">
+      <div className="ig-feed-layout">
+        {/* Center: post composer + feed */}
+        <main className="ig-feed-main">
           <form className="feed-composer-card" onSubmit={handleCreatePost}>
             <div>
               <img src={currentUser.profile_photo} alt={currentUser.full_name} />
@@ -787,29 +768,33 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           })}
         </main>
 
-        <aside className="feed-right-panel">
+        {/* Right panel */}
+        <aside className="ig-feed-right">
           <section className="heritage-widget reunion-widget">
-            <h3><Calendar size={20} /> Upcoming Reunions</h3>
+            <h3><Calendar size={18} /> Upcoming Reunions</h3>
             {['Centenary Grand Gala', 'Batch 2012 Meetup', "Founders' Day Sports Meet"].map((title, index) => (
-              <div key={title}>
-                <strong>{title}</strong>
-                <p>{index === 0 ? 'Dec 14, 2026 · 6:00 PM' : index === 1 ? 'Jan 20, 2027 · 4:00 PM' : 'Feb 08, 2027 · 9:00 AM'}</p>
-                <button onClick={() => showToast(`RSVP noted for ${title}.`, 'success')}>RSVP</button>
+              <div key={title} style={{ marginBottom: '14px' }}>
+                <strong style={{ fontSize: '0.88rem' }}>{title}</strong>
+                <p style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', margin: '2px 0 6px' }}>
+                  {index === 0 ? 'Dec 14, 2026 · 6:00 PM' : index === 1 ? 'Jan 20, 2027 · 4:00 PM' : 'Feb 08, 2027 · 9:00 AM'}
+                </p>
+                <button onClick={() => showToast(`RSVP noted for ${title}.`, 'success')} style={{ fontSize: '0.78rem', padding: '4px 12px' }}>RSVP</button>
               </div>
             ))}
           </section>
-          <section className="spotlight-widget">
-            <h3><Star size={20} /> Alumni Spotlight</h3>
+          <section className="spotlight-widget" style={{ marginTop: '20px' }}>
+            <h3><Star size={18} /> Alumni Spotlight</h3>
             <img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=220&h=220&fit=crop&q=80" alt="Dr. Edward Whitman" />
             <h2>Dr. Edward Whitman</h2>
             <span>Class of 1968</span>
             <p>A pioneering neurosurgeon and recipient of national honors.</p>
-            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More <span aria-hidden="true">›</span></button>
+            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More ›</button>
           </section>
         </aside>
       </div>
     );
   }
+
 
   if (screenMode === 'discover') {
     return (
