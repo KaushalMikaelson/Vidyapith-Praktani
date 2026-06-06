@@ -108,6 +108,15 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  // Top header nav items (desktop center links)
+  const topNavItems = [
+    { id: 'feed', label: 'Home' },
+    { id: 'discover', label: 'Discover' },
+    { id: 'events', label: 'Events' },
+    { id: 'careers', label: 'Careers' },
+    { id: 'directory', label: 'Directory' },
+  ];
+
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value;
     setSearchQuery(q);
@@ -238,23 +247,101 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Main Content Area */}
       <main className="app-main">
         {/* Top Header */}
-        <header className="app-header">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(true)}>
-              <Menu size={22} />
-            </button>
-            <div className="header-search-bar" ref={searchRef}>
-              <Search className="search-icon" size={18} />
+        <header className="app-header" style={{
+          background: 'var(--bg-darker)',
+          height: 'var(--header-height)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          borderBottom: '1px solid var(--border-color)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000
+        }}>
+          {/* Left: Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveScreen('feed')}>
+            <div style={{
+              background: '#f5a623',
+              color: '#08172b',
+              width: '36px',
+              height: '36px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '1.25rem',
+              boxShadow: '0 2px 6px rgba(245, 166, 35, 0.4)'
+            }}>
+              🎓
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+              <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', fontFamily: 'var(--font-title)', letterSpacing: '-0.01em' }}>AlumniConnect</span>
+              <span style={{ fontSize: '0.68rem', color: '#f5a623', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>100 Years of Legacy</span>
+            </div>
+          </div>
+
+          {/* Center Nav Links (Desktop only) */}
+          <div className="header-nav-center" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
+            {topNavItems.map(item => {
+              const isActive = activeScreen === item.id || (item.id === 'feed' && activeScreen === 'explore');
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveScreen(item.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: isActive ? 'white' : '#9ca3af',
+                    fontWeight: isActive ? 700 : 500,
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    padding: '8px 0',
+                    borderBottom: isActive ? '2.5px solid #f5a623' : '2.5px solid transparent',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Section: Search + Bell + Profile Avatar */}
+          <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Search Box */}
+            <div className="header-search-bar" ref={searchRef} style={{
+              position: 'relative',
+              background: 'rgba(255, 255, 255, 0.08)',
+              borderRadius: '24px',
+              padding: '6px 14px 6px 36px',
+              display: 'flex',
+              alignItems: 'center',
+              width: '240px',
+              height: '36px',
+              border: 'none'
+            }}>
+              <Search className="search-icon" size={16} style={{ position: 'absolute', left: '12px', color: '#9ca3af' }} />
               <input 
                 type="text" 
-                placeholder="Search alumni, batches, memories, jobs, events..." 
+                placeholder="Search alumni, batches..." 
                 value={searchQuery}
                 onChange={handleSearch}
                 onFocus={() => searchQuery.trim() && setSearchDropdownVisible(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '0.82rem',
+                  outline: 'none',
+                  width: '100%'
+                }}
               />
               {searchDropdownVisible && (
-                <div className="quick-search-dropdown" style={{ display: 'block' }}>
-                  <div className="search-section-title">Directory Matches</div>
+                <div className="quick-search-dropdown" style={{ display: 'block', position: 'absolute', top: '42px', right: 0, width: '280px', background: '#0b1a30', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 1100, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+                  <div className="search-section-title" style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Directory Matches</div>
                   {searchResults.length === 0 ? (
                     <p style={{ fontSize: '0.8rem', textAlign: 'center', padding: '10px', color: 'var(--text-muted)' }}>
                       No alumni matching "{searchQuery}"
@@ -265,11 +352,12 @@ export const Layout: React.FC<LayoutProps> = ({
                         key={m.id}
                         className="search-result-item" 
                         onClick={() => selectSearchResult(m.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', cursor: 'pointer', transition: 'background 0.2s' }}
                       >
-                        <img src={m.profile_photo} className="search-item-photo" alt="Avatar" />
-                        <div className="search-item-info">
-                          <span className="search-item-name">{m.full_name}</span>
-                          <span className="search-item-sub">Batch of {m.batch_year} • {m.profession}</span>
+                        <img src={m.profile_photo} className="search-item-photo" alt="Avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                        <div className="search-item-info" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                          <span className="search-item-name" style={{ color: 'white', fontSize: '0.8rem', fontWeight: 600 }}>{m.full_name}</span>
+                          <span className="search-item-sub" style={{ color: '#9ca3af', fontSize: '0.72rem' }}>Batch of {m.batch_year} • {m.profession}</span>
                         </div>
                       </div>
                     ))
@@ -277,28 +365,26 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="header-right">
-            {/* Notification Center */}
-            <div className="notification-trigger" ref={notifRef}>
-              <button className="icon-btn" onClick={() => setNotifDropdownVisible(!notifDropdownVisible)}>
-                <Bell size={18} />
+            {/* Bell Notifications */}
+            <div className="notification-trigger" ref={notifRef} style={{ position: 'relative' }}>
+              <button className="icon-btn" onClick={() => setNotifDropdownVisible(!notifDropdownVisible)} style={{ background: 'none', border: 'none', color: '#f5a623', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', position: 'relative' }}>
+                <Bell size={20} />
                 {unreadNotifCount > 0 && (
-                  <span className="notif-badge">{unreadNotifCount}</span>
+                  <span className="notif-badge" style={{ position: 'absolute', top: '1px', right: '1px', width: '8px', height: '8px', background: '#FF7A1A', borderRadius: '50%' }}></span>
                 )}
               </button>
               {notifDropdownVisible && (
-                <div className="notification-dropdown" style={{ display: 'block' }}>
-                  <div className="notif-header">
-                    <h3>Notifications</h3>
-                    <button className="text-btn" onClick={markAllNotificationsRead}>Mark all read</button>
+                <div className="notification-dropdown" style={{ display: 'block', position: 'absolute', top: '38px', right: '-80px', width: '300px', background: '#0b1a30', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 1100, boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                  <div className="notif-header" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <h3 style={{ fontSize: '0.88rem', color: 'white', margin: 0 }}>Notifications</h3>
+                    <button className="text-btn" onClick={markAllNotificationsRead} style={{ background: 'none', border: 'none', color: '#f5a623', fontSize: '0.75rem', cursor: 'pointer' }}>Mark all read</button>
                   </div>
-                  <div className="notif-list">
+                  <div className="notif-list" style={{ maxHeight: '240px', overflowY: 'auto' }}>
                     {notifications.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                        <BellOff size={28} style={{ marginBottom: '8px', display: 'inline-block' }} />
-                        <p style={{ fontSize: '0.8rem' }}>You have no active alerts.</p>
+                      <div style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>
+                        <BellOff size={24} style={{ marginBottom: '8px', display: 'inline-block' }} />
+                        <p style={{ fontSize: '0.78rem', margin: 0 }}>You have no active alerts.</p>
                       </div>
                     ) : (
                       notifications.map(n => (
@@ -306,18 +392,16 @@ export const Layout: React.FC<LayoutProps> = ({
                           key={n.id}
                           className={`notif-item ${n.read ? '' : 'unread'}`} 
                           onClick={() => handleNotifClick(n)}
+                          style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', background: n.read ? 'transparent' : 'rgba(255,122,26,0.05)' }}
                         >
-                          <div className={`notif-icon-wrap ${n.type}`}>
-                            <span style={{ fontSize: '1.1rem' }}>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ fontSize: '1rem' }}>
                               {n.type === 'success' ? '✅' : n.type === 'alert' ? '⚠️' : 'ℹ️'}
                             </span>
-                          </div>
-                          <div className="notif-content-box">
-                            <span className="notif-title">{n.title}</span>
-                            <span className="notif-body">{n.body}</span>
-                            <span className="notif-time">
-                              {new Date(n.created_at).toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'white' }}>{n.title}</span>
+                              <span style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '2px' }}>{n.body}</span>
+                            </div>
                           </div>
                         </div>
                       ))
@@ -328,19 +412,17 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             {/* Profile Dropdown */}
-            <div className="profile-dropdown-wrap" ref={profileRef}>
-              <button className="header-user-btn" onClick={() => setProfileDropdownVisible(!profileDropdownVisible)}>
-                <img src={currentUser.profile_photo} alt={currentUser.full_name} className="header-user-avatar" />
-                <span className="user-header-name">{currentUser.full_name.split(' ')[0]}</span>
-                <ChevronDown size={14} className="chevron-icon" />
+            <div className="profile-dropdown-wrap" ref={profileRef} style={{ position: 'relative' }}>
+              <button className="header-user-btn" onClick={() => setProfileDropdownVisible(!profileDropdownVisible)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}>
+                <img src={currentUser.profile_photo} alt={currentUser.full_name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)' }} />
               </button>
               {profileDropdownVisible && (
-                <div className="profile-menu-dropdown" style={{ display: 'block' }}>
+                <div className="profile-menu-dropdown" style={{ display: 'block', position: 'absolute', top: '38px', right: 0, width: '160px', background: '#0b1a30', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 1100, boxShadow: '0 8px 24px rgba(0,0,0,0.5)', padding: '4px' }}>
                   <a href="#" className="profile-menu-item" onClick={(e) => {
                     e.preventDefault();
                     setActiveScreen('profile');
                     setProfileDropdownVisible(false);
-                  }}>
+                  }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', color: 'white', fontSize: '0.8rem', borderRadius: '4px', textDecoration: 'none' }}>
                     <UserIcon size={14} />
                     <span>My Profile</span>
                   </a>
@@ -349,17 +431,17 @@ export const Layout: React.FC<LayoutProps> = ({
                       e.preventDefault();
                       setActiveScreen('admin');
                       setProfileDropdownVisible(false);
-                    }}>
+                    }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', color: 'white', fontSize: '0.8rem', borderRadius: '4px', textDecoration: 'none' }}>
                       <ShieldCheck size={14} />
                       <span>Admin Center</span>
                     </a>
                   )}
-                  <hr className="dropdown-divider" />
+                  <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', margin: '4px 0' }} />
                   <a href="#" className="profile-menu-item text-danger" onClick={(e) => {
                     e.preventDefault();
                     logout();
                     showToast("Signed out successfully.", "info");
-                  }}>
+                  }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', color: '#ef4444', fontSize: '0.8rem', borderRadius: '4px', textDecoration: 'none' }}>
                     <LogOut size={14} />
                     <span>Logout</span>
                   </a>
