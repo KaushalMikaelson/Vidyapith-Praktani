@@ -14,6 +14,7 @@ import { listNotifications, markRead, readAllNotifications } from '../controller
 import { listPendingUsers } from '../controllers/admin.controller.js';
 import { uploadMedia } from '../controllers/upload.controller.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
+import { listConversations, getConversation, sendMessage } from '../controllers/messages.controller.js';
 
 export const apiRouter = Router();
 
@@ -69,3 +70,9 @@ apiRouter.post('/notifications/:id/read', requireAuth, markRead);
 
 // Admin Endpoints
 apiRouter.get('/admin/pending-users', requireAdmin, listPendingUsers);
+
+// Messages Endpoints
+apiRouter.get('/messages/conversations', requireAuth, listConversations);
+apiRouter.get('/messages/:partnerId', requireAuth, getConversation);
+apiRouter.post('/messages/:partnerId', requireAuth, sendMessage);
+

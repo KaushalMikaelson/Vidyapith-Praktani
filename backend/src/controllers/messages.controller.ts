@@ -1,0 +1,177 @@
+import { Response } from 'express';
+import { prisma } from '../config/db.js';
+import { AuthenticatedRequest } from '../middlewares/auth.js';
+
+// List all conversations for the current user
+export const listConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized access.' });
+      return;
+    }
+
+    // Get all messages involving this user
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [{ sender_id: userId }, { receiver_id: userId }]
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    // Find unique partner IDs
+    const partnerIds = Array.from(new Set(
+      messages.map(m => m.sender_id === userId ? m.receiver_id : m.sender_id)
+    ));
+
+    if (partnerIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    // Fetch partner profiles
+    const partners = await prisma.user.findMany({
+      where: { id: { in: partnerIds } },
+      include: { profile: true }
+    });
+
+    const conversations = partners.map(partner => {
+      const lastMsg = messages.find(m =>
+        (m.sender_id === partner.id && m.receiver_id === userId) ||
+        (m.sender_id === userId && m.receiver_id === partner.id)
+      );
+      const unreadCount = messages.filter(m =>
+        m.sender_id === partner.id && m.receiver_id === userId && !m.read
+      ).length;
+
+      return {
+        partnerId: partner.id,
+        partnerName: partner.profile?.full_name || 'Vidyapith Alumnus',
+        partnerPhoto: partner.profile?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
+        partnerBatch: partner.profile?.batch_year || null,
+        partnerProfession: partner.profile?.profession_category || '',
+        lastMessage: lastMsg?.content || '',
+        lastMessageAt: lastMsg?.created_at || null,
+        unreadCount,
+        isLastFromMe: lastMsg?.sender_id === userId
+      };
+    });
+
+    // Sort by most recent message
+    conversations.sort((a, b) =>
+      new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
+    );
+
+    res.status(200).json(conversations);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get conversation messages with a specific user
+export const getConversation = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const partnerId = req.params.partnerId as string;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized access.' });
+      return;
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { sender_id: userId, receiver_id: partnerId },
+          { sender_id: partnerId, receiver_id: userId }
+        ]
+      },
+      orderBy: { created_at: 'asc' }
+    });
+
+    // Mark incoming messages as read
+    await prisma.message.updateMany({
+      where: {
+        sender_id: partnerId,
+        receiver_id: userId,
+        read: false
+      },
+      data: { read: true }
+    });
+
+    // Get partner profile
+    const partner = await prisma.user.findUnique({
+      where: { id: partnerId },
+      include: { profile: true }
+    });
+
+    res.status(200).json({
+      messages,
+      partner: partner ? {
+        id: partner.id,
+        full_name: partner.profile?.full_name || 'Vidyapith Alumnus',
+        profile_photo: partner.profile?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
+        batch_year: partner.profile?.batch_year,
+        profession_category: partner.profile?.profession_category
+      } : null
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Send a message to a user
+export const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const partnerId = req.params.partnerId as string;
+    const { content } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized access.' });
+      return;
+    }
+
+    if (!content?.trim()) {
+      res.status(400).json({ error: 'Message content cannot be empty.' });
+      return;
+    }
+
+    // Verify partner exists
+    const partner = await prisma.user.findUnique({ where: { id: partnerId } });
+    if (!partner) {
+      res.status(404).json({ error: 'Recipient user not found.' });
+      return;
+    }
+
+    const message = await prisma.message.create({
+      data: {
+        sender_id: userId,
+        receiver_id: partnerId,
+        content: content.trim(),
+        read: false
+      }
+    });
+
+    // Notify recipient (best-effort — don't fail if this errors)
+    try {
+      const sender = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+      await prisma.notification.create({
+        data: {
+          user_id: partnerId,
+          title: 'New Direct Message',
+          body: `${sender?.profile?.full_name || 'A fellow alumnus'} sent you a message.`,
+          type: 'info',
+          read: false
+        }
+      });
+    } catch { /* Notification creation failure is non-fatal */ }
+
+    res.status(201).json({ success: true, message });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -16,6 +16,8 @@ import { NewsScreen } from '../screens/NewsScreen';
 import { JobsScreen } from '../screens/JobsScreen';
 import { AdminScreen } from '../screens/AdminScreen';
 import { CreateScreen } from '../screens/CreateScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { MessagesScreen } from '../screens/MessagesScreen';
 
 // Icons
 import { Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles } from 'lucide-react';
@@ -166,7 +168,6 @@ export default function App() {
       case 'archives':
       case 'saved':
       case 'settings':
-      case 'messages':
       case 'explore':
       case 'notes':
         return (
@@ -186,6 +187,10 @@ export default function App() {
             forceProfileId={currentUser?.id} 
           />
         );
+      case 'notifications':
+        return <NotificationsScreen showToast={showToast} />;
+      case 'messages':
+        return <MessagesScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
       case 'search':
       case 'directory':
         return <DirectoryScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
