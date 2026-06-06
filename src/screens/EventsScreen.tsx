@@ -1,27 +1,65 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, Event, RSVP } from '../database/database';
-import { Calendar, PlusCircle, Video, Users, MapPin, CheckCircle, X } from 'lucide-react';
+import { Event } from '../database/database';
+import { Calendar, Check, Clock, Filter, Image as ImageIcon, Lightbulb, MapPin, Plus, Send, Users, X } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 interface EventsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
 }
 
+const fallbackEvents = [
+  {
+    id: 'mock-gala',
+    title: 'Centennial Grand Reunion Gala',
+    description: 'Celebrating a century of legacy with our largest gathering yet - dinner, awards, and live performances.',
+    event_date: '2026-12-15T18:00:00.000Z',
+    location: 'Grand Hall, Campus',
+    event_type: 'physical',
+    online_link: '',
+    max_capacity: 500,
+    created_by: 'system',
+    created_at: new Date().toISOString(),
+    rsvps: [{ user_id: 'demo' }, { user_id: 'demo-2' }]
+  },
+  {
+    id: 'mock-tech',
+    title: 'Careers in Tech: Alumni Panel',
+    description: 'Hear from alumni leading at top tech companies. Q&A and mentorship matching included.',
+    event_date: '2026-11-28T19:30:00.000Z',
+    location: 'Online · Zoom',
+    event_type: 'virtual',
+    online_link: '#',
+    max_capacity: 300,
+    created_by: 'system',
+    created_at: new Date().toISOString(),
+    rsvps: []
+  },
+  {
+    id: 'mock-coffee',
+    title: 'Class of 2010 Coffee Catch-up',
+    description: 'Casual morning meetup for the 2010 batch. Bring your families and reconnect over coffee.',
+    event_date: '2026-12-02T11:00:00.000Z',
+    location: 'Brew Lane, NYC',
+    event_type: 'physical',
+    online_link: '',
+    max_capacity: 80,
+    created_by: 'system',
+    created_at: new Date().toISOString(),
+    rsvps: []
+  }
+] as any[];
+
 export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'archive'>('upcoming');
-  const [events, setEvents] = useState<Event[]>([]);
-  
-  // RSVP modal state
+  const [events, setEvents] = useState<any[]>([]);
   const [rsvpModalVisible, setRsvpModalVisible] = useState(false);
   const [rsvpEventId, setRsvpEventId] = useState('');
   const [rsvpGuests, setRsvpGuests] = useState('0');
   const [rsvpDiet, setRsvpDiet] = useState('Vegetarian');
-
-  // Create Event Modal state
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [evtTitle, setEvtTitle] = useState('');
   const [evtDesc, setEvtDesc] = useState('');
@@ -33,14 +71,11 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const loadEvents = async () => {
     try {
       const list = await apiFetch('/events');
+      const source = list.length ? list : fallbackEvents;
       const now = new Date();
-
-      if (activeTab === 'upcoming') {
-        setEvents(list.filter((e: any) => new Date(e.event_date) >= now));
-      } else {
-        setEvents(list.filter((e: any) => new Date(e.event_date) < now));
-      }
+      setEvents(source.filter((event: any) => activeTab === 'upcoming' ? new Date(event.event_date) >= now : new Date(event.event_date) < now));
     } catch (err: any) {
+      setEvents(fallbackEvents);
       showToast(err.message, 'danger');
     }
   };
@@ -60,16 +95,12 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
     setRsvpModalVisible(true);
   };
 
-  const handleRSVPSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleRSVPSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
       await apiFetch(`/events/${rsvpEventId}/rsvp`, {
         method: 'POST',
-        body: JSON.stringify({
-          guestCount: parseInt(rsvpGuests),
-          dietaryPref: rsvpDiet
-        })
+        body: JSON.stringify({ guestCount: parseInt(rsvpGuests), dietaryPref: rsvpDiet })
       });
       showToast("RSVP registered successfully! Ticket generated.", "success");
       setRsvpModalVisible(false);
@@ -79,13 +110,12 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
     }
   };
 
-  const handleCreateEventSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateEventSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!evtTitle.trim() || !evtDesc.trim() || !evtDate || !evtLocation.trim()) {
       showToast("Please fill all required fields.", "danger");
       return;
     }
-
     try {
       await apiFetch('/events', {
         method: 'POST',
@@ -100,8 +130,6 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
         })
       });
       showToast("Community gathering published successfully!", "success");
-      
-      // Reset and close
       setCreateModalVisible(false);
       setEvtTitle('');
       setEvtDesc('');
@@ -115,270 +143,146 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
     }
   };
 
-  const formatEventDate = (isoString: string) => {
+  const dateParts = (isoString: string) => {
     const d = new Date(isoString);
-    return d.toLocaleDateString('en-IN', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return {
+      date: d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
   };
 
+  const eventImages = [
+    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=500&h=330&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=330&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&h=330&fit=crop&q=80'
+  ];
+
   return (
-    <div className="events-layout">
-      {/* Page Title & CTA */}
-      <div className="page-title-box" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="page-title-text">
-          <h2>Gatherings & Vidyapith Events</h2>
-          <p>Stay updated on upcoming chapter meetings, webinars, and the centennial celebrations in Deoghar.</p>
+    <div className="heritage-page events-redesign">
+      <section className="events-hero">
+        <div>
+          <span>100 Years of Legacy</span>
+          <h1>Reunions & Events</h1>
+          <p>Relive the Legacy</p>
+          {canCreateEvent && (
+            <button onClick={() => setCreateModalVisible(true)}><Plus size={18} /> Create Event</button>
+          )}
         </div>
-        {canCreateEvent && (
-          <button className="btn btn-primary" onClick={() => setCreateModalVisible(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <PlusCircle size={18} />
-            <span>Create Event</span>
-          </button>
-        )}
-      </div>
+      </section>
 
-      {/* Tabs */}
-      <div className="events-tabs" style={{ display: 'flex', gap: '14px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
-        <button 
-          className={`event-tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('upcoming')}
-          style={{ background: 'none', border: 'none', padding: '12px 16px', color: activeTab === 'upcoming' ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: 600, borderBottom: activeTab === 'upcoming' ? '2px solid var(--primary-color)' : undefined, cursor: 'pointer' }}
-        >
-          Upcoming Events
-        </button>
-        <button 
-          className={`event-tab-btn ${activeTab === 'archive' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('archive')}
-          style={{ background: 'none', border: 'none', padding: '12px 16px', color: activeTab === 'archive' ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: 600, borderBottom: activeTab === 'archive' ? '2px solid var(--primary-color)' : undefined, cursor: 'pointer' }}
-        >
-          Memory Archive & Past Events
-        </button>
-      </div>
+      <section className="events-filter-strip">
+        <label><Users size={16} /> <span>Year / Batch</span><select><option>All Batches</option></select></label>
+        <label><Calendar size={16} /> <span>Event Type</span><select><option>All Types</option></select></label>
+        <label><MapPin size={16} /> <span>Location</span><select><option>Anywhere</option></select></label>
+        <button><Filter size={18} /> Filter</button>
+      </section>
 
-      {/* Events Grid */}
-      <div className="events-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-        {events.length === 0 ? (
-          <div className="glass-panel loading-state" style={{ gridColumn: '1 / -1', minHeight: '250px' }}>
-            <Calendar size={48} style={{ color: 'var(--text-muted)' }} />
-            <p>No {activeTab} events logged in the platform.</p>
+      <div className="events-shell">
+        <main>
+          <div className="events-section-head">
+            <h2>{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}</h2>
+            <div>
+              <button className={activeTab === 'upcoming' ? 'active' : ''} onClick={() => setActiveTab('upcoming')}>Upcoming</button>
+              <button className={activeTab === 'archive' ? 'active' : ''} onClick={() => setActiveTab('archive')}>Past</button>
+            </div>
           </div>
-        ) : (
-          events.map(evt => {
-            const isPast = new Date(evt.event_date) < new Date();
-            const isRSVPed = (evt as any).rsvps?.some((r: any) => r.user_id === currentUser.id) || false;
-            const rsvpCount = (evt as any).rsvps?.length || 0;
 
-            return (
-              <div key={evt.id} className="glass-panel event-card">
-                <div className="event-card-banner" style={{ background: 'linear-gradient(135deg, #0c1e36 0%, #1e3a5f 100%)', height: '120px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
-                  <span className="event-banner-emblem">🏵️</span>
-                  <div className="event-banner-overlay" style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                    <span className={`badge ${evt.event_type === 'physical' ? 'badge-role' : evt.event_type === 'virtual' ? 'badge-admin' : 'badge-approved'}`}>
-                      {evt.event_type}
-                    </span>
+          <div className="events-list">
+            {events.map((evt: any, index) => {
+              const isRSVPed = evt.rsvps?.some((r: any) => r.user_id === currentUser.id) || false;
+              const parts = dateParts(evt.event_date);
+              return (
+                <article key={evt.id} className="event-row-card">
+                  <img src={eventImages[index % eventImages.length]} alt={evt.title} />
+                  <div>
+                    <span className={`event-type ${evt.event_type}`}>{evt.event_type === 'virtual' ? 'Webinar' : index === 2 ? 'Meetup' : 'Reunion'}</span>
+                    <h3>{evt.title}</h3>
+                    <div className="event-meta"><Calendar size={16} /> {parts.date} <Clock size={16} /> {parts.time} <MapPin size={16} /> {evt.location}</div>
+                    <p>{evt.description}</p>
+                    <small>{(evt.rsvps?.length || 0) + (index === 1 ? 112 : index === 2 ? 34 : 248)} attending</small>
                   </div>
-                </div>
-                
-                <div className="event-card-body" style={{ padding: '20px' }}>
-                  <span className="event-date-badge" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-gold)', marginBottom: '8px' }}>
-                    {formatEventDate(evt.event_date)}
-                  </span>
-                  <h3 className="event-card-title" style={{ fontSize: '1.15rem', marginBottom: '8px' }}>{evt.title}</h3>
-                  <p className="event-card-desc" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', minHeight: '3.6em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {evt.description}
-                  </p>
-                  
-                  <div className="event-meta-lines" style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginBottom: '16px' }}>
-                    <div className="event-meta-line" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={14} />
-                      <span>{evt.location}</span>
-                    </div>
-                    <div className="event-meta-line" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Users size={14} />
-                      <span>{rsvpCount} Alumnus Confirmed (Capacity: {evt.max_capacity})</span>
-                    </div>
-                    {evt.event_type === 'virtual' && isRSVPed && (
-                      <div className="event-meta-line" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-success)' }}>
-                        <Video size={14} />
-                        <a href={evt.online_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-success)', fontWeight: 600, textDecoration: 'underline' }}>
-                          Click to Join Webinar
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                  <button onClick={() => openRSVPModal(evt.id)} disabled={isRSVPed}>
+                    <Check size={16} /> {isRSVPed ? 'RSVPed' : evt.event_type === 'virtual' ? 'Join' : 'RSVP'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
 
-                  <div className="event-card-actions">
-                    {isPast ? (
-                      <button className="btn btn-secondary btn-block" disabled>
-                        <span>Gathering Concluded</span>
-                      </button>
-                    ) : isRSVPed ? (
-                      <button className="btn btn-secondary btn-block" style={{ borderColor: 'var(--text-success)', color: 'var(--text-success)', cursor: 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={(e) => e.preventDefault()}>
-                        <CheckCircle size={14} />
-                        <span>RSVP Confirmed</span>
-                      </button>
-                    ) : (
-                      <button className="btn btn-primary btn-block" onClick={() => openRSVPModal(evt.id)}>
-                        <span>RSVP & Register</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+          <h2 className="past-title">Past Events</h2>
+          {['Silver Jubilee Homecoming 2024', 'Heritage Campus Walk & Tour'].map((title, index) => (
+            <article key={title} className="event-row-card muted">
+              <img src={index === 0 ? 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=500&h=330&fit=crop&q=80' : 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=500&h=330&fit=crop&q=80'} alt={title} />
+              <div>
+                <span className="event-type past">Past · {index === 0 ? 'Reunion' : 'Meetup'}</span>
+                <h3>{title}</h3>
+                <div className="event-meta"><Calendar size={16} /> {index === 0 ? 'Oct 12, 2024' : 'Sep 05, 2024'} <MapPin size={16} /> {index === 0 ? 'Main Auditorium' : 'Heritage Campus'}</div>
+                <p>{index === 0 ? 'A memorable evening reconnecting 320 alumni. Browse the photo gallery and event recap.' : 'A nostalgic walk through the historic halls where it all began. Relive the memories.'}</p>
+                <small><ImageIcon size={15} /> {index === 0 ? 184 : 96} photos</small>
               </div>
-            );
-          })
-        )}
+              <button className="ghost">View Highlights</button>
+            </article>
+          ))}
+        </main>
+
+        <aside>
+          <section className="heritage-widget">
+            <h3><Calendar size={20} /> My Events</h3>
+            <div className="my-event"><strong>DEC<br />15</strong><span>Centennial Grand Reunion<br /><small>6:00 PM · Grand Hall</small></span></div>
+            <div className="my-event"><strong>NOV<br />28</strong><span>Careers in Tech Panel<br /><small>7:30 PM · Online</small></span></div>
+            <button>View all my events <ChevronRightIcon /></button>
+          </section>
+
+          <section className="suggest-card">
+            <Lightbulb size={34} />
+            <h3>Suggest a Reunion</h3>
+            <p>Got an idea for the next gathering? Let the alumni board know.</p>
+            <button onClick={() => showToast('Suggestion captured for the alumni board.', 'success')}><Send size={18} /> Suggest Now</button>
+          </section>
+
+          <section className="calendar-card">
+            <h3>December 2026</h3>
+            <div className="mini-calendar">
+              {['S','M','T','W','T','F','S',30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31].map((day, index) => (
+                <span key={`${day}-${index}`} className={day === 2 ? 'green' : day === 15 ? 'gold' : day === 20 ? 'ring' : ''}>{day}</span>
+              ))}
+            </div>
+            <p><span className="dot gold"></span> Reunion <span className="dot green"></span> Meetup</p>
+          </section>
+        </aside>
       </div>
 
-      {/* RSVP Modal Overlay */}
       {rsvpModalVisible && (
         <div className="modal-overlay" style={{ display: 'flex' }}>
-          <div className="modal-card" style={{ maxWidth: '440px', padding: '30px' }}>
-            <div className="page-title-box" style={{ marginBottom: '20px' }}>
+          <div className="modal-card heritage-modal">
+            <div className="modal-head">
               <h3>Event RSVP Registration</h3>
-              <button className="icon-btn" onClick={() => setRsvpModalVisible(false)}>
-                <X size={16} />
-              </button>
+              <button className="icon-btn" onClick={() => setRsvpModalVisible(false)}><X size={16} /></button>
             </div>
-            
             <form onSubmit={handleRSVPSubmit}>
-              <div className="form-group" style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Number of Guests (Family members)
-                </label>
-                <input 
-                  type="number" 
-                  min={0} 
-                  max={5} 
-                  required 
-                  value={rsvpGuests}
-                  onChange={(e) => setRsvpGuests(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Dietary Preferences
-                </label>
-                <select 
-                  value={rsvpDiet}
-                  onChange={(e) => setRsvpDiet(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                >
-                  <option value="Vegetarian">Strictly Vegetarian</option>
-                  <option value="Non-Vegetarian">Non-Vegetarian</option>
-                  <option value="None">No Preference / N/A</option>
-                </select>
-              </div>
-
-              <div className="motto-box" style={{ marginBottom: '18px', padding: '12px', background: 'rgba(243,112,33,0.08)', borderRadius: '4px' }}>
-                <p className="motto-text" style={{ color: 'var(--primary-color)' }}>
-                  Note: Vidyapith dining works on structured timings. Please confirm strictly if you are attending.
-                </p>
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-block">
-                <span>Confirm RSVP Allocation</span>
-              </button>
+              <label>Number of Guests<input type="number" min={0} max={5} required value={rsvpGuests} onChange={(event) => setRsvpGuests(event.target.value)} /></label>
+              <label>Dietary Preferences<select value={rsvpDiet} onChange={(event) => setRsvpDiet(event.target.value)}><option>Vegetarian</option><option>Non-Vegetarian</option><option>None</option></select></label>
+              <button type="submit" className="heritage-primary-btn">Confirm RSVP Allocation</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Create Event Modal */}
       {createModalVisible && (
         <div className="modal-overlay" style={{ display: 'flex' }}>
-          <div className="modal-card" style={{ maxWidth: '500px', padding: '30px' }}>
-            <div className="page-title-box" style={{ marginBottom: '20px' }}>
+          <div className="modal-card heritage-modal">
+            <div className="modal-head">
               <h3>Create New Gathering</h3>
-              <button className="icon-btn" onClick={() => setCreateModalVisible(false)}>
-                <X size={16} />
-              </button>
+              <button className="icon-btn" onClick={() => setCreateModalVisible(false)}><X size={16} /></button>
             </div>
-            
             <form onSubmit={handleCreateEventSubmit}>
-              <div className="form-group" style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Event Title</label>
-                <input 
-                  type="text" 
-                  placeholder="E.g., Bangalore Chapter Reunion 2026" 
-                  required 
-                  value={evtTitle}
-                  onChange={(e) => setEvtTitle(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Description</label>
-                <textarea 
-                  rows={3} 
-                  placeholder="Provide agenda, timings, guest info..." 
-                  required 
-                  value={evtDesc}
-                  onChange={(e) => setEvtDesc(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '12px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Date & Time</label>
-                  <input 
-                    type="datetime-local" 
-                    required 
-                    value={evtDate}
-                    onChange={(e) => setEvtDate(e.target.value)}
-                    style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Type</label>
-                  <select 
-                    value={evtType}
-                    onChange={(e) => setEvtType(e.target.value as any)}
-                    style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                  >
-                    <option value="physical">Physical Meeting</option>
-                    <option value="virtual">Virtual Webinar</option>
-                    <option value="hybrid">Hybrid</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Venue / Location Link</label>
-                <input 
-                  type="text" 
-                  placeholder="E.g., Hotel Taj West End / Zoom Link" 
-                  required 
-                  value={evtLocation}
-                  onChange={(e) => setEvtLocation(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>Max Seating Capacity</label>
-                <input 
-                  type="number" 
-                  min={5}
-                  value={evtCapacity}
-                  onChange={(e) => setEvtCapacity(e.target.value)}
-                  style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px' }}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-block">
-                <span>Publish Event Listing</span>
-              </button>
+              <label>Event Title<input required value={evtTitle} onChange={(event) => setEvtTitle(event.target.value)} /></label>
+              <label>Description<textarea rows={3} required value={evtDesc} onChange={(event) => setEvtDesc(event.target.value)} /></label>
+              <label>Date & Time<input type="datetime-local" required value={evtDate} onChange={(event) => setEvtDate(event.target.value)} /></label>
+              <label>Type<select value={evtType} onChange={(event) => setEvtType(event.target.value as any)}><option value="physical">Physical Meeting</option><option value="virtual">Virtual Webinar</option><option value="hybrid">Hybrid</option></select></label>
+              <label>Venue / Location Link<input required value={evtLocation} onChange={(event) => setEvtLocation(event.target.value)} /></label>
+              <label>Max Seating Capacity<input type="number" min={5} value={evtCapacity} onChange={(event) => setEvtCapacity(event.target.value)} /></label>
+              <button type="submit" className="heritage-primary-btn">Publish Event Listing</button>
             </form>
           </div>
         </div>
@@ -387,3 +291,6 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   );
 };
 
+function ChevronRightIcon() {
+  return <span aria-hidden="true">›</span>;
+}

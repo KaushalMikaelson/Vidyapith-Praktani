@@ -10,7 +10,7 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown
+  Users, Camera, ChevronDown, Quote
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
@@ -703,6 +703,247 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }
     setCarouselActiveIndexes(prev => ({ ...prev, [postId]: nextIndex }));
   };
+
+  const spotlightPeople = [
+    { name: 'Dr. Marcus Adeyemi', batch: '1998', role: 'Chief Innovation Officer, NovaTech Global', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&h=520&fit=crop&q=80', story: 'The values I learned within these century-old halls shaped every breakthrough I have led.' },
+    { name: 'Sophia Patel', batch: '2005', role: 'UN Goodwill Ambassador for Education', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=180&h=180&fit=crop&q=80', story: 'Appointed UN Goodwill Ambassador for Education.' },
+    { name: 'Diego Morales', batch: '2011', role: 'Founder, Fintech Startup', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=180&h=180&fit=crop&q=80', story: 'Founded a unicorn fintech startup in Latin America.' },
+    { name: 'Dr. Elena Wong', batch: '1992', role: 'Cancer Researcher', image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=180&h=180&fit=crop&q=80', story: 'Pioneered breakthrough cancer immunotherapy research.' },
+    { name: 'Boris Kovac', batch: '2014', role: 'Documentary Filmmaker', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=180&h=180&fit=crop&q=80', story: 'National award-winning documentary filmmaker.' },
+    { name: 'Dr. Amara Tesfaye', batch: '2001', role: 'Healthcare Leader', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=180&h=180&fit=crop&q=80', story: 'Leading rural healthcare access across the region.' }
+  ];
+
+  const mockMemories = [
+    { name: 'Meera Iyer', batch: '2005', image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=520&h=700&fit=crop&q=80', text: 'Late nights at the old library before finals - we practically lived here!', likes: 128, comments: 24 },
+    { name: 'Ananya Roy', batch: '2010', image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=520&h=520&fit=crop&q=80', text: 'Annual reunion picnic 2024 - some friendships never fade.', likes: 212, comments: 41 },
+    { name: 'Nisha Patel', batch: '2015', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=760&fit=crop&q=80', text: 'Graduation day - throwing those caps will never get old!', likes: 405, comments: 72 },
+    { name: 'Sameer Khan', batch: '1985', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=520&h=760&fit=crop&q=80', text: 'Our old chemistry lab - found this gem in the archives!', likes: 97, comments: 19 }
+  ];
+
+  if (screenMode === 'feed') {
+    const firstPost = filteredPosts[0];
+    const firstAuthor = (firstPost as any)?.author || currentUser;
+    const secondPost = filteredPosts[1];
+    const secondAuthor = (secondPost as any)?.author || currentUser;
+
+    return (
+      <div className="heritage-page home-feed-redesign">
+        <aside className="feed-left-panel">
+          <section className="mini-profile-card">
+            <div className="mini-cover"></div>
+            <img src={currentUser.profile_photo} alt={currentUser.full_name} />
+            <h2>{currentUser.full_name}</h2>
+            <p>Class of {currentUser.batch_year} · Science Stream</p>
+            <span>Batch '{String(currentUser.batch_year).slice(-2)} - Falcons</span>
+          </section>
+          <nav className="feed-side-menu">
+            {[['My Profile', UserIcon], ['My Batch', Users], ['Events', Calendar], ['Alumni Directory', BookOpen], ['Memories', Camera]].map(([label, Icon]: any) => (
+              <button key={label}><Icon size={22} /> {label}</button>
+            ))}
+          </nav>
+          <section className="heritage-widget">
+            <h3><Flame size={18} /> Trending Alumni</h3>
+            <p><strong>Sarah Kapoor</strong><br /><span>Class of 2008</span></p>
+            <p><strong>James Cole</strong><br /><span>Class of 1995</span></p>
+          </section>
+        </aside>
+
+        <main className="feed-main-panel">
+          <form className="feed-composer-card" onSubmit={handleCreatePost}>
+            <div>
+              <img src={currentUser.profile_photo} alt={currentUser.full_name} />
+              <input value={newPostText} onChange={(event) => setNewPostText(event.target.value)} placeholder="Share a memory, update, or milestone..." />
+            </div>
+            <footer>
+              <button type="button" onClick={() => setPostMediaType('photo')}><Image size={20} /> Photo</button>
+              <button type="button" onClick={() => setPostToGroup(`grp-${currentUser.batch_year}`)}><Tag size={20} /> Tag Batch</button>
+              <button type="submit"><Send size={20} /> Post</button>
+            </footer>
+          </form>
+
+          {[firstPost, secondPost].filter(Boolean).map((post: any, index) => {
+            const author = index === 0 ? firstAuthor : secondAuthor;
+            const imageUrl = post.media_urls?.[0] && post.media_urls[0].startsWith('http')
+              ? post.media_urls[0]
+              : index === 0
+                ? 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=900&h=520&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&h=520&fit=crop&q=80';
+            return (
+              <article key={post.id} className="feed-story-card">
+                <header>
+                  <img src={author.profile_photo} alt={author.full_name} onClick={() => onViewProfile(author.id)} />
+                  <div><h3>{author.full_name}</h3><p>{formatTimeAgo(post.created_at)} · Class of {author.batch_year}</p></div>
+                  <MoreHorizontal size={24} />
+                </header>
+                <p>{post.content || (index === 0 ? 'Just walked back into the old assembly hall after years - and it still feels exactly the same.' : 'Proud milestone to share with my school family.')}</p>
+                {index === 0 ? <img className="story-media" src={imageUrl} alt="memory" /> : <div className="milestone-box"><Award size={32} /><strong>Career Milestone</strong><span>Published Author · 2026</span></div>}
+                <footer>
+                  <button onClick={() => handleLike(post.id)}><Heart size={22} /> {(post.likes || []).length || (index === 0 ? 124 : 89)}</button>
+                  <button><MessageCircle size={22} /> {((post as any).comments || []).length || (index === 0 ? 38 : 21)}</button>
+                  <button><Share2 size={22} /> Share</button>
+                </footer>
+              </article>
+            );
+          })}
+        </main>
+
+        <aside className="feed-right-panel">
+          <section className="heritage-widget reunion-widget">
+            <h3><Calendar size={20} /> Upcoming Reunions</h3>
+            {['Centenary Grand Gala', 'Batch 2012 Meetup', "Founders' Day Sports Meet"].map((title, index) => (
+              <div key={title}>
+                <strong>{title}</strong>
+                <p>{index === 0 ? 'Dec 14, 2026 · 6:00 PM' : index === 1 ? 'Jan 20, 2027 · 4:00 PM' : 'Feb 08, 2027 · 9:00 AM'}</p>
+                <button onClick={() => showToast(`RSVP noted for ${title}.`, 'success')}>RSVP</button>
+              </div>
+            ))}
+          </section>
+          <section className="spotlight-widget">
+            <h3><Star size={20} /> Alumni Spotlight</h3>
+            <img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=220&h=220&fit=crop&q=80" alt="Dr. Edward Whitman" />
+            <h2>Dr. Edward Whitman</h2>
+            <span>Class of 1968</span>
+            <p>A pioneering neurosurgeon and recipient of national honors.</p>
+            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More <span aria-hidden="true">›</span></button>
+          </section>
+        </aside>
+      </div>
+    );
+  }
+
+  if (screenMode === 'discover') {
+    return (
+      <div className="heritage-page spotlight-redesign">
+        <main>
+          <div className="spotlight-heading">
+            <div><h1>Alumni Spotlight</h1><p>Celebrating the achievements of our community</p></div>
+            <span><Star size={17} /> Featured</span>
+          </div>
+          <section className="featured-spotlight">
+            <div style={{ backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${spotlightPeople[0].image})` }}>
+              <span>Alumnus of the Month</span>
+              <h2>{spotlightPeople[0].name}</h2>
+              <p>Class of {spotlightPeople[0].batch} · {spotlightPeople[0].role}</p>
+            </div>
+            <blockquote>"{spotlightPeople[0].story} This school taught me that legacy is built one bold idea at a time."</blockquote>
+            <footer><p><span>Awards</span><strong>12 Global Honors</strong></p><p><span>Patents</span><strong>34 Filed</strong></p><button><BookOpen size={20} /> Read Full Story</button></footer>
+          </section>
+          <div className="spotlight-grid-head"><h2>More Spotlights</h2><button>View all <span aria-hidden="true">›</span></button></div>
+          <section className="spotlight-card-grid">
+            {spotlightPeople.slice(1).map(person => (
+              <article key={person.name}>
+                <img src={person.image} alt={person.name} />
+                <h3>{person.name}</h3>
+                <span>Batch of {person.batch}</span>
+                <p>{person.story}</p>
+                <button onClick={() => showToast(`Viewing ${person.name}'s profile.`, 'info')}>View Profile <span aria-hidden="true">›</span></button>
+              </article>
+            ))}
+          </section>
+          <section className="nominate-band">
+            <Award size={38} />
+            <div><h2>Know an inspiring alumnus?</h2><p>Nominate a fellow graduate to be featured in our next spotlight.</p></div>
+            <button onClick={() => showToast('Nomination form opened.', 'info')}><UserPlus size={20} /> Nominate an Alumnus</button>
+          </section>
+        </main>
+        <aside className="notifications-panel">
+          <h2><Bell size={22} /> Notifications <span>7 new</span></h2>
+          {['Sophia Patel sent you a connection request.', 'Diego Morales and 12 others liked your post.', 'Dr. Amara Tesfaye commented: Great to reconnect after all these years!', 'Reminder: The Centennial Gala Reunion starts in 2 days.', 'Batch of 1998 group has 8 new posts today.'].map((item, index) => (
+            <p key={item}><strong>{item.split(' ')[0]} {item.split(' ')[1]}</strong>{item.replace(`${item.split(' ')[0]} ${item.split(' ')[1]}`, '')}<small>{index + 1}h ago</small></p>
+          ))}
+          <button>View all notifications</button>
+        </aside>
+      </div>
+    );
+  }
+
+  if (screenMode === 'batch' || screenMode === 'memories') {
+    return (
+      <div className="heritage-page batch-redesign">
+        <aside>
+          <section className="your-batch-card">
+            <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=300&fit=crop&q=80" alt="Your batch" />
+            <div><span>Your Batch</span><h2>Class of {currentUser.batch_year}</h2></div>
+            <p><Users size={18} /> 186 members</p>
+            <div><Calendar size={18} /><strong>20-Year Gala</strong><small>Dec 14, 2026 · Main Hall</small></div>
+            <h3>Batchmates</h3>
+            {['Arjun Mehta', 'Priya Sharma', 'Rohan Das'].map((name, index) => <p key={name}><img src={`https://images.unsplash.com/photo-${index === 0 ? '1500648767791-00dcc994a43e' : index === 1 ? '1494790108377-be9c29b29330' : '1506794778202-cad84cf45f1d'}?w=60&h=60&fit=crop&q=80`} alt={name} /> {name}</p>)}
+          </section>
+          <section className="heritage-widget"><h3><Sparkles size={18} /> Batch Stats</h3><p>Memories shared <strong>412</strong></p><p>Active this week <strong>57</strong></p></section>
+        </aside>
+
+        <main>
+          <section className="batch-carousel-section">
+            <div><h1>Explore Your Batch</h1><p>Connect with alumni from every graduating class</p></div>
+            <button>View all <span aria-hidden="true">›</span></button>
+            <div className="batch-class-row">
+              {[1980, 1990, 2000, 2005].map((year, index) => (
+                <article key={year}>
+                  <img src={['https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=420&h=210&fit=crop&q=80'][index]} alt={`Class of ${year}`} />
+                  <h2>Class of {year}</h2>
+                  <p><Users size={16} /> {[94, 138, 205, 186][index]} members</p>
+                  <button onClick={() => showToast(`Opened Class of ${year}.`, 'info')}>Join / View</button>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="memory-lane-section">
+            <div className="memory-head"><div><h1>Memory Lane</h1><p>Cherished moments shared by our alumni community</p></div><div><button>All</button><button>Photos</button><button>Stories</button></div></div>
+            <div className="memory-masonry">
+              {mockMemories.map((memory, index) => (
+                <article key={memory.name} className={index === 0 || index === 2 ? 'tall' : ''} onClick={() => setActiveMemoryLightbox({ media_urls: [memory.image], content: memory.text, author: { full_name: memory.name, batch_year: memory.batch, profile_photo: currentUser.profile_photo }, comments: [] })}>
+                  <img src={memory.image} alt={memory.text} />
+                  <div><strong>{memory.name}</strong><span>Class of {memory.batch}</span><p>{memory.text}</p><small><Heart size={18} /> {memory.likes} <MessageCircle size={18} /> {memory.comments}</small></div>
+                </article>
+              ))}
+              <article className="quote-memory"><Quote size={30} /><strong>Class of 1978</strong><p>100 years of legacy, and every batch carries a piece of it forward.</p><span>- Harish Kumar, Alumni President</span></article>
+            </div>
+          </section>
+        </main>
+        <button className="share-memory-fab" onClick={() => { setPostMediaType('photo'); showToast('Photo memory composer is ready on Home.', 'info'); }}><Image size={22} /> Share a Memory</button>
+      </div>
+    );
+  }
+
+  if (screenMode === 'profile' && profileUser) {
+    const person = profileUser.profile || profileUser;
+    return (
+      <div className="heritage-page profile-redesign">
+        <section className="profile-cover-hero">
+          <img src="https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1500&h=380&fit=crop&q=80" alt="Campus" />
+        </section>
+        <section className="profile-head-card">
+          <img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} />
+          <div><h1>{person.full_name || currentUser.full_name}</h1><p><Briefcase size={17} /> {person.profession || currentUser.profession} <MapPin size={17} /> {person.city || currentUser.city}, {person.country || currentUser.country}</p></div>
+          <span>Class of {person.batch_year || currentUser.batch_year}</span>
+          <button><UserPlus size={18} /> Connect</button><button><MessageCircle size={18} /> Message</button><button><Plus size={18} /> Follow</button>
+        </section>
+        <nav className="profile-tabs"><button>Posts</button><button className="active">About</button><button>Batch Mates</button><button>Photos</button><button>Memories</button></nav>
+        <div className="profile-content-grid">
+          <aside>
+            <section className="heritage-widget about-card">
+              <h2>About</h2><p>Alumni profile details</p>
+              {[['Education', 'Heritage High School', `Attended 1991 - ${person.batch_year || currentUser.batch_year}`], ['Current Work', person.profession || currentUser.profession, `${person.company || currentUser.company} · Since 2014`], ['Location', `${person.city || currentUser.city}, ${person.country || currentUser.country}`, '']].map(([label, value, meta]) => (
+                <div key={label}><BookOpen size={22} /><p><span>{label}</span><strong>{value}</strong><small>{meta}</small></p></div>
+              ))}
+            </section>
+            <section className="heritage-widget social-card"><h2>Social Links</h2><p>linkedin.com/in/rajatmehra</p><p>rajatmehra.design</p><p>@rajat.builds</p></section>
+          </aside>
+          <main>
+            {profilePosts.slice(0, 3).concat(profilePosts.length ? [] : posts.slice(0, 2)).map((post: any, index) => (
+              <article key={post.id || index} className="profile-post-card">
+                <header><img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} /><div><h3>{person.full_name || currentUser.full_name}</h3><p>{post.created_at ? formatTimeAgo(post.created_at) : '2 hours ago'} · Class of {person.batch_year || currentUser.batch_year}</p></div></header>
+                <p>{post.content || "Wonderful catching up with the batch at the centenary reunion this weekend. The bonds still feel like yesterday."}</p>
+                <img src={post.media_urls?.[0] || (index === 0 ? 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=520&fit=crop&q=80' : 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=520&fit=crop&q=80')} alt="Profile post" />
+                <footer><span><Heart size={19} /> {(post.likes || []).length || 128}</span><span><MessageSquare size={19} /> 34 Comments</span><span><Share2 size={19} /> Share</span></footer>
+              </article>
+            ))}
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="forums-layout">

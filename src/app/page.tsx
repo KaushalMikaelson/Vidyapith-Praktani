@@ -162,6 +162,7 @@ export default function App() {
       case 'archives':
       case 'saved':
       case 'settings':
+      case 'messages':
       case 'explore':
       case 'notes':
         return (

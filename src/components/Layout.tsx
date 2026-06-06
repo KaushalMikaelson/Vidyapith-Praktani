@@ -7,7 +7,7 @@ import { apiFetch } from '../utils/api';
 import { 
   Home, Compass, FileText, Film, Award, Users, BookOpen, Briefcase, 
   Calendar, Bookmark, User as UserIcon, Settings, ShieldCheck, Bell, BellOff, LogOut, Menu, X, Search, ChevronDown, Heart,
-  Camera, Archive, HelpCircle
+  Camera, Archive, HelpCircle, MessageCircle, GraduationCap
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -94,27 +94,22 @@ export const Layout: React.FC<LayoutProps> = ({
   // Sticky Left Navigation Items setup (SaaS Design)
   const navItems = [
     { id: 'feed', label: 'Home', icon: Home },
-    { id: 'discover', label: 'Discover Alumni', icon: Compass },
-    { id: 'batch', label: 'My Batch', icon: Users },
-    { id: 'memories', label: 'Memories', icon: Camera },
-    { id: 'directory', label: 'Alumni Directory', icon: BookOpen },
-    { id: 'careers', label: 'Careers', icon: Briefcase },
-    { id: 'reunions', label: 'Reunions', icon: Award },
-    { id: 'mentorship', label: 'Mentorship', icon: HelpCircle },
-    { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'archives', label: 'School Archives', icon: Archive },
-    { id: 'saved', label: 'Saved Posts', icon: Bookmark },
+    { id: 'feed', label: 'Feed', icon: Compass },
+    { id: 'batch', label: 'Batches', icon: Users },
+    { id: 'events', label: 'Reunions', icon: Calendar },
+    { id: 'discover', label: 'Spotlights', icon: Award },
     { id: 'profile', label: 'Profile', icon: UserIcon },
+    { id: 'messages', label: 'Messages', icon: MessageCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   // Top header nav items (desktop center links)
   const topNavItems = [
     { id: 'feed', label: 'Home' },
-    { id: 'discover', label: 'Discover' },
-    { id: 'events', label: 'Events' },
-    { id: 'careers', label: 'Careers' },
     { id: 'directory', label: 'Directory' },
+    { id: 'events', label: 'Events' },
+    { id: 'memories', label: 'Memories' },
+    { id: 'batch', label: 'Batches' },
   ];
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,15 +160,15 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout screen-${activeScreen}`}>
       {/* Sidebar Navigation */}
       <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-header">
           <div className="logo-box">
             <span className="logo-emblem">🏵️</span>
             <div className="logo-text">
-              <h1 className="logo-title" style={{ color: 'var(--text-primary)' }}>Vidyapith</h1>
-              <span className="logo-subtitle" style={{ fontSize: '0.68rem' }}>Alumni</span>
+              <h1 className="logo-title" style={{ color: 'var(--text-primary)' }}>Heritage Alumni</h1>
+              <span className="logo-subtitle" style={{ fontSize: '0.68rem' }}>Est. 1925</span>
             </div>
           </div>
           <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
@@ -277,8 +272,8 @@ export const Layout: React.FC<LayoutProps> = ({
               🎓
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-              <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', fontFamily: 'var(--font-title)', letterSpacing: '-0.01em' }}>AlumniConnect</span>
-              <span style={{ fontSize: '0.68rem', color: '#f5a623', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>100 Years of Legacy</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'white', fontFamily: 'var(--font-title)', letterSpacing: '-0.01em' }}>Heritage Alumni</span>
+              <span style={{ fontSize: '0.68rem', color: '#f5a623', fontWeight: 700 }}>Est. 1925 · 100 Years</span>
             </div>
           </div>
 
