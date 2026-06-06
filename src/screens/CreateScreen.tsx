@@ -43,6 +43,8 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
   const [tagClassmates, setTagClassmates] = useState('');
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [aspectRatio, setAspectRatio] = useState<'original' | '1:1' | '4:5' | '4:3' | '16:9'>('original');
+  const [fitMode, setFitMode] = useState<'contain' | 'cover'>('contain');
 
   // ── Video state ────────────────────────────────────────────────────────────
   const [videoUrl, setVideoUrl] = useState('');             // URL-mode
@@ -265,7 +267,11 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
         targetBatchYear:  group === 'grp-all' ? '' : String(currentUser?.batch_year || ''),
         isReunionPost:    false,
         nostalgicPhotoUrl: readyUrls[0],
-        memoryLocation:   ''
+        memoryLocation:   '',
+        imageLayout: {
+          aspectRatio,
+          objectFit: fitMode
+        }
       };
       mediaUrls = [...readyUrls, 'Memory Photo', '', JSON.stringify(meta)];
     } else if (selectedType === 'video') {
@@ -486,6 +492,113 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Image Layout Settings */}
+              {imageItems.length > 0 && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', marginBottom: '14px', letterSpacing: '0.05em' }}>
+                    🏵️ Image Layout & Fit Settings
+                  </div>
+                  
+                  {/* Aspect Ratio */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Aspect Ratio</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {[
+                        { id: 'original', label: 'Original / Auto' },
+                        { id: '1:1', label: 'Square (1:1)' },
+                        { id: '4:5', label: 'Portrait (4:5)' },
+                        { id: '4:3', label: 'Landscape (4:3)' },
+                        { id: '16:9', label: 'Cinema (16:9)' },
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setAspectRatio(opt.id as any)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            background: aspectRatio === opt.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            border: aspectRatio === opt.id ? 'none' : '1px solid var(--border-color)',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fit Mode */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Fit Mode</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[
+                        { id: 'contain', label: 'Fit (Show Whole Image)' },
+                        { id: 'cover', label: 'Crop (Fill Area)' },
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setFitMode(opt.id as any)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            background: fitMode === opt.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            border: fitMode === opt.id ? 'none' : '1px solid var(--border-color)',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Live Preview of first image */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Live Feed Preview</label>
+                    <div style={{
+                      width: '100%',
+                      maxWidth: '400px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid var(--border-color)',
+                      background: '#09152c',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <img
+                        src={imageItems[0]?.preview}
+                        alt="Preview"
+                        style={{
+                          width: '100%',
+                          aspectRatio: aspectRatio === 'original' ? 'auto' : (aspectRatio === '1:1' ? '1' : aspectRatio === '4:3' ? '4/3' : aspectRatio === '16:9' ? '16/9' : '4/5'),
+                          objectFit: fitMode,
+                          maxHeight: '300px',
+                          display: 'block'
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+                      {fitMode === 'contain' ? '💡 Full image will be displayed with dark bars on sides/top.' : '⚠️ Portions of your image may be cropped to fit the aspect ratio.'}
+                    </span>
+                  </div>
                 </div>
               )}
 

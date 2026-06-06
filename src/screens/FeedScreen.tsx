@@ -775,6 +775,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             const postImages: string[] = (post.media_urls || []).filter(
               (url: string) => url && url.startsWith('http') && !url.startsWith('{') && url !== 'Memory Photo'
             );
+            let postMeta: any = {};
+            if (post.media_urls && post.media_urls.length > 0) {
+              const lastItem = post.media_urls[post.media_urls.length - 1];
+              if (lastItem && lastItem.startsWith('{')) {
+                try {
+                  postMeta = JSON.parse(lastItem);
+                } catch (e) {}
+              }
+            }
+            const imageLayout = postMeta.imageLayout || { aspectRatio: 'original', objectFit: 'contain' };
+
             const isVideo = post.post_type === 'video';
             const isPhoto = post.post_type === 'photo';
             const isArticle = post.post_type === 'article';
@@ -836,20 +847,34 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     gridTemplateColumns: postImages.length === 1 ? '1fr' : postImages.length === 2 ? '1fr 1fr' : 'repeat(3, 1fr)',
                     gap: '2px', marginBottom: '0'
                   }}>
-                    {postImages.slice(0, 9).map((url: string, imgIdx: number) => (
-                      <img
-                        key={imgIdx}
-                        src={url}
-                        alt={`Photo ${imgIdx + 1}`}
-                        style={{
-                          width: '100%',
-                          aspectRatio: postImages.length === 1 ? '4/3' : '1',
-                          objectFit: 'cover',
-                          display: 'block',
-                          borderRadius: postImages.length === 1 ? '0' : imgIdx === 0 ? '0 0 0 0' : ''
-                        }}
-                      />
-                    ))}
+                    {postImages.slice(0, 9).map((url: string, imgIdx: number) => {
+                      const finalAspectRatio = imageLayout.aspectRatio === 'original' 
+                        ? 'auto' 
+                        : (imageLayout.aspectRatio === '1:1' 
+                          ? '1' 
+                          : imageLayout.aspectRatio === '4:3' 
+                            ? '4/3' 
+                            : imageLayout.aspectRatio === '16:9' 
+                              ? '16/9' 
+                              : '4/5');
+
+                      return (
+                        <img
+                          key={imgIdx}
+                          src={url}
+                          alt={`Photo ${imgIdx + 1}`}
+                          style={{
+                            width: '100%',
+                            aspectRatio: postImages.length === 1 ? finalAspectRatio : '1',
+                            objectFit: postImages.length === 1 ? (imageLayout.objectFit || 'contain') : 'cover',
+                            display: 'block',
+                            maxHeight: '550px',
+                            background: (postImages.length === 1 && imageLayout.objectFit === 'contain') ? '#0f172a' : 'transparent',
+                            borderRadius: postImages.length === 1 ? '0' : imgIdx === 0 ? '0 0 0 0' : ''
+                          }}
+                        />
+                      );
+                    })}
                     {postImages.length > 9 && (
                       <div style={{ position: 'relative' }}>
                         <img src={postImages[8]} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block', filter: 'brightness(0.4)' }} />
@@ -1926,46 +1951,73 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     
                     {/* PHOTO CAROUSEL */}
                     {post.post_type === 'photo' && post.media_urls && post.media_urls.length > 0 && (
-                      <div 
-                        className="swipe-carousel-wrap"
-                        onDoubleClick={() => handleDoubleLike(post.id, isLiked)}
-                      >
-                        <div className={`double-click-heart-overlay ${isHeartAnimated ? 'animate' : ''}`}>
-                          <Heart size={64} fill="#ff3040" stroke="#ff3040" />
-                        </div>
-                        
-                        {/* Slide Deck */}
-                        <div className="swipe-card-deck" style={{
-                          transform: `translateX(-${(carouselActiveIndexes[post.id] || 0) * 100}%)`
-                        }}>
-                          {post.media_urls.map((imgUrl, idx) => (
-                            <img 
-                              key={idx}
-                              src={imgUrl} 
-                              className="post-card-media-img" 
-                              style={{ width: '100%', minWidth: '100%', objectFit: 'cover' }}
-                              alt={`attachment-${idx}`} 
-                            />
-                          ))}
-                        </div>
+                      (() => {
+                        const carouselImages = (post.media_urls || []).filter(
+                          (url: string) => url && url.startsWith('http') && !url.startsWith('{') && url !== 'Memory Photo'
+                        );
+                        if (carouselImages.length === 0) return null;
 
-                        {/* Controls */}
-                        {post.media_urls.length > 1 && (
-                          <>
-                            <button className="carousel-control-btn prev" onClick={() => handleSlideChange(post.id, 'prev', post.media_urls.length)}>
-                              <ChevronLeft size={18} />
-                            </button>
-                            <button className="carousel-control-btn next" onClick={() => handleSlideChange(post.id, 'next', post.media_urls.length)}>
-                              <ChevronRight size={18} />
-                            </button>
-                            <div className="carousel-progress-dots">
-                              {post.media_urls.map((_, i) => (
-                                <div key={i} className={`carousel-dot ${(carouselActiveIndexes[post.id] || 0) === i ? 'active' : ''}`} />
+                        const imageLayout = extraNostalgia?.imageLayout || { aspectRatio: 'original', objectFit: 'contain' };
+                        const finalAspectRatio = imageLayout.aspectRatio === 'original' 
+                          ? 'auto' 
+                          : (imageLayout.aspectRatio === '1:1' 
+                            ? '1' 
+                            : imageLayout.aspectRatio === '4:3' 
+                              ? '4/3' 
+                              : imageLayout.aspectRatio === '16:9' 
+                                ? '16/9' 
+                                : '4/5');
+
+                        return (
+                          <div 
+                            className="swipe-carousel-wrap"
+                            onDoubleClick={() => handleDoubleLike(post.id, isLiked)}
+                          >
+                            <div className={`double-click-heart-overlay ${isHeartAnimated ? 'animate' : ''}`}>
+                              <Heart size={64} fill="#ff3040" stroke="#ff3040" />
+                            </div>
+                            
+                            {/* Slide Deck */}
+                            <div className="swipe-card-deck" style={{
+                              transform: `translateX(-${(carouselActiveIndexes[post.id] || 0) * 100}%)`
+                            }}>
+                              {carouselImages.map((imgUrl, idx) => (
+                                <img 
+                                  key={idx}
+                                  src={imgUrl} 
+                                  className="post-card-media-img" 
+                                  style={{ 
+                                    width: '100%', 
+                                    minWidth: '100%', 
+                                    aspectRatio: carouselImages.length === 1 ? finalAspectRatio : '1',
+                                    objectFit: carouselImages.length === 1 ? (imageLayout.objectFit || 'contain') : 'cover',
+                                    maxHeight: '500px',
+                                    background: (carouselImages.length === 1 && imageLayout.objectFit === 'contain') ? '#0f172a' : 'transparent',
+                                  }}
+                                  alt={`attachment-${idx}`} 
+                                />
                               ))}
                             </div>
-                          </>
-                        )}
-                      </div>
+
+                            {/* Controls */}
+                            {carouselImages.length > 1 && (
+                              <>
+                                <button className="carousel-control-btn prev" onClick={() => handleSlideChange(post.id, 'prev', carouselImages.length)}>
+                                  <ChevronLeft size={18} />
+                                </button>
+                                <button className="carousel-control-btn next" onClick={() => handleSlideChange(post.id, 'next', carouselImages.length)}>
+                                  <ChevronRight size={18} />
+                                </button>
+                                <div className="carousel-progress-dots">
+                                  {carouselImages.map((_, i) => (
+                                    <div key={i} className={`carousel-dot ${(carouselActiveIndexes[post.id] || 0) === i ? 'active' : ''}`} />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()
                     )}
 
                     {/* VIDEO PLAYER */}
