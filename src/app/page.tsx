@@ -15,6 +15,7 @@ import { EventsScreen } from '../screens/EventsScreen';
 import { NewsScreen } from '../screens/NewsScreen';
 import { JobsScreen } from '../screens/JobsScreen';
 import { AdminScreen } from '../screens/AdminScreen';
+import { CreateScreen } from '../screens/CreateScreen';
 
 // Icons
 import { Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles } from 'lucide-react';
@@ -30,6 +31,9 @@ export default function App() {
   
   const [activeScreen, setActiveScreen] = useState('feed');
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+
+  const triggerFeedRefresh = () => setFeedRefreshKey(k => k + 1);
 
   // Auth Modals Tabs
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
@@ -169,7 +173,8 @@ export default function App() {
           <FeedScreen 
             showToast={showToast} 
             onViewProfile={setSelectedProfileId} 
-            screenMode={activeScreen} 
+            screenMode={activeScreen}
+            refreshKey={feedRefreshKey}
           />
         );
       case 'profile':
@@ -196,6 +201,8 @@ export default function App() {
         return <NewsScreen showToast={showToast} />;
       case 'admin':
         return <AdminScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+      case 'create':
+        return <CreateScreen showToast={showToast} setActiveScreen={setActiveScreen} onPublished={triggerFeedRefresh} />;
       default:
         return <h2>Page Not Found</h2>;
     }

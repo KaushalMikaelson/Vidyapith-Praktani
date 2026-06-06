@@ -31,7 +31,7 @@
   --shadow-lg: 0 15px 40px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 15px rgba(255, 122, 26, 0.35);
   
-  --sidebar-width: 240px;
+  --sidebar-width: 68px;
   --header-height: 70px;
   --border-radius-sm: 8px;
   --border-radius-md: 14px;
@@ -141,127 +141,108 @@ h1, h2, h3, h4, h5, h6 {
   min-height: 100vh;
 }
 
-/* ─── Instagram-style Sidebar ─────────────────────────── */
-.app-sidebar {
-  background-color: var(--bg-darker);
-  border-right: 1px solid var(--border-color);
+/* ─── Icon Rail Sidebar ──────────────────────────────── */
+.icon-rail {
+  width: var(--sidebar-width);
+  background: transparent;
+  border-right: none;
   display: flex;
   flex-direction: column;
+  align-items: center;
   height: 100vh;
   position: sticky;
   top: 0;
-  z-index: 100;
-  overflow: hidden;
-  padding: 0;
+  z-index: 200;
+  padding: 12px 0;
+  overflow: visible; /* needed for tooltips */
 }
 
-/* Logo */
-.tiktok-sidebar-logo {
+/* Logo button */
+.rail-logo {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: background 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 28px 24px 20px;
-  cursor: pointer;
-  user-select: none;
-  border-bottom: 1px solid var(--border-color);
+  justify-content: center;
+}
+.rail-logo:hover { background: rgba(255,255,255,0.07); }
+
+.rail-divider {
+  display: none;
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px 0 12px;
   flex-shrink: 0;
 }
 
-.tiktok-logo-icon { font-size: 1.8rem; line-height: 1; }
-
-.tiktok-logo-text {
+/* Nav */
+.rail-nav {
   display: flex;
   flex-direction: column;
-  line-height: 1.15;
-}
-
-.tiktok-logo-name {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  font-family: var(--font-title);
-  letter-spacing: -0.01em;
-}
-
-.tiktok-logo-sub {
-  font-size: 0.62rem;
-  color: var(--primary-color);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-/* Nav list */
-.tiktok-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 12px;
-  flex-grow: 1;
-  overflow-y: auto;
+  align-items: center;
+  gap: 32px;
+  margin-top: 24px;
+  flex: 1;
+  width: 100%;
+  padding: 0 8px;
+  overflow: visible;
   scrollbar-width: none;
 }
-.tiktok-nav::-webkit-scrollbar { display: none; }
+.rail-nav::-webkit-scrollbar { display: none; }
 
-/* Each nav item — tall, generous padding like Instagram */
-.tiktok-nav-item {
+/* Individual rail button */
+.rail-btn {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 18px;
-  width: 100%;
-  padding: 13px 16px;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
   border: none;
   background: none;
-  color: var(--text-secondary);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 400;
+  border-radius: 14px;
   cursor: pointer;
-  text-align: left;
+  color: var(--text-secondary);
   transition: background 0.15s ease, color 0.15s ease;
-  position: relative;
-  font-family: var(--font-body);
-  letter-spacing: -0.01em;
+  flex-shrink: 0;
 }
 
-.tiktok-nav-item:hover {
-  background: rgba(255,255,255,0.07);
+.rail-btn:hover {
+  background: rgba(255,255,255,0.08);
   color: var(--text-primary);
 }
 
-.tiktok-nav-item.active {
-  color: var(--text-primary);
-  font-weight: 700;
+.rail-btn.active {
+  background: rgba(255,122,26,0.12);
+  color: var(--primary-color);
 }
 
-.tiktok-nav-item.active .tiktok-nav-icon-wrap svg {
-  stroke-width: 2.5;
-}
-
-/* Icon wrapper */
-.tiktok-nav-icon-wrap {
+/* Icon wrapper (for badge positioning) */
+.rail-icon {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
-  flex-shrink: 0;
 }
 
-.tiktok-nav-label {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-/* Badge */
-.tiktok-nav-badge {
+/* Notification / count badge */
+.rail-badge {
   position: absolute;
   top: -5px;
   right: -7px;
   background: #e0245e;
   color: #fff;
-  font-size: 0.58rem;
+  font-size: 0.55rem;
   font-weight: 800;
   min-width: 16px;
   height: 16px;
@@ -270,40 +251,110 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   padding: 0 3px;
-  border: 2px solid var(--bg-darker);
+  border: 2px solid var(--bg-dark);
+  pointer-events: none;
 }
 
-/* Divider */
-.tiktok-nav-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 8px 6px;
+/* Tooltip that appears to the right on hover */
+.rail-tooltip {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+  font-family: var(--font-body);
 }
 
-/* Bottom profile section */
-.tiktok-sidebar-bottom {
-  padding: 12px;
-  border-top: 1px solid var(--border-color);
+/* Arrow pointing left */
+.rail-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: var(--border-color);
+}
+.rail-tooltip::after {
+  content: '';
+  position: absolute;
+  right: calc(100% - 1px);
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: var(--bg-dark);
+}
+
+.rail-btn:hover .rail-tooltip,
+.rail-logo:hover .rail-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* Avatar for profile button */
+.rail-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-color);
+  display: block;
+}
+
+/* Bottom section (profile) */
+.rail-bottom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  border-top: none;
   flex-shrink: 0;
+  position: relative;
 }
 
-.tiktok-profile-btn {
+.rail-profile-btn {
+  width: 48px;
+  height: 48px;
+}
+
+/* Profile popup (appears to the right of bottom section) */
+.rail-profile-popup {
+  position: absolute;
+  left: calc(100% + 12px);
+  bottom: 0;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 6px;
+  min-width: 200px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rail-popup-user {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
+  gap: 10px;
   padding: 10px 12px;
-  border-radius: 12px;
-  transition: background 0.15s ease;
-  text-align: left;
 }
 
-.tiktok-profile-btn:hover { background: rgba(255,255,255,0.07); }
-
-.tiktok-profile-avatar {
+.rail-popup-user img {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -312,15 +363,13 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-.tiktok-profile-info {
-  flex: 1;
+.rail-popup-user div {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-width: 0;
 }
 
-.tiktok-profile-name {
+.rail-popup-user strong {
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -329,31 +378,18 @@ h1, h2, h3, h4, h5, h6 {
   text-overflow: ellipsis;
 }
 
-.tiktok-profile-role {
-  font-size: 0.68rem;
+.rail-popup-user span {
+  font-size: 0.7rem;
   color: var(--text-muted);
 }
 
-.tiktok-profile-row { position: relative; }
-
-/* Dropdown above profile button */
-.tiktok-profile-dropdown {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 4px;
-  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.rail-popup-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 3px 0;
 }
 
-.tiktok-dropdown-item {
+.rail-popup-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -366,21 +402,24 @@ h1, h2, h3, h4, h5, h6 {
   padding: 9px 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.13s ease;
   text-align: left;
   font-family: var(--font-body);
+  transition: background 0.13s ease, color 0.13s ease;
 }
 
-.tiktok-dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
-.tiktok-dropdown-item.danger { color: var(--text-danger); }
-.tiktok-dropdown-item.danger:hover { background: rgba(252,129,129,0.1); }
-.tiktok-dropdown-divider { height: 1px; background: var(--border-color); margin: 3px 0; }
+.rail-popup-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+}
 
-/* Unused legacy classes kept for safety */
-.sidebar-close-btn { display: none; }
-.sidebar-footer { display: none; }
-.sidebar-nav { display: none; }
-.sidebar-user-quick { display: none; }
+.rail-popup-item.danger { color: var(--text-danger); }
+.rail-popup-item.danger:hover { background: rgba(252,129,129,0.1); }
+
+/* Legacy sidebar classes — hidden but kept to avoid errors */
+.app-sidebar, .sidebar-header, .sidebar-nav, .sidebar-footer,
+.sidebar-user-quick, .sidebar-close-btn, .tiktok-sidebar-logo,
+.tiktok-nav, .tiktok-nav-item, .tiktok-sidebar-bottom { display: none !important; }
+user-quick { display: none; }
 .sidebar-header { display: none; }
 
 /* Main Area Layout */
@@ -3596,6 +3635,7 @@ textarea:focus {
 
 
 .screen-feed .main-viewport,
+.screen-create .main-viewport,
 .screen-events .main-viewport,
 .screen-batch .main-viewport,
 .screen-memories .main-viewport,
@@ -3608,6 +3648,7 @@ textarea:focus {
 }
 
 .screen-feed .app-header,
+.screen-create .app-header,
 .screen-events .app-header,
 .screen-batch .app-header,
 .screen-memories .app-header,
@@ -4859,4 +4900,15 @@ textarea:focus {
   .event-row-card img {
     height: 210px;
   }
+}
+
+/* ─── Create Screen ─── */
+.create-type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  border-color: var(--primary-color) !important;
+}
+
+.create-type-card:active {
+  transform: translateY(-1px);
 }

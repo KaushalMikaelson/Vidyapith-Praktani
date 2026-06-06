@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Post, Comment } from '../database/database';
 import { 
-  Send, Image, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, 
+  Send, Image, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, Bell,
   Smile, Share2, Film, Link, FileText, Clipboard, Play, ExternalLink, 
   Sparkles, Check, ChevronLeft, ChevronRight, Download, BookOpen, Eye, 
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
@@ -19,10 +19,11 @@ interface FeedScreenProps {
   onViewProfile: (userId: string) => void;
   screenMode?: string;
   forceProfileId?: string;
+  refreshKey?: number;
 }
 
 export const FeedScreen: React.FC<FeedScreenProps> = ({ 
-  showToast, onViewProfile, screenMode = 'feed', forceProfileId 
+  showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0 
 }) => {
   const { currentUser } = useAuth();
   
@@ -251,7 +252,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         .then(data => setDiscoverAlumni(data))
         .catch(err => console.error(err));
     }
-  }, [activeGroupId, screenMode, forceProfileId]);
+  }, [activeGroupId, screenMode, forceProfileId, refreshKey]);
 
   const handleConnectRequest = async (id: string, name: string) => {
     try {
@@ -1930,6 +1931,34 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             </div>
                           </div>
                         </a>
+                      </div>
+                    )}
+
+                    {/* ARTICLE BLOCK */}
+                    {post.post_type === 'article' && post.media_urls && post.media_urls.length > 0 && (
+                      <div className="article-post-block" style={{ padding: '0 20px 10px 20px' }}>
+                        <div className="glass-panel" style={{ overflow: 'hidden', borderRadius: '12px', padding: 0 }}>
+                          {post.media_urls[0] && (
+                            <img 
+                              src={post.media_urls[0]} 
+                              alt={post.media_urls[1] || 'Article Cover'} 
+                              style={{ width: '100%', maxHeight: '250px', objectFit: 'cover' }} 
+                            />
+                          )}
+                          <div style={{ padding: '20px' }}>
+                            {post.media_urls[2] && (
+                              <span className="badge badge-role" style={{ background: 'rgba(255, 122, 26, 0.1)', color: 'var(--primary-color)', border: '1px solid rgba(255,122,26,0.25)', fontSize: '0.7rem', padding: '2px 8px', marginBottom: '10px' }}>
+                                {post.media_urls[2]}
+                              </span>
+                            )}
+                            <h3 style={{ fontSize: '1.25rem', color: 'white', marginTop: '6px', marginBottom: '12px', lineHeight: '1.4' }}>
+                              {post.media_urls[1] || 'Untitled Article'}
+                            </h3>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                              {post.content}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
 
