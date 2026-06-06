@@ -5,13 +5,18 @@ import { AuthenticatedRequest } from '../middlewares/auth.js';
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { search, batchYear, house, city } = req.query;
+    const { search, batchYear, house, city, role, profession, sortBy } = req.query;
 
     // Build Prisma query condition
     const whereCondition: any = {
       verify_status: 'approved',
-      role: { not: 'admin' } // Exclude admins from normal directory
     };
+
+    if (role && role !== 'all') {
+      whereCondition.role = role as string;
+    } else {
+      whereCondition.role = { not: 'admin' };
+    }
 
     const profileConditions: any = {};
 
@@ -23,6 +28,9 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     }
     if (city) {
       profileConditions.city = { contains: city as string, mode: 'insensitive' };
+    }
+    if (profession) {
+      profileConditions.profession_category = { contains: profession as string, mode: 'insensitive' };
     }
 
     if (Object.keys(profileConditions).length > 0) {
@@ -60,18 +68,50 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
           profile: {
             city: { contains: searchStr, mode: 'insensitive' }
           }
+        },
+        {
+          profile: {
+            country: { contains: searchStr, mode: 'insensitive' }
+          }
         }
       ];
+    }
+
+    // Sorting logic
+    let orderByCondition: any = {
+      profile: {
+        batch_year: 'desc'
+      }
+    };
+
+    if (sortBy === 'batch_asc') {
+      orderByCondition = {
+        profile: {
+          batch_year: 'asc'
+        }
+      };
+    } else if (sortBy === 'name_asc') {
+      orderByCondition = {
+        profile: {
+          full_name: 'asc'
+        }
+      };
+    } else if (sortBy === 'name_desc') {
+      orderByCondition = {
+        profile: {
+          full_name: 'desc'
+        }
+      };
+    } else if (sortBy === 'recent') {
+      orderByCondition = {
+        created_at: 'desc'
+      };
     }
 
     const users = await prisma.user.findMany({
       where: whereCondition,
       include: { profile: true },
-      orderBy: {
-        profile: {
-          batch_year: 'desc'
-        }
-      }
+      orderBy: orderByCondition
     });
 
     // Format list to match front-end User interface expectations

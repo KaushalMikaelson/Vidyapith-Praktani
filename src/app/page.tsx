@@ -186,6 +186,7 @@ export default function App() {
             forceProfileId={currentUser?.id} 
           />
         );
+      case 'search':
       case 'directory':
         return <DirectoryScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
       case 'careers':
