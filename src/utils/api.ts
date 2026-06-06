@@ -22,3 +22,28 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
 
   return response.json();
 };
+
+/**
+ * Upload helper for multipart/form-data (file uploads).
+ * Does NOT set Content-Type — lets the browser set the correct
+ * multipart boundary automatically.
+ */
+export const apiUploadFetch = async (endpoint: string, formData: FormData) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('rkmv_auth_token') : null;
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      // NOTE: Do NOT set Content-Type here — browser handles multipart boundary
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+  }
+
+  return response.json();
+};

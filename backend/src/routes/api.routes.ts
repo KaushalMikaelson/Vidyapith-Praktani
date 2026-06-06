@@ -5,17 +5,22 @@ import { listJobs, createJob, applyJob } from '../controllers/jobs.controller.js
 import { listNews, createNews, listHeritage } from '../controllers/news.controller.js';
 import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 
-// New Controllers
+// Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment } from '../controllers/posts.controller.js';
 import { listEvents, createEvent, rsvpEvent } from '../controllers/events.controller.js';
 import { listDirectory, connectRequest, getProfile } from '../controllers/directory.controller.js';
 import { listMentors, listPairings, requestMentorship } from '../controllers/mentorship.controller.js';
 import { listNotifications, markRead, readAllNotifications } from '../controllers/notifications.controller.js';
 import { listPendingUsers } from '../controllers/admin.controller.js';
+import { uploadMedia } from '../controllers/upload.controller.js';
+import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 
 export const apiRouter = Router();
 
-// Auth Endpoints
+// ── Media Upload (Cloudinary) ─────────────────────────────────────────────
+apiRouter.post('/upload', requireAuth, uploadMiddleware.single('file'), uploadMedia);
+
+// ── Auth ──────────────────────────────────────────────────────────────────
 apiRouter.post('/auth/register', register);
 apiRouter.post('/auth/login', login);
 apiRouter.get('/auth/me', requireAuth, getMe);

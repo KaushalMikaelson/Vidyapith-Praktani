@@ -705,6 +705,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setCarouselActiveIndexes(prev => ({ ...prev, [postId]: nextIndex }));
   };
 
+  // Aliases for the simplified feed render
+  const handleBookmark = (postId: string) => toggleBookmark(postId);
+  const handleCommentSubmit = (postId: string, text: string) => {
+    if (!text.trim()) return;
+    apiFetch(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content: text.trim() })
+    }).then(() => {
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      loadFeed();
+    }).catch((err: any) => showToast(err.message, 'danger'));
+  };
+
   const spotlightPeople = [
     { name: 'Dr. Marcus Adeyemi', batch: '1998', role: 'Chief Innovation Officer, NovaTech Global', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&h=520&fit=crop&q=80', story: 'The values I learned within these century-old halls shaped every breakthrough I have led.' },
     { name: 'Sophia Patel', batch: '2005', role: 'UN Goodwill Ambassador for Education', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=180&h=180&fit=crop&q=80', story: 'Appointed UN Goodwill Ambassador for Education.' },
@@ -722,10 +735,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   ];
 
   if (screenMode === 'feed') {
-    const firstPost = filteredPosts[0];
-    const firstAuthor = (firstPost as any)?.author || currentUser;
-    const secondPost = filteredPosts[1];
-    const secondAuthor = (secondPost as any)?.author || currentUser;
+    // Sort newest first (backend already orders desc, but ensure client-side too)
+    const sortedPosts = [...filteredPosts].sort((a, b) =>
+      new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime()
+    );
 
     return (
       <div className="ig-feed-layout">
@@ -743,27 +756,175 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </footer>
           </form>
 
-          {[firstPost, secondPost].filter(Boolean).map((post: any, index) => {
-            const author = index === 0 ? firstAuthor : secondAuthor;
-            const imageUrl = post.media_urls?.[0] && post.media_urls[0].startsWith('http')
-              ? post.media_urls[0]
-              : index === 0
-                ? 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=900&h=520&fit=crop&q=80'
-                : 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&h=520&fit=crop&q=80';
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--heritage-muted)', fontSize: '0.9rem' }}>
+              Loading posts...
+            </div>
+          )}
+
+          {!loading && sortedPosts.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--heritage-muted)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏵️</div>
+              <p style={{ fontWeight: 600, marginBottom: '6px' }}>No posts yet</p>
+              <p style={{ fontSize: '0.85rem' }}>Be the first to share something with the Vidyapith family!</p>
+            </div>
+          )}
+
+          {sortedPosts.map((post: any) => {
+            const author = post.author || currentUser;
+            const postImages: string[] = (post.media_urls || []).filter(
+              (url: string) => url && url.startsWith('http') && !url.startsWith('{') && url !== 'Memory Photo'
+            );
+            const isVideo = post.post_type === 'video';
+            const isPhoto = post.post_type === 'photo';
+            const isArticle = post.post_type === 'article';
+
+            // For articles: mediaUrls[0]=coverImg, [1]=title, [2]=category
+            const articleCoverImg = isArticle ? post.media_urls?.[0] : null;
+            const articleTitle = isArticle ? post.media_urls?.[1] : null;
+            const articleCategory = isArticle ? post.media_urls?.[2] : null;
+
+            // For video: mediaUrls[0] = video URL
+            const videoSrc = isVideo ? post.media_urls?.[0] : null;
+
+            const isLiked = (post.likes || []).includes(currentUser.id);
+
             return (
-              <article key={post.id} className="feed-story-card">
-                <header>
-                  <img src={author.profile_photo} alt={author.full_name} onClick={() => onViewProfile(author.id)} />
-                  <div><h3>{author.full_name}</h3><p>{formatTimeAgo(post.created_at)} · Class of {author.batch_year}</p></div>
-                  <MoreHorizontal size={24} />
+              <article key={post.id} className="feed-story-card" style={{ marginBottom: '16px' }}>
+                {/* Post Header */}
+                <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', cursor: 'pointer' }}
+                  onClick={() => author?.id && onViewProfile(author.id)}
+                >
+                  <img
+                    src={author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'}
+                    alt={author?.full_name}
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{author?.full_name || 'Vidyapith Alumnus'}</h3>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--heritage-muted)' }}>
+                      {formatTimeAgo(post.created_at)} · Class of {author?.batch_year || '—'}
+                    </p>
+                  </div>
+                  <MoreHorizontal size={20} style={{ color: 'var(--heritage-muted)', cursor: 'pointer', flexShrink: 0 }} />
                 </header>
-                <p>{post.content || (index === 0 ? 'Just walked back into the old assembly hall after years - and it still feels exactly the same.' : 'Proud milestone to share with my school family.')}</p>
-                {index === 0 ? <img className="story-media" src={imageUrl} alt="memory" /> : <div className="milestone-box"><Award size={32} /><strong>Career Milestone</strong><span>Published Author · 2026</span></div>}
-                <footer>
-                  <button onClick={() => handleLike(post.id)}><Heart size={22} /> {(post.likes || []).length || (index === 0 ? 124 : 89)}</button>
-                  <button><MessageCircle size={22} /> {((post as any).comments || []).length || (index === 0 ? 38 : 21)}</button>
-                  <button><Share2 size={22} /> Share</button>
+
+                {/* Caption */}
+                {post.content && (
+                  <p style={{ margin: '0 16px 12px', fontSize: '0.93rem', lineHeight: '1.55', whiteSpace: 'pre-wrap' }}>
+                    {post.content}
+                  </p>
+                )}
+
+                {/* Article card */}
+                {isArticle && (
+                  <div style={{ margin: '0 16px 12px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--heritage-border, #e0e0e0)', background: 'rgba(0,0,0,0.02)' }}>
+                    {articleCoverImg && articleCoverImg.startsWith('http') && (
+                      <img src={articleCoverImg} alt={articleTitle || ''} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+                    )}
+                    <div style={{ padding: '12px 14px' }}>
+                      {articleCategory && <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: 'var(--primary-color)', letterSpacing: '0.05em' }}>{articleCategory}</span>}
+                      {articleTitle && <p style={{ margin: '4px 0 0', fontWeight: 700, fontSize: '1rem' }}>{articleTitle}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo grid */}
+                {isPhoto && postImages.length > 0 && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: postImages.length === 1 ? '1fr' : postImages.length === 2 ? '1fr 1fr' : 'repeat(3, 1fr)',
+                    gap: '2px', marginBottom: '0'
+                  }}>
+                    {postImages.slice(0, 9).map((url: string, imgIdx: number) => (
+                      <img
+                        key={imgIdx}
+                        src={url}
+                        alt={`Photo ${imgIdx + 1}`}
+                        style={{
+                          width: '100%',
+                          aspectRatio: postImages.length === 1 ? '4/3' : '1',
+                          objectFit: 'cover',
+                          display: 'block',
+                          borderRadius: postImages.length === 1 ? '0' : imgIdx === 0 ? '0 0 0 0' : ''
+                        }}
+                      />
+                    ))}
+                    {postImages.length > 9 && (
+                      <div style={{ position: 'relative' }}>
+                        <img src={postImages[8]} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block', filter: 'brightness(0.4)' }} />
+                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '1.2rem' }}>+{postImages.length - 9}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Video */}
+                {isVideo && videoSrc && (
+                  <div style={{ marginBottom: '0' }}>
+                    {videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be') ? (
+                      (() => {
+                        const ytId = (() => { const m = videoSrc.match(/(?:youtu\.be\/|v=|embed\/)([^#&?]{11})/); return m ? m[1] : null; })();
+                        return ytId ? (
+                          <iframe src={`https://www.youtube.com/embed/${ytId}`} style={{ width: '100%', height: '300px', border: 'none', display: 'block' }} allowFullScreen title="Video" />
+                        ) : null;
+                      })()
+                    ) : (
+                      <video src={videoSrc} controls style={{ width: '100%', maxHeight: '400px', display: 'block', objectFit: 'contain', background: '#000' }} />
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <footer style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '10px 12px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? '#e0245e' : 'inherit', padding: '6px 10px', borderRadius: '8px', fontWeight: isLiked ? 700 : 400, fontSize: '0.88rem' }}
+                  >
+                    <Heart size={20} fill={isLiked ? '#e0245e' : 'none'} /> {(post.likes || []).length || 0}
+                  </button>
+                  <button
+                    onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}
+                  >
+                    <MessageCircle size={20} /> {((post as any).comments || []).length || 0}
+                  </button>
+                  <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}>
+                    <Share2 size={20} /> Share
+                  </button>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    onClick={() => handleBookmark(post.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: bookmarks.includes(post.id) ? 'var(--primary-color)' : 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}
+                  >
+                    <Bookmark size={20} fill={bookmarks.includes(post.id) ? 'var(--primary-color)' : 'none'} />
+                  </button>
                 </footer>
+
+                {/* Comments */}
+                {expandedComments[post.id] && (
+                  <div style={{ padding: '0 16px 14px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                    {((post as any).comments || []).slice(0, 5).map((comment: any) => (
+                      <div key={comment.id} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                        <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <div>
+                          <strong style={{ fontSize: '0.82rem' }}>{comment.author?.full_name || 'Alumnus'}</strong>
+                          <p style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>{comment.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                      <img src={currentUser.profile_photo} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      <input
+                        value={commentInputs[post.id] || ''}
+                        onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleCommentSubmit(post.id, commentInputs[post.id] || ''); }}
+                        placeholder="Add a comment..."
+                        style={{ flex: 1, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '20px', padding: '6px 14px', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                  </div>
+                )}
               </article>
             );
           })}
