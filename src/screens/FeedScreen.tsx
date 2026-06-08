@@ -10,9 +10,10 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus
+  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
+import { uploadMedia } from '../utils/upload';
 
 interface FeedScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -26,15 +27,277 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0 
 }) => {
   const { currentUser } = useAuth();
-  
-  // Feed & Filtering states
-  const [activeGroupId, setActiveGroupId] = useState('grp-all');
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filterChip, setFilterChip] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  // Stories Tray & Viewer States
+  interface StoryItem {
+    id: string;
+    mediaUrl: string;
+    text: string;
+    timestamp: string;
+    viewed: boolean;
+  }
 
-  // Active Profile details if view-profile is requested
+  interface StoryGroup {
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    userBatch: string;
+    hasUnviewed: boolean;
+    stories: StoryItem[];
+  }
+
+  const [stories, setStories] = useState<StoryGroup[]>([
+    {
+      userId: 'usr-alumni-2',
+      userName: 'Dr. Marcus Adeyemi',
+      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&q=80',
+      userBatch: '1998',
+      hasUnviewed: true,
+      stories: [
+        {
+          id: 'story-1-1',
+          mediaUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=1400&fit=crop&q=80',
+          text: 'Visiting the new research wing today! ðŸ”¬',
+          timestamp: '2h ago',
+          viewed: false
+        },
+        {
+          id: 'story-1-2',
+          mediaUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=1400&fit=crop&q=80',
+          text: 'The advanced laboratory setup is amazing!',
+          timestamp: '1h ago',
+          viewed: false
+        }
+      ]
+    },
+    {
+      userId: 'usr-alumni-3',
+      userName: 'Sophia Patel',
+      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&q=80',
+      userBatch: '2005',
+      hasUnviewed: true,
+      stories: [
+        {
+          id: 'story-2-1',
+          mediaUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=1400&fit=crop&q=80',
+          text: 'Speech at the UN Assembly done. Proud alumni! ðŸ‡ºðŸ‡³',
+          timestamp: '4h ago',
+          viewed: false
+        }
+      ]
+    },
+    {
+      userId: 'usr-alumni-4',
+      userName: 'Sameer Khan',
+      userAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&q=80',
+      userBatch: '1985',
+      hasUnviewed: false,
+      stories: [
+        {
+          id: 'story-3-1',
+          mediaUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=1400&fit=crop&q=80',
+          text: 'Found a photo of the chemistry lab from 1983! ðŸ§ª',
+          timestamp: '12h ago',
+          viewed: true
+        }
+      ]
+    },
+    {
+      userId: 'usr-alumni-5',
+      userName: 'Dr. Elena Wong',
+      userAvatar: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=120&h=120&fit=crop&q=80',
+      userBatch: '1992',
+      hasUnviewed: true,
+      stories: [
+        {
+          id: 'story-4-1',
+          mediaUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=1400&fit=crop&q=80',
+          text: 'Congratulations to the graduating class! ðŸŽ‰',
+          timestamp: '6h ago',
+          viewed: false
+        }
+      ]
+    }
+  ]);
+
+  const [currentUserStories, setCurrentUserStories] = useState<StoryItem[]>([]);
+  const [activeStoryGroupIndex, setActiveStoryGroupIndex] = useState<number | null>(null); // -1 = current user
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number>(0);
+  const [storyProgress, setStoryProgress] = useState<number>(0);
+  const [storyPaused, setStoryPaused] = useState<boolean>(false);
+  const [storyReplyText, setStoryReplyText] = useState<string>('');
+
+  // Story Creation states
+  const [createStoryOpen, setCreateStoryOpen] = useState<boolean>(false);
+  const [storyTextContent, setStoryTextContent] = useState<string>('');
+  const [storyBgType, setStoryBgType] = useState<'gradient' | 'image'>('gradient');
+  const [storyBgValue, setStoryBgValue] = useState<string>('linear-gradient(135deg, #FF7A1A 0%, #d4af37 100%)');
+  const [storyCustomImageUrl, setStoryCustomImageUrl] = useState<string>('');
+
+  // Story composer - full create screen feature parity
+  type StoryPostType = 'text' | 'image' | 'video' | 'article';
+  interface StoryImageItem { preview: string; url: string; uploading: boolean; error: string | null; file?: File; }
+  const [storyPostType, setStoryPostType] = useState<StoryPostType>('text');
+  const [storyImageItems, setStoryImageItems] = useState<StoryImageItem[]>([]);
+  const [storyImageMethod, setStoryImageMethod] = useState<'device'|'url'>('device');
+  const [storyTempImageUrl, setStoryTempImageUrl] = useState('');
+  const [storyAspectRatio, setStoryAspectRatio] = useState<'original'|'1:1'|'4:5'|'4:3'|'16:9'>('original');
+  const [storyFitMode, setStoryFitMode] = useState<'contain'|'cover'>('contain');
+  const [storyTagClassmates, setStoryTagClassmates] = useState('');
+  const [storyVideoUrl, setStoryVideoUrl] = useState('');
+  const [storyVideoCloudUrl, setStoryVideoCloudUrl] = useState('');
+  const [storyVideoPreviewSrc, setStoryVideoPreviewSrc] = useState('');
+  const [storyVideoFileName, setStoryVideoFileName] = useState('');
+  const [storyVideoUploading, setStoryVideoUploading] = useState(false);
+  const [storyVideoUploadError, setStoryVideoUploadError] = useState<string|null>(null);
+  const [storyVideoMethod, setStoryVideoMethod] = useState<'device'|'url'>('device');
+  const [storyArticleTitle, setStoryArticleTitle] = useState('');
+  const [storyArticleCategory, setStoryArticleCategory] = useState('Nostalgia & School Stories');
+  const [storyCoverImageUrl, setStoryCoverImageUrl] = useState('');
+  const [storyIsSubmitting, setStoryIsSubmitting] = useState(false);
+  const storyImageInputRef = useRef<HTMLInputElement>(null);
+  const storyVideoInputRef = useRef<HTMLInputElement>(null);
+
+  // Core feed states (posts, loading, filters)
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterChip, setFilterChip] = useState<string>('All');
+  const [activeGroupId, setActiveGroupId] = useState<string>('grp-all');
+
+  // Load user stories from localStorage
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('rkmv_user_stories');
+      if (stored) {
+        try {
+          setCurrentUserStories(JSON.parse(stored));
+        } catch (e) {}
+      }
+    }
+  }, [refreshKey]);
+
+  // Auto-advance logic for stories
+  useEffect(() => {
+    if (activeStoryGroupIndex === null) {
+      setStoryProgress(0);
+      return;
+    }
+
+    let interval: NodeJS.Timeout;
+    const duration = 5000; // 5000ms total
+    const intervalTime = 50; // 50ms ticks
+    const increment = 100 / (duration / intervalTime); // 1% per tick
+
+    if (!storyPaused) {
+      interval = setInterval(() => {
+        setStoryProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            // Move to next story
+            handleNextStory();
+            return 0;
+          }
+          return prev + increment;
+        });
+      }, intervalTime);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeStoryGroupIndex, activeStoryIndex, storyPaused, currentUserStories, stories]);
+
+  const getActiveStoriesList = (): StoryItem[] => {
+    if (activeStoryGroupIndex === -1) {
+      return currentUserStories;
+    }
+    if (activeStoryGroupIndex !== null && stories[activeStoryGroupIndex]) {
+      return stories[activeStoryGroupIndex].stories;
+    }
+    return [];
+  };
+
+  const handleNextStory = () => {
+    const currentList = getActiveStoriesList();
+    if (activeStoryIndex < currentList.length - 1) {
+      setActiveStoryIndex(prev => prev + 1);
+      setStoryProgress(0);
+      if (activeStoryGroupIndex !== -1 && activeStoryGroupIndex !== null) {
+        markStoryAsViewed(activeStoryGroupIndex, activeStoryIndex + 1);
+      }
+    } else {
+      // End of this group
+      if (activeStoryGroupIndex === -1) {
+        // Move from own stories to first alumni stories
+        if (stories.length > 0) {
+          setActiveStoryGroupIndex(0);
+          setActiveStoryIndex(0);
+          setStoryProgress(0);
+          markStoryAsViewed(0, 0);
+        } else {
+          closeStoryViewer();
+        }
+      } else if (activeStoryGroupIndex !== null && activeStoryGroupIndex < stories.length - 1) {
+        // Move to next alumni group
+        setActiveStoryGroupIndex(prev => (prev as number) + 1);
+        setActiveStoryIndex(0);
+        setStoryProgress(0);
+        markStoryAsViewed((activeStoryGroupIndex as number) + 1, 0);
+      } else {
+        // End of all story groups
+        closeStoryViewer();
+      }
+    }
+  };
+
+  const handlePrevStory = () => {
+    if (activeStoryIndex > 0) {
+      setActiveStoryIndex(prev => prev - 1);
+      setStoryProgress(0);
+    } else {
+      // Go to previous group
+      if (activeStoryGroupIndex === 0) {
+        if (currentUserStories.length > 0) {
+          setActiveStoryGroupIndex(-1);
+          setActiveStoryIndex(currentUserStories.length - 1);
+          setStoryProgress(0);
+        } else {
+          closeStoryViewer();
+        }
+      } else if (activeStoryGroupIndex !== null && activeStoryGroupIndex > 0) {
+        const prevGroupIdx = activeStoryGroupIndex - 1;
+        setActiveStoryGroupIndex(prevGroupIdx);
+        setActiveStoryIndex(stories[prevGroupIdx].stories.length - 1);
+        setStoryProgress(0);
+      } else {
+        closeStoryViewer();
+      }
+    }
+  };
+
+  const markStoryAsViewed = (groupIdx: number, storyIdx: number) => {
+    setStories(prev => {
+      const updated = prev.map((group, gIdx) => {
+        if (gIdx !== groupIdx) return group;
+        const updatedStories = group.stories.map((story, sIdx) => {
+          if (sIdx !== storyIdx) return story;
+          return { ...story, viewed: true };
+        });
+        const hasUnviewed = updatedStories.some(s => !s.viewed);
+        return { ...group, stories: updatedStories, hasUnviewed };
+      });
+      return updated;
+    });
+  };
+
+  const closeStoryViewer = () => {
+    setActiveStoryGroupIndex(null);
+    setActiveStoryIndex(0);
+    setStoryProgress(0);
+    setStoryPaused(false);
+  };
+
   const [profileUser, setProfileUser] = useState<any>(null);
   const [profilePosts, setProfilePosts] = useState<Post[]>([]);
   const [profileTab, setProfileTab] = useState<'posts' | 'notes' | 'reels' | 'achievements' | 'saved'>('posts');
@@ -139,7 +402,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     ],
     'chat-batch': [
       { id: 'bmsg-1', senderId: 'usr-alumni-2', text: 'Brothers, has anyone contributed to the computer lab fund yet?', time: 'Yesterday' },
-      { id: 'bmsg-2', senderId: 'usr-alumni-3', text: 'Yes, just completed a ₹25k transfer. Receipt received.', time: 'Yesterday' }
+      { id: 'bmsg-2', senderId: 'usr-alumni-3', text: 'Yes, just completed a â‚¹25k transfer. Receipt received.', time: 'Yesterday' }
     ]
   });
   const [messageInputText, setMessageInputText] = useState('');
@@ -284,11 +547,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       } else if (templateType === 'idea') {
         text = "Quick shoutout to the Class of 2016! Where is everyone settled now? Let's trace our batchmates. Comment down your current city and profession, let's plan a virtual meetup this weekend! #ClassOf2016 #Reconnect";
       } else if (templateType === 'reunion') {
-        text = "📢 Vidyapith Reunion Invite! Let's get together, catch up on old times, and share memories. Date: Oct 18, 2026. Venue: San Francisco Cafe. RSVP here! #Reunion2026 #RKMVAlumni";
+        text = "ðŸ“¢ Vidyapith Reunion Invite! Let's get together, catch up on old times, and share memories. Date: Oct 18, 2026. Venue: San Francisco Cafe. RSVP here! #Reunion2026 #RKMVAlumni";
       } else if (templateType === 'event') {
         text = "Join us for the Vidyapith Alumni Mentorship & Networking Meetup. An opportunity for young graduates and current students to connect with senior alumni in Tech, Medicine, and Public Services. #Mentorship #AlumniMeet";
       } else if (templateType === 'announcement') {
-        text = "🚨 URGENT ANNOUNCEMENT: Swami Asangananda-ji Memorial and Prayer Meeting. We request all alumni to join the prayer service in memory of our beloved teacher. Venue: Temple Hall & Zoom. #Announcements #VidyapithCommunity";
+        text = "ðŸš¨ URGENT ANNOUNCEMENT: Swami Asangananda-ji Memorial and Prayer Meeting. We request all alumni to join the prayer service in memory of our beloved teacher. Venue: Temple Hall & Zoom. #Announcements #VidyapithCommunity";
       }
       setNewPostText(text);
       showToast("Draft generated by Memory Assistant!", "success");
@@ -609,7 +872,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const handleRunCode = (postId: string, code: string, lang: string) => {
     setSimulatedConsoleOutput(prev => ({
       ...prev,
-      [postId]: `Compiling on Vidyapith Node Server...\nRunning ${lang} sandbox compiler...\n\n[STDOUT]\nSolving test cases...\nTest Case 1 Passed (Time: 4ms)\nTest Case 2 Passed (Time: 8ms)\n\n🚀 Program executed successfully with exit status 0.`
+      [postId]: `Compiling on Vidyapith Node Server...\nRunning ${lang} sandbox compiler...\n\n[STDOUT]\nSolving test cases...\nTest Case 1 Passed (Time: 4ms)\nTest Case 2 Passed (Time: 8ms)\n\nðŸš€ Program executed successfully with exit status 0.`
     }));
   };
 
@@ -734,6 +997,143 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     { name: 'Sameer Khan', batch: '1985', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=520&h=760&fit=crop&q=80', text: 'Our old chemistry lab - found this gem in the archives!', likes: 97, comments: 19 }
   ];
 
+  // Story click handlers
+  const handleStoryGroupClick = (idx: number) => {
+    setActiveStoryGroupIndex(idx);
+    setActiveStoryIndex(0);
+    setStoryProgress(0);
+    setStoryPaused(false);
+    markStoryAsViewed(idx, 0);
+  };
+
+  const handleUserStoryClick = () => {
+    if (currentUserStories.length > 0) {
+      setActiveStoryGroupIndex(-1);
+      setActiveStoryIndex(0);
+      setStoryProgress(0);
+      setStoryPaused(false);
+    } else {
+      setCreateStoryOpen(true);
+    }
+  };
+
+  const handlePublishStory = async () => {
+    setStoryIsSubmitting(true);
+    try {
+      let mediaUrl = '';
+      let storyText = storyTextContent.trim();
+
+      if (storyPostType === 'text') {
+        // Gradient/text story - no media required but text is
+        if (!storyText) { showToast('Please add some text for your story.', 'danger'); return; }
+        mediaUrl = '';
+      } else if (storyPostType === 'image') {
+        const ready = storyImageItems.filter(i => i.url && !i.uploading && !i.error);
+        if (ready.length === 0) { showToast('Please add at least one image.', 'danger'); return; }
+        mediaUrl = ready[0].url;
+        if (!storyText) storyText = 'ðŸ“¸ ' + (storyTagClassmates ? `with ${storyTagClassmates}` : 'Shared a photo');
+      } else if (storyPostType === 'video') {
+        const finalVid = storyVideoMethod === 'device' ? storyVideoCloudUrl : storyVideoUrl.trim();
+        if (!finalVid) { showToast('Please add a video.', 'danger'); return; }
+        if (storyVideoUploading) { showToast('Video still uploading...', 'info'); return; }
+        mediaUrl = finalVid;
+        if (!storyText) storyText = 'ðŸŽ¬ Shared a video';
+      } else if (storyPostType === 'article') {
+        if (!storyArticleTitle.trim()) { showToast('Please add an article title.', 'danger'); return; }
+        if (!storyText) { showToast('Article body cannot be empty.', 'danger'); return; }
+        mediaUrl = storyCoverImageUrl.trim();
+        storyText = `ðŸ“° ${storyArticleTitle.trim()}\n\n${storyText}`;
+      }
+
+      const newStory: StoryItem = {
+        id: `story-user-${Date.now()}`,
+        mediaUrl,
+        text: storyText,
+        timestamp: 'Just now',
+        viewed: false
+      };
+      const updated = [...currentUserStories, newStory];
+      setCurrentUserStories(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rkmv_user_stories', JSON.stringify(updated));
+      }
+      // Reset all story state
+      setCreateStoryOpen(false);
+      setStoryPostType('text');
+      setStoryTextContent('');
+      setStoryBgType('gradient');
+      setStoryBgValue('linear-gradient(135deg, #FF7A1A 0%, #d4af37 100%)');
+      setStoryCustomImageUrl('');
+      setStoryImageItems([]);
+      setStoryTempImageUrl('');
+      setStoryVideoUrl('');
+      setStoryVideoCloudUrl('');
+      setStoryVideoPreviewSrc('');
+      setStoryVideoFileName('');
+      setStoryVideoUploadError(null);
+      setStoryArticleTitle('');
+      setStoryArticleCategory('Nostalgia & School Stories');
+      setStoryCoverImageUrl('');
+      setStoryTagClassmates('');
+      showToast('Story posted! 🎉', 'success');
+    } finally {
+      setStoryIsSubmitting(false);
+    }
+  };
+
+  // Story composer upload helpers
+  const handleStoryImageFiles = async (files: File[]) => {
+    const valid = files.filter(f => f.type.startsWith('image/'));
+    if (!valid.length) { showToast('Please select image files.', 'danger'); return; }
+    const placeholders = valid.map(file => ({ preview: URL.createObjectURL(file), url: '', uploading: true, error: null as string | null, file }));
+    setStoryImageItems(prev => [...prev, ...placeholders]);
+    for (let i = 0; i < valid.length; i++) {
+      const file = valid[i];
+      const idx = storyImageItems.length + i;
+      try {
+        const result = await uploadMedia(file, 'posts/images');
+        setStoryImageItems(prev => { const u = [...prev]; u[idx] = { ...u[idx], url: result.url, uploading: false, error: null, file: undefined }; return u; });
+      } catch (err: any) {
+        setStoryImageItems(prev => { const u = [...prev]; u[idx] = { ...u[idx], uploading: false, error: err.message || 'Upload failed' }; return u; });
+      }
+    }
+  };
+  const handleAddStoryImageUrl = () => {
+    if (!storyTempImageUrl.trim()) return;
+    setStoryImageItems(prev => [...prev, { preview: storyTempImageUrl.trim(), url: storyTempImageUrl.trim(), uploading: false, error: null }]);
+    setStoryTempImageUrl('');
+  };
+  const handleStoryVideoFile = async (file: File) => {
+    if (!file.type.startsWith('video/')) { showToast('Please select a video file.', 'danger'); return; }
+    if (file.size > 100 * 1024 * 1024) { showToast('Video must be under 100 MB.', 'danger'); return; }
+    setStoryVideoPreviewSrc(URL.createObjectURL(file));
+    setStoryVideoFileName(file.name);
+    setStoryVideoCloudUrl('');
+    setStoryVideoUploadError(null);
+    setStoryVideoUploading(true);
+    try {
+      const result = await uploadMedia(file, 'posts/videos');
+      setStoryVideoCloudUrl(result.url);
+      setStoryVideoUploading(false);
+      showToast('Video uploaded!', 'success');
+    } catch (err: any) {
+      setStoryVideoUploadError(err.message || 'Upload failed');
+      setStoryVideoUploading(false);
+    }
+  };
+  const clearStoryVideo = () => {
+    if (storyVideoPreviewSrc.startsWith('blob:')) URL.revokeObjectURL(storyVideoPreviewSrc);
+    setStoryVideoPreviewSrc('');
+    setStoryVideoCloudUrl('');
+    setStoryVideoFileName('');
+    setStoryVideoUploadError(null);
+    setStoryVideoUploading(false);
+  };
+  const storyYouTubeId = (url: string) => {
+    const m = url.match(/(?:youtu\.be\/|v=|embed\/)([^#&?]{11})/);
+    return m ? m[1] : null;
+  };
+
   if (screenMode === 'feed') {
     // Sort newest first (backend already orders desc, but ensure client-side too)
     const sortedPosts = [...filteredPosts].sort((a, b) =>
@@ -744,17 +1144,52 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       <div className="ig-feed-layout">
         {/* Center: post composer + feed */}
         <main className="ig-feed-main">
-          <form className="feed-composer-card" onSubmit={handleCreatePost}>
-            <div>
-              <img src={currentUser.profile_photo} alt={currentUser.full_name} />
-              <input value={newPostText} onChange={(event) => setNewPostText(event.target.value)} placeholder="Share a memory, update, or milestone..." />
+          {/* Instagram-style Stories Tray */}
+          <div className="stories-tray-container">
+            {/* Current User's Story */}
+            <div className="story-item-wrap">
+              <div 
+                className={`story-avatar-ring ${currentUserStories.length > 0 ? 'has-unviewed' : 'viewed'}`}
+                onClick={handleUserStoryClick}
+              >
+                <img 
+                  src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
+                  alt="Your Story" 
+                  className="story-avatar" 
+                />
+                <button 
+                  className="story-add-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCreateStoryOpen(true);
+                  }}
+                  title="Add to story"
+                  type="button"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+              <span className="story-username">Your Story</span>
             </div>
-            <footer>
-              <button type="button" onClick={() => setPostMediaType('photo')}><Image size={20} /> Photo</button>
-              <button type="button" onClick={() => setPostToGroup(`grp-${currentUser.batch_year}`)}><Tag size={20} /> Tag Batch</button>
-              <button type="submit"><Send size={20} /> Post</button>
-            </footer>
-          </form>
+
+            {/* Other Story Groups */}
+            {stories.map((group, idx) => (
+              <div 
+                key={group.userId} 
+                className="story-item-wrap"
+                onClick={() => handleStoryGroupClick(idx)}
+              >
+                <div className={`story-avatar-ring ${group.hasUnviewed ? 'has-unviewed' : 'viewed'}`}>
+                  <img 
+                    src={group.userAvatar} 
+                    alt={group.userName} 
+                    className="story-avatar" 
+                  />
+                </div>
+                <span className="story-username">{group.userName.split(' ')[0]}</span>
+              </div>
+            ))}
+          </div>
 
           {loading && (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--heritage-muted)', fontSize: '0.9rem' }}>
@@ -764,7 +1199,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
           {!loading && sortedPosts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--heritage-muted)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏵️</div>
+              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>ðŸµï¸</div>
               <p style={{ fontWeight: 600, marginBottom: '6px' }}>No posts yet</p>
               <p style={{ fontSize: '0.85rem' }}>Be the first to share something with the Vidyapith family!</p>
             </div>
@@ -814,7 +1249,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{author?.full_name || 'Vidyapith Alumnus'}</h3>
                     <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--heritage-muted)' }}>
-                      {formatTimeAgo(post.created_at)} · Class of {author?.batch_year || '—'}
+                      {formatTimeAgo(post.created_at)} Â· Class of {author?.batch_year || 'â€”'}
                     </p>
                   </div>
                   <MoreHorizontal size={20} style={{ color: 'var(--heritage-muted)', cursor: 'pointer', flexShrink: 0 }} />
@@ -953,17 +1388,338 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               </article>
             );
           })}
+
+          {/* ============ STORY VIEWER OVERLAY ============ */}
+          {activeStoryGroupIndex !== null && (() => {
+            const isOwnStory = activeStoryGroupIndex === -1;
+            const storyList = isOwnStory ? currentUserStories : (stories[activeStoryGroupIndex as number]?.stories || []);
+            const currentStory = storyList[activeStoryIndex];
+            const groupInfo = isOwnStory
+              ? {
+                  userName: currentUser?.full_name || 'You',
+                  userAvatar: currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80',
+                  userBatch: `Class of ${currentUser?.batch_year || 'â€”'}`
+                }
+              : {
+                  userName: stories[activeStoryGroupIndex as number]?.userName || '',
+                  userAvatar: stories[activeStoryGroupIndex as number]?.userAvatar || '',
+                  userBatch: `Batch of ${stories[activeStoryGroupIndex as number]?.userBatch || ''}`
+                };
+            if (!currentStory) return null;
+            const hasBg = currentStory.mediaUrl && currentStory.mediaUrl.startsWith('http');
+            return (
+              <div
+                className="sv-overlay"
+                onMouseDown={() => setStoryPaused(true)}
+                onMouseUp={() => setStoryPaused(false)}
+              >
+                {/* Progress bars */}
+                <div className="sv-progress-bar-row">
+                  {storyList.map((_, i) => (
+                    <div key={i} className="sv-progress-bar-track">
+                      <div
+                        className="sv-progress-bar-fill"
+                        style={{
+                          width: i < activeStoryIndex ? '100%'
+                            : i === activeStoryIndex ? `${storyProgress}%`
+                            : '0%'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Header */}
+                <div className="sv-header">
+                  <img src={groupInfo.userAvatar} alt={groupInfo.userName} className="sv-header-avatar" />
+                  <div className="sv-header-info">
+                    <span className="sv-header-name">{groupInfo.userName}</span>
+                    <span className="sv-header-meta">{groupInfo.userBatch} Â· {currentStory.timestamp}</span>
+                  </div>
+                  <button className="sv-close-btn" onClick={(e) => { e.stopPropagation(); closeStoryViewer(); }}>
+                    <X size={26} />
+                  </button>
+                </div>
+
+                {/* Story content */}
+                <div
+                  className="sv-content"
+                  style={
+                    hasBg
+                      ? { backgroundImage: `url(${currentStory.mediaUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                      : { background: 'linear-gradient(135deg, #FF7A1A 0%, #d4af37 100%)' }
+                  }
+                  onClick={(e) => {
+                    const x = e.clientX;
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    if (x - rect.left < rect.width / 2) handlePrevStory();
+                    else handleNextStory();
+                  }}
+                >
+                  {currentStory.text && (
+                    <div className="sv-text-overlay">{currentStory.text}</div>
+                  )}
+                </div>
+
+                {/* Reply bar */}
+                <div className="sv-reply-bar">
+                  <input
+                    className="sv-reply-input"
+                    value={storyReplyText}
+                    onChange={e => setStoryReplyText(e.target.value)}
+                    placeholder={`Reply to ${groupInfo.userName.split(' ')[0]}...`}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && storyReplyText.trim()) {
+                        showToast('Reply sent!', 'success');
+                        setStoryReplyText('');
+                      }
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <button
+                    className="sv-reply-send"
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (storyReplyText.trim()) {
+                        showToast('Reply sent!', 'success');
+                        setStoryReplyText('');
+                      }
+                    }}
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+
+                {/* Nav arrows */}
+                <button className="sv-nav sv-nav-left" onClick={e => { e.stopPropagation(); handlePrevStory(); }}>
+                  <ChevronLeft size={28} />
+                </button>
+                <button className="sv-nav sv-nav-right" onClick={e => { e.stopPropagation(); handleNextStory(); }}>
+                  <ChevronRight size={28} />
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* ============ STORY CREATION MODAL – FULL FEATURED ============ */}
+          {createStoryOpen && (
+            <div className="sc-overlay" onClick={() => setCreateStoryOpen(false)}>
+              <div className="sc-modal" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="sc-modal-header">
+                  <h3><Camera size={18} /> Create Story</h3>
+                  <button onClick={() => setCreateStoryOpen(false)}><X size={20} /></button>
+                </div>
+
+                {/* Type Tabs */}
+                <div style={{ display: 'flex', gap: '6px', padding: '12px 20px 0', borderBottom: '1px solid var(--heritage-line)' }}>
+                  {([['text', '✏️ Text', 'Text/Gradient'], ['image', '🖼️ Image', 'Image'], ['video', '🎬 Video', 'Video'], ['article', '📰 Article', 'Article']] as [string,string,string][]).map(([type, icon, label]) => (
+                    <button
+                      key={type}
+                      onClick={() => setStoryPostType(type as any)}
+                      style={{
+                        padding: '7px 14px', borderRadius: '8px 8px 0 0', fontSize: '0.82rem', fontWeight: 700,
+                        border: '1px solid var(--heritage-line)', borderBottom: 'none', cursor: 'pointer',
+                        background: storyPostType === type ? 'var(--heritage-card)' : 'transparent',
+                        color: storyPostType === type ? 'var(--primary-color)' : 'var(--heritage-muted)',
+                        marginBottom: '-1px', position: 'relative', zIndex: 1
+                      }}
+                    >{icon} {label}</button>
+                  ))}
+                </div>
+
+                <div className="sc-controls" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+
+                  {/* ─── TEXT / GRADIENT ─── */}
+                  {storyPostType === 'text' && (
+                    <>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Caption / Story Text</label>
+                        <textarea className="sc-textarea" rows={3} value={storyTextContent}
+                          onChange={e => setStoryTextContent(e.target.value)}
+                          placeholder="Type something inspiring..." />
+                      </div>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Background Gradient</label>
+                        <div className="sc-gradient-swatches">
+                          {['linear-gradient(135deg,#FF7A1A 0%,#d4af37 100%)','linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                            'linear-gradient(135deg,#f093fb 0%,#f5576c 100%)','linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
+                            'linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)','linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
+                            'linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)','linear-gradient(135deg,#0f2027 0%,#2c5364 100%)'
+                          ].map(g => (
+                            <button key={g} className={`sc-swatch ${storyBgValue===g?'selected':''}`} style={{background:g}} onClick={()=>setStoryBgValue(g)} />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="sc-preview" style={{background:storyBgValue}}>
+                        {storyTextContent
+                          ? <div className="sc-preview-text">{storyTextContent}</div>
+                          : <div className="sc-preview-placeholder"><Camera size={28}/><span>Preview</span></div>}
+                      </div>
+                    </>
+                  )}
+
+                  {/* ─── IMAGE ─── */}
+                  {storyPostType === 'image' && (
+                    <>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Upload Method</label>
+                        <div className="sc-bg-tabs">
+                          <button className={`sc-bg-tab ${storyImageMethod==='device'?'active':''}`} onClick={()=>setStoryImageMethod('device')}><Upload size={13}/> Device</button>
+                          <button className={`sc-bg-tab ${storyImageMethod==='url'?'active':''}`} onClick={()=>setStoryImageMethod('url')}><Link size={13}/> URL</button>
+                        </div>
+                      </div>
+                      {storyImageMethod === 'device' ? (
+                        <div
+                          onClick={() => storyImageInputRef.current?.click()}
+                          style={{ border: '2px dashed var(--heritage-line)', borderRadius: '12px', padding: '24px', textAlign: 'center', cursor: 'pointer', background: 'rgba(0,0,0,0.02)' }}
+                        >
+                          <Upload size={24} style={{ color: 'var(--primary-color)', marginBottom: '6px' }} />
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem' }}>Click to browse or drag &amp; drop</p>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--heritage-muted)' }}>JPG, PNG, GIF, WebP · max 10 images</p>
+                          <input ref={storyImageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                            onChange={e => { if (e.target.files) handleStoryImageFiles(Array.from(e.target.files)); e.target.value=''; }} />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input className="sc-url-input" value={storyTempImageUrl} onChange={e=>setStoryTempImageUrl(e.target.value)}
+                            onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();handleAddStoryImageUrl();}}} placeholder="Paste image URL..." style={{flex:1}} />
+                          <button onClick={handleAddStoryImageUrl} className="sc-publish-btn" style={{width:'auto',padding:'0 16px'}}>Add</button>
+                        </div>
+                      )}
+                      {storyImageItems.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(80px,1fr))', gap: '8px', marginTop: '8px' }}>
+                          {storyImageItems.map((item, idx) => (
+                            <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${item.error?'#fc8181':'var(--heritage-line)'}`, background: 'rgba(0,0,0,0.05)' }}>
+                              <img src={item.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: item.uploading?0.4:1 }} />
+                              {item.uploading && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}><Loader2 size={16} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} /></div>}
+                              {!item.uploading && !item.error && item.url && <div style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(72,187,120,0.9)', borderRadius: '50%', padding: '2px' }}><CheckCircle2 size={10} style={{ color: '#fff' }} /></div>}
+                              {item.error && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}><AlertCircle size={14} style={{ color: '#fc8181' }} /></div>}
+                              {!item.uploading && <button onClick={()=>setStoryImageItems(prev=>prev.filter((_,i)=>i!==idx))} style={{ position: 'absolute', top: 3, right: 3, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}><X size={10}/></button>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {storyImageItems.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                          {(['original','1:1','4:5','4:3','16:9'] as const).map(r => (
+                            <button key={r} onClick={()=>setStoryAspectRatio(r)} style={{ padding: '5px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: storyAspectRatio===r?'var(--primary-color)':'rgba(0,0,0,0.04)', color: storyAspectRatio===r?'#fff':'var(--heritage-muted)', border: '1px solid var(--heritage-line)' }}>{r}</button>
+                          ))}
+                          <button onClick={()=>setStoryFitMode(m=>m==='contain'?'cover':'contain')} style={{ padding: '5px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(0,0,0,0.04)', border: '1px solid var(--heritage-line)', color: 'var(--heritage-muted)' }}>Fit: {storyFitMode}</button>
+                        </div>
+                      )}
+                      <div className="sc-control-row">
+                        <label className="sc-label">Tag Classmates (optional)</label>
+                        <input className="sc-url-input" value={storyTagClassmates} onChange={e=>setStoryTagClassmates(e.target.value)} placeholder="e.g. Aurobindo, Priya" />
+                      </div>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Caption</label>
+                        <textarea className="sc-textarea" rows={2} value={storyTextContent} onChange={e=>setStoryTextContent(e.target.value)} placeholder="Add a caption..." />
+                      </div>
+                    </>
+                  )}
+
+                  {/* ─── VIDEO ─── */}
+                  {storyPostType === 'video' && (
+                    <>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Upload Method</label>
+                        <div className="sc-bg-tabs">
+                          <button className={`sc-bg-tab ${storyVideoMethod==='device'?'active':''}`} onClick={()=>{setStoryVideoMethod('device');clearStoryVideo();setStoryVideoUrl('');}}><Upload size={13}/> Device</button>
+                          <button className={`sc-bg-tab ${storyVideoMethod==='url'?'active':''}`} onClick={()=>{setStoryVideoMethod('url');clearStoryVideo();}}><Link size={13}/> URL / YouTube</button>
+                        </div>
+                      </div>
+                      {storyVideoMethod === 'device' ? (
+                        !storyVideoPreviewSrc ? (
+                          <div onClick={()=>storyVideoInputRef.current?.click()} style={{ border: '2px dashed var(--heritage-line)', borderRadius: '12px', padding: '28px', textAlign: 'center', cursor: 'pointer' }}>
+                            <Play size={28} style={{ color: 'var(--primary-color)', marginBottom: '6px' }} />
+                            <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem' }}>Click to browse or drag &amp; drop a video</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--heritage-muted)' }}>MP4, MOV, WebM · Max 100 MB</p>
+                            <input ref={storyVideoInputRef} type="file" accept="video/*" style={{ display: 'none' }}
+                              onChange={e=>{const f=e.target.files?.[0];if(f)handleStoryVideoFile(f);e.target.value='';}} />
+                          </div>
+                        ) : (
+                          <div style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--heritage-line)' }}>
+                            <video src={storyVideoPreviewSrc} controls style={{ width: '100%', maxHeight: '220px', display: 'block', objectFit: 'contain', background: '#000' }} />
+                            <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--heritage-muted)' }}>
+                                {storyVideoUploading && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />}
+                                {!storyVideoUploading && storyVideoCloudUrl && <CheckCircle2 size={14} style={{ color: '#48bb78' }} />}
+                                {!storyVideoUploading && storyVideoUploadError && <AlertCircle size={14} style={{ color: '#fc8181' }} />}
+                                <span>{storyVideoUploading ? 'Uploading…' : storyVideoUploadError ? `Error: ${storyVideoUploadError}` : `✅ ${storyVideoFileName}`}</span>
+                              </div>
+                              <button onClick={clearStoryVideo} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--heritage-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}><X size={12}/> Remove</button>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <>
+                          <input className="sc-url-input" value={storyVideoUrl} onChange={e=>setStoryVideoUrl(e.target.value)} placeholder="YouTube URL or direct MP4 URL..." />
+                          {storyVideoUrl && storyYouTubeId(storyVideoUrl) && (
+                            <div style={{ marginTop: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--heritage-line)' }}>
+                              <iframe src={`https://www.youtube.com/embed/${storyYouTubeId(storyVideoUrl)}`} style={{ width: '100%', height: '180px', border: 'none' }} title="Preview" allowFullScreen />
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <div className="sc-control-row">
+                        <label className="sc-label">Caption</label>
+                        <textarea className="sc-textarea" rows={2} value={storyTextContent} onChange={e=>setStoryTextContent(e.target.value)} placeholder="Add a caption..." />
+                      </div>
+                    </>
+                  )}
+
+                  {/* ─── ARTICLE ─── */}
+                  {storyPostType === 'article' && (
+                    <>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Article Title</label>
+                        <input className="sc-url-input" value={storyArticleTitle} onChange={e=>setStoryArticleTitle(e.target.value)} placeholder="Enter a compelling title..." />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div className="sc-control-row">
+                          <label className="sc-label">Category</label>
+                          <select className="sc-url-input" value={storyArticleCategory} onChange={e=>setStoryArticleCategory(e.target.value)} style={{ height: '42px' }}>
+                            {['Nostalgia & School Stories','Tech & Innovation','Monastery & Spirituality','Career & Jobs Advice','Centenary Celebrations','General Reflections','Achievements'].map(c=><option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div className="sc-control-row">
+                          <label className="sc-label">Cover Image URL</label>
+                          <input className="sc-url-input" value={storyCoverImageUrl} onChange={e=>setStoryCoverImageUrl(e.target.value)} placeholder="https://..." />
+                        </div>
+                      </div>
+                      <div className="sc-control-row">
+                        <label className="sc-label">Article Body</label>
+                        <textarea className="sc-textarea" rows={5} value={storyTextContent} onChange={e=>setStoryTextContent(e.target.value)} placeholder="Write your article here..." />
+                      </div>
+                      {storyCoverImageUrl && (
+                        <div className="sc-preview" style={{ backgroundImage: `url(${storyCoverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                          <div className="sc-preview-text" style={{ fontSize: '1rem' }}>📰 {storyArticleTitle || 'Article Preview'}</div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Post Story button */}
+                  <button className="sc-publish-btn" onClick={handlePublishStory} disabled={storyIsSubmitting}>
+                    {storyIsSubmitting ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Posting...</> : <><Send size={16} /> Post to Story</>}
+                  </button>
+                  <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
 
         {/* Right panel */}
         <aside className="ig-feed-right">
           <section className="heritage-widget reunion-widget">
-            <h3><Calendar size={18} /> Upcoming Reunions</h3>
             {['Centenary Grand Gala', 'Batch 2012 Meetup', "Founders' Day Sports Meet"].map((title, index) => (
               <div key={title} style={{ marginBottom: '14px' }}>
                 <strong style={{ fontSize: '0.88rem' }}>{title}</strong>
                 <p style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', margin: '2px 0 6px' }}>
-                  {index === 0 ? 'Dec 14, 2026 · 6:00 PM' : index === 1 ? 'Jan 20, 2027 · 4:00 PM' : 'Feb 08, 2027 · 9:00 AM'}
+                  {index === 0 ? 'Dec 14, 2026 Â· 6:00 PM' : index === 1 ? 'Jan 20, 2027 Â· 4:00 PM' : 'Feb 08, 2027 Â· 9:00 AM'}
                 </p>
                 <button onClick={() => showToast(`RSVP noted for ${title}.`, 'success')} style={{ fontSize: '0.78rem', padding: '4px 12px' }}>RSVP</button>
               </div>
@@ -975,7 +1731,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <h2>Dr. Edward Whitman</h2>
             <span>Class of 1968</span>
             <p>A pioneering neurosurgeon and recipient of national honors.</p>
-            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More ›</button>
+            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More â€º</button>
           </section>
         </aside>
       </div>
@@ -995,12 +1751,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <div style={{ backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${spotlightPeople[0].image})` }}>
               <span>Alumnus of the Month</span>
               <h2>{spotlightPeople[0].name}</h2>
-              <p>Class of {spotlightPeople[0].batch} · {spotlightPeople[0].role}</p>
+              <p>Class of {spotlightPeople[0].batch} Â· {spotlightPeople[0].role}</p>
             </div>
             <blockquote>"{spotlightPeople[0].story} This school taught me that legacy is built one bold idea at a time."</blockquote>
             <footer><p><span>Awards</span><strong>12 Global Honors</strong></p><p><span>Patents</span><strong>34 Filed</strong></p><button><BookOpen size={20} /> Read Full Story</button></footer>
           </section>
-          <div className="spotlight-grid-head"><h2>More Spotlights</h2><button>View all <span aria-hidden="true">›</span></button></div>
+          <div className="spotlight-grid-head"><h2>More Spotlights</h2><button>View all <span aria-hidden="true">â€º</span></button></div>
           <section className="spotlight-card-grid">
             {spotlightPeople.slice(1).map(person => (
               <article key={person.name}>
@@ -1008,7 +1764,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <h3>{person.name}</h3>
                 <span>Batch of {person.batch}</span>
                 <p>{person.story}</p>
-                <button onClick={() => showToast(`Viewing ${person.name}'s profile.`, 'info')}>View Profile <span aria-hidden="true">›</span></button>
+                <button onClick={() => showToast(`Viewing ${person.name}'s profile.`, 'info')}>View Profile <span aria-hidden="true">â€º</span></button>
               </article>
             ))}
           </section>
@@ -1037,7 +1793,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=300&fit=crop&q=80" alt="Your batch" />
             <div><span>Your Batch</span><h2>Class of {currentUser.batch_year}</h2></div>
             <p><Users size={18} /> 186 members</p>
-            <div><Calendar size={18} /><strong>20-Year Gala</strong><small>Dec 14, 2026 · Main Hall</small></div>
+            <div><Calendar size={18} /><strong>20-Year Gala</strong><small>Dec 14, 2026 Â· Main Hall</small></div>
             <h3>Batchmates</h3>
             {['Arjun Mehta', 'Priya Sharma', 'Rohan Das'].map((name, index) => <p key={name}><img src={`https://images.unsplash.com/photo-${index === 0 ? '1500648767791-00dcc994a43e' : index === 1 ? '1494790108377-be9c29b29330' : '1506794778202-cad84cf45f1d'}?w=60&h=60&fit=crop&q=80`} alt={name} /> {name}</p>)}
           </section>
@@ -1047,7 +1803,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         <main>
           <section className="batch-carousel-section">
             <div><h1>Explore Your Batch</h1><p>Connect with alumni from every graduating class</p></div>
-            <button>View all <span aria-hidden="true">›</span></button>
+            <button>View all <span aria-hidden="true">â€º</span></button>
             <div className="batch-class-row">
               {[1980, 1990, 2000, 2005].map((year, index) => (
                 <article key={year}>
@@ -1096,7 +1852,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           <aside>
             <section className="heritage-widget about-card">
               <h2>About</h2><p>Alumni profile details</p>
-              {[['Education', 'Heritage High School', `Attended 1991 - ${person.batch_year || currentUser.batch_year}`], ['Current Work', person.profession || currentUser.profession, `${person.company || currentUser.company} · Since 2014`], ['Location', `${person.city || currentUser.city}, ${person.country || currentUser.country}`, '']].map(([label, value, meta]) => (
+              {[['Education', 'Heritage High School', `Attended 1991 - ${person.batch_year || currentUser.batch_year}`], ['Current Work', person.profession || currentUser.profession, `${person.company || currentUser.company} Â· Since 2014`], ['Location', `${person.city || currentUser.city}, ${person.country || currentUser.country}`, '']].map(([label, value, meta]) => (
                 <div key={label}><BookOpen size={22} /><p><span>{label}</span><strong>{value}</strong><small>{meta}</small></p></div>
               ))}
             </section>
@@ -1105,7 +1861,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           <main>
             {profilePosts.slice(0, 3).concat(profilePosts.length ? [] : posts.slice(0, 2)).map((post: any, index) => (
               <article key={post.id || index} className="profile-post-card">
-                <header><img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} /><div><h3>{person.full_name || currentUser.full_name}</h3><p>{post.created_at ? formatTimeAgo(post.created_at) : '2 hours ago'} · Class of {person.batch_year || currentUser.batch_year}</p></div></header>
+                <header><img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} /><div><h3>{person.full_name || currentUser.full_name}</h3><p>{post.created_at ? formatTimeAgo(post.created_at) : '2 hours ago'} Â· Class of {person.batch_year || currentUser.batch_year}</p></div></header>
                 <p>{post.content || "Wonderful catching up with the batch at the centenary reunion this weekend. The bonds still feel like yesterday."}</p>
                 <img src={post.media_urls?.[0] || (index === 0 ? 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=520&fit=crop&q=80' : 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=520&fit=crop&q=80')} alt="Profile post" />
                 <footer><span><Heart size={19} /> {(post.likes || []).length || 128}</span><span><MessageSquare size={19} /> 34 Comments</span><span><Share2 size={19} /> Share</span></footer>
@@ -1181,7 +1937,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <div>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{profileUser.profile?.full_name || profileUser.full_name}</h2>
                     <p style={{ color: 'var(--accent-gold)', fontSize: '0.88rem', fontWeight: 600, marginTop: '4px' }}>
-                      Batch of {profileUser.profile?.batch_year || 2008} • {profileUser.profile?.house || "Vivekananda House"}
+                      Batch of {profileUser.profile?.batch_year || 2008} â€¢ {profileUser.profile?.house || "Vivekananda House"}
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '2px' }}>
                       {profileUser.profile?.profession_category || profileUser.profession} at {profileUser.profile?.company || profileUser.company}
@@ -1218,10 +1974,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <div style={{ marginTop: '16px' }}>
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Earned Badges</span>
                   <div className="gamified-badges-row">
-                    <div className="gamified-badge-item"><span className="gamified-badge-icon">🔥</span> Consistency Master</div>
-                    <div className="gamified-badge-item"><span className="gamified-badge-icon">🎓</span> Top Mentor</div>
-                    <div className="gamified-badge-item"><span className="gamified-badge-icon">💻</span> DSA Expert</div>
-                    <div className="gamified-badge-item"><span className="gamified-badge-icon">🏅</span> 30-Day Streak</div>
+                    <div className="gamified-badge-item"><span className="gamified-badge-icon">ðŸ”¥</span> Consistency Master</div>
+                    <div className="gamified-badge-item"><span className="gamified-badge-icon">ðŸŽ“</span> Top Mentor</div>
+                    <div className="gamified-badge-item"><span className="gamified-badge-icon">ðŸ’»</span> DSA Expert</div>
+                    <div className="gamified-badge-item"><span className="gamified-badge-icon">ðŸ…</span> 30-Day Streak</div>
                   </div>
                 </div>
               </div>
@@ -1367,12 +2123,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     {showMemoryAssistantMenu && (
                       <div style={{ position: 'absolute', right: 0, top: '28px', background: 'rgba(8, 26, 54, 0.95)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px', display: 'flex', flexDirection: 'column', gap: '4px', width: '220px', zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)' }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '4px 8px', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Select Template Prompt</div>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('caption')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>✨ Suggest Nostalgic Caption</button>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('story')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>✍️ Improve School Story</button>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('idea')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>💡 Generate Post Idea</button>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('reunion')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>✉️ Draft Reunion Invitation</button>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('event')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>📅 Generate Event Desc</button>
-                        <button type="button" onClick={() => handleMemoryAssistantClick('announcement')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>📢 Polishing Announcement</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('caption')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>âœ¨ Suggest Nostalgic Caption</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('story')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>âœï¸ Improve School Story</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('idea')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>ðŸ’¡ Generate Post Idea</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('reunion')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>âœ‰ï¸ Draft Reunion Invitation</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('event')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>ðŸ“… Generate Event Desc</button>
+                        <button type="button" onClick={() => handleMemoryAssistantClick('announcement')} style={{ background: 'none', border: 'none', color: 'white', textAlign: 'left', padding: '6px 8px', fontSize: '0.78rem', cursor: 'pointer', borderRadius: '6px', width: '100%', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,122,26,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>ðŸ“¢ Polishing Announcement</button>
                       </div>
                     )}
                   </div>
@@ -1384,12 +2140,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     onChange={(e) => setPostVisibility(e.target.value)}
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', padding: '4px 8px', fontSize: '0.74rem' }}
                   >
-                    <option value="Public">🌍 Public Alumni Network</option>
-                    <option value="Batch Only">👥 My Batch Only</option>
-                    <option value="School Community">🏫 School Community</option>
-                    <option value="Mentors Only">🤝 Mentors Only</option>
-                    <option value="Alumni Committee">🛡️ Alumni Committee</option>
-                    <option value="Private Draft">📝 Private Draft</option>
+                    <option value="Public">ðŸŒ Public Alumni Network</option>
+                    <option value="Batch Only">ðŸ‘¥ My Batch Only</option>
+                    <option value="School Community">ðŸ« School Community</option>
+                    <option value="Mentors Only">ðŸ¤ Mentors Only</option>
+                    <option value="Alumni Committee">ðŸ›¡ï¸ Alumni Committee</option>
+                    <option value="Private Draft">ðŸ“ Private Draft</option>
                   </select>
                 </div>
               </div>
@@ -1411,7 +2167,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.92rem' }}>{currentUser.full_name}</span>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.76rem' }}>
-                  {currentUser.profession || 'Alumnus'} {currentUser.company ? `• ${currentUser.company}` : ''}
+                  {currentUser.profession || 'Alumnus'} {currentUser.company ? `â€¢ ${currentUser.company}` : ''}
                 </span>
               </div>
             </div>
@@ -1430,13 +2186,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               {/* Suggester Helper pills */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingLeft: '4px' }}>
                 <button type="button" onClick={() => appendSuggestion('@' + (currentUser.full_name.split(' ')[0] || 'Alumni'))} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
-                  👤 @Mention Alumni
+                  ðŸ‘¤ @Mention Alumni
                 </button>
                 <button type="button" onClick={() => appendSuggestion('#ClassOf' + currentUser.batch_year)} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
-                  👥 #BatchTag
+                  ðŸ‘¥ #BatchTag
                 </button>
                 <button type="button" onClick={() => appendSuggestion('#SchoolMemories')} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
-                  🏫 #SchoolMemories
+                  ðŸ« #SchoolMemories
                 </button>
               </div>
             </div>
@@ -1446,22 +2202,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quick Actions</span>
               <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
                 <button type="button" onClick={() => { setPostMediaType('photo'); showToast("Memory photo mode active!", "info"); }} style={{ background: 'rgba(255, 122, 26, 0.08)', border: '1px solid rgba(255, 122, 26, 0.2)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.15)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.08)'}>
-                  📸 Add School Memory
+                  ðŸ“¸ Add School Memory
                 </button>
                 <button type="button" onClick={() => { setShowNostalgiaPanel(true); showToast("Targeting options expanded!", "info"); }} style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}>
-                  👥 Tag Batchmates
+                  ðŸ‘¥ Tag Batchmates
                 </button>
                 <button type="button" onClick={() => { setPostMediaType('event'); showToast("Reunion event creation active!", "info"); }} style={{ background: 'rgba(255, 122, 26, 0.08)', border: '1px solid rgba(255, 122, 26, 0.2)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.15)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.08)'}>
-                  📅 Create Reunion
+                  ðŸ“… Create Reunion
                 </button>
                 <button type="button" onClick={() => { setPostMediaType('achievement'); showToast("Achievement celebration active!", "info"); }} style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}>
-                  🎉 Celebrate Achievement
+                  ðŸŽ‰ Celebrate Achievement
                 </button>
                 <button type="button" onClick={() => { setPostMediaType('mentorship'); showToast("Mentorship pairing active!", "info"); }} style={{ background: 'rgba(255, 122, 26, 0.08)', border: '1px solid rgba(255, 122, 26, 0.2)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.15)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 122, 26, 0.08)'}>
-                  🤝 Offer Mentorship
+                  ðŸ¤ Offer Mentorship
                 </button>
                 <button type="button" onClick={() => { setPostMediaType('career'); showToast("Career milestone opportunity active!", "info"); }} style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'}>
-                  💼 Share Opportunity
+                  ðŸ’¼ Share Opportunity
                 </button>
               </div>
             </div>
@@ -1471,17 +2227,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Post Category</span>
               <div className="composer-media-tabs" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', overflowX: 'auto', paddingBottom: '4px' }}>
                 {[
-                  { id: 'text', label: 'Update', icon: '📝' },
-                  { id: 'photo', label: 'School Memory', icon: '📸' },
-                  { id: 'video', label: 'Video Clip', icon: '🎥' },
-                  { id: 'achievement', label: 'Achievement', icon: '🎉' },
-                  { id: 'career', label: 'Career Update', icon: '💼' },
-                  { id: 'mentorship', label: 'Mentorship', icon: '🤝' },
-                  { id: 'event', label: 'Reunion Event', icon: '📅' },
-                  { id: 'story', label: 'School Story', icon: '🏫' },
-                  { id: 'announcement', label: 'Announcement', icon: '📢' },
-                  { id: 'spotlight', label: 'Alumni Spotlight', icon: '💡' },
-                  { id: 'tribute', label: 'Tribute Post', icon: '❤️' }
+                  { id: 'text', label: 'Update', icon: 'ðŸ“' },
+                  { id: 'photo', label: 'School Memory', icon: 'ðŸ“¸' },
+                  { id: 'video', label: 'Video Clip', icon: 'ðŸŽ¥' },
+                  { id: 'achievement', label: 'Achievement', icon: 'ðŸŽ‰' },
+                  { id: 'career', label: 'Career Update', icon: 'ðŸ’¼' },
+                  { id: 'mentorship', label: 'Mentorship', icon: 'ðŸ¤' },
+                  { id: 'event', label: 'Reunion Event', icon: 'ðŸ“…' },
+                  { id: 'story', label: 'School Story', icon: 'ðŸ«' },
+                  { id: 'announcement', label: 'Announcement', icon: 'ðŸ“¢' },
+                  { id: 'spotlight', label: 'Alumni Spotlight', icon: 'ðŸ’¡' },
+                  { id: 'tribute', label: 'Tribute Post', icon: 'â¤ï¸' }
                 ].map(tab => (
                   <button 
                     key={tab.id}
@@ -1539,7 +2295,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '4px' }}>📤</span>
+                  <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '4px' }}>ðŸ“¤</span>
                   <span>Drag & Drop photos here, or click to add a school memory picture.</span>
                 </div>
 
@@ -1556,7 +2312,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             type="button" 
                             onClick={(e) => { e.stopPropagation(); setMediaImages(prev => prev.filter((_, idx) => idx !== i)); }} 
                             style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '9px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >✕</button>
+                          >âœ•</button>
                         </div>
                       ))}
                     </div>
@@ -1600,12 +2356,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <div>
                     <label style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Awarded Badge</label>
                     <select value={achievementBadge} onChange={(e) => setAchievementBadge(e.target.value)} style={{ width: '100%', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}>
-                      <option value="School Ambassador">🏵️ School Ambassador</option>
-                      <option value="Top Mentor">🤝 Top Mentor</option>
-                      <option value="Community Builder">🏗️ Community Builder</option>
-                      <option value="Career Guide">💼 Career Guide</option>
-                      <option value="Event Organizer">🎉 Event Organizer</option>
-                      <option value="Memory Keeper">📸 Memory Keeper</option>
+                      <option value="School Ambassador">ðŸµï¸ School Ambassador</option>
+                      <option value="Top Mentor">ðŸ¤ Top Mentor</option>
+                      <option value="Community Builder">ðŸ—ï¸ Community Builder</option>
+                      <option value="Career Guide">ðŸ’¼ Career Guide</option>
+                      <option value="Event Organizer">ðŸŽ‰ Event Organizer</option>
+                      <option value="Memory Keeper">ðŸ“¸ Memory Keeper</option>
                     </select>
                   </div>
                 </div>
@@ -1695,9 +2451,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <div>
                   <label style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Urgency Priority</label>
                   <select value={announcementUrgency} onChange={(e) => setAnnouncementUrgency(e.target.value)} style={{ width: '120px', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}>
-                    <option value="Urgent">🚨 Urgent</option>
-                    <option value="Important">🌟 Important</option>
-                    <option value="Standard">📌 Standard</option>
+                    <option value="Urgent">ðŸš¨ Urgent</option>
+                    <option value="Important">ðŸŒŸ Important</option>
+                    <option value="Standard">ðŸ“Œ Standard</option>
                   </select>
                 </div>
               </div>
@@ -1746,7 +2502,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: 0
                 }}
               >
-                <span>{showNostalgiaPanel ? '▼' : '▶'} Nostalgic Targeting & Extra Details</span>
+                <span>{showNostalgiaPanel ? 'â–¼' : 'â–¶'} Nostalgic Targeting & Extra Details</span>
               </button>
               
               {showNostalgiaPanel && (
@@ -1796,13 +2552,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     borderRadius: 'var(--border-radius-sm)', color: 'var(--text-primary)', padding: '6px 10px', fontSize: '0.8rem'
                   }}
                 >
-                  <option value="grp-all">📢 Alumni Feed</option>
-                  <option value={`grp-${currentUser.batch_year}`}>👥 Batch Community</option>
-                  <option value="grp-career">💼 Career Network</option>
-                  <option value="grp-mentorship">🤝 Mentorship Hub</option>
-                  <option value="grp-reunion">📅 Reunion Planning</option>
-                  <option value="grp-school">🏫 School Announcements</option>
-                  <option value="grp-business">💰 Business Network</option>
+                  <option value="grp-all">ðŸ“¢ Alumni Feed</option>
+                  <option value={`grp-${currentUser.batch_year}`}>ðŸ‘¥ Batch Community</option>
+                  <option value="grp-career">ðŸ’¼ Career Network</option>
+                  <option value="grp-mentorship">ðŸ¤ Mentorship Hub</option>
+                  <option value="grp-reunion">ðŸ“… Reunion Planning</option>
+                  <option value="grp-school">ðŸ« School Announcements</option>
+                  <option value="grp-business">ðŸ’° Business Network</option>
                 </select>
                 <button 
                   className="btn btn-primary btn-sm" 
@@ -2049,7 +2805,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     {post.post_type === 'notes' && post.media_urls && post.media_urls.length > 0 && (
                       <div style={{ padding: '0 20px 10px 20px' }}>
                         <div className="pdf-preview-box">
-                          <div className="pdf-icon-wrap">📄</div>
+                          <div className="pdf-icon-wrap">ðŸ“„</div>
                           <div className="pdf-details-col">
                             <span className="pdf-title-text">{post.media_urls[1] || 'Lecture notes'}</span>
                             <div className="pdf-meta-row">
@@ -2204,7 +2960,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'linear-gradient(135deg, rgba(255, 122, 26, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%)', border: '1.5px solid var(--accent-gold)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-glow)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.25rem' }}>🏆</span>
+                              <span style={{ fontSize: '1.25rem' }}>ðŸ†</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>{post.media_urls[0]}</span>
                             </div>
                             <span className="badge badge-admin" style={{ fontSize: '0.68rem', border: '1px solid var(--accent-gold)' }}>
@@ -2224,17 +2980,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'rgba(13, 35, 69, 0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.2rem' }}>💼</span>
+                              <span style={{ fontSize: '1.2rem' }}>ðŸ’¼</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>{post.media_urls[0]}</span>
                             </div>
                             {post.media_urls[3] === 'yes' && (
                               <span className="badge badge-role" style={{ fontSize: '0.68rem', background: 'rgba(104,211,145,0.15)', borderColor: 'var(--text-success)', color: 'var(--text-success)' }}>
-                                🟢 Referral Available
+                                ðŸŸ¢ Referral Available
                               </span>
                             )}
                           </div>
                           <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                            Company: {post.media_urls[1]} {post.media_urls[2] ? `• ${post.media_urls[2]}` : ''}
+                            Company: {post.media_urls[1]} {post.media_urls[2] ? `â€¢ ${post.media_urls[2]}` : ''}
                           </div>
                           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
                             Ex-student career milestone update. Click 'Connect' to request a referral or ask for guidance.
@@ -2249,7 +3005,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'rgba(255, 122, 26, 0.05)', border: '1px solid rgba(255, 122, 26, 0.3)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.2rem' }}>🤝</span>
+                              <span style={{ fontSize: '1.2rem' }}>ðŸ¤</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>Available for Mentorship</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem', color: 'var(--accent-gold)' }}>
@@ -2272,7 +3028,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'rgba(13, 35, 69, 0.7)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.25rem' }}>📅</span>
+                              <span style={{ fontSize: '1.25rem' }}>ðŸ“…</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>{post.media_urls[0]}</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem', background: 'var(--primary-gradient)', color: 'white' }}>
@@ -2280,8 +3036,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             </span>
                           </div>
                           <div style={{ fontSize: '0.82rem', color: 'var(--accent-gold)', display: 'flex', gap: '12px' }}>
-                            <span>🕒 {post.media_urls[1]}</span>
-                            {post.media_urls[2] && <span>📍 {post.media_urls[2]}</span>}
+                            <span>ðŸ•’ {post.media_urls[1]}</span>
+                            {post.media_urls[2] && <span>ðŸ“ {post.media_urls[2]}</span>}
                           </div>
                           <button className="btn btn-secondary btn-sm" onClick={() => showToast("RSVP Confirmed!", "success")} style={{ marginTop: '8px', alignSelf: 'flex-start', fontSize: '0.74rem', padding: '4px 12px' }}>
                             RSVP to Event
@@ -2296,7 +3052,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'rgba(12, 30, 54, 0.8)', border: '1px solid rgba(255, 122, 26, 0.25)', borderLeft: '4px solid var(--primary-color)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.2rem' }}>🏫</span>
+                              <span style={{ fontSize: '1.2rem' }}>ðŸ«</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-gold)' }}>Vidyapith Legacy Story</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem' }}>
@@ -2319,11 +3075,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'rgba(252, 129, 129, 0.05)', border: '1.5px solid var(--text-danger)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.2rem' }}>📢</span>
+                              <span style={{ fontSize: '1.2rem' }}>ðŸ“¢</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-danger)' }}>Alumni Announcement</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem', background: 'rgba(252, 129, 129, 0.15)', color: 'var(--text-danger)' }}>
-                              🚨 {post.media_urls[0]} Priority
+                              ðŸš¨ {post.media_urls[0]} Priority
                             </span>
                           </div>
                           <p style={{ fontSize: '0.82rem', color: 'white', margin: 0 }}>
@@ -2339,7 +3095,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'linear-gradient(135deg, rgba(255, 122, 26, 0.15) 0%, rgba(255, 199, 44, 0.15) 100%)', border: '1.5px solid var(--accent-gold)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 0 15px rgba(255, 199, 44, 0.1)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.25rem' }}>💡</span>
+                              <span style={{ fontSize: '1.25rem' }}>ðŸ’¡</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>Alumni Spotlight</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem', background: 'var(--accent-gold)', color: 'black', fontWeight: 700 }}>
@@ -2362,7 +3118,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div style={{ background: 'linear-gradient(135deg, rgba(13, 35, 69, 0.9) 0%, rgba(8, 26, 54, 0.9) 100%)', border: '1px solid rgba(255,255,255,0.1)', borderTop: '4px solid #9B51E0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '1.25rem' }}>❤️</span>
+                              <span style={{ fontSize: '1.25rem' }}>â¤ï¸</span>
                               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#B19FFB' }}>Tribute & Condolence</span>
                             </div>
                             <span className="badge" style={{ fontSize: '0.68rem', background: 'rgba(155, 81, 224, 0.2)', color: '#B19FFB', border: '1px solid rgba(155, 81, 224, 0.3)' }}>
@@ -2488,23 +3244,23 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
                             {extraNostalgia.memoryLocation && (
                               <span style={{ color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                                📍 {extraNostalgia.memoryLocation}
+                                ðŸ“ {extraNostalgia.memoryLocation}
                               </span>
                             )}
                             {extraNostalgia.targetBatchYear && (
                               <span style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                👥 Batch: Class of {extraNostalgia.targetBatchYear}
+                                ðŸ‘¥ Batch: Class of {extraNostalgia.targetBatchYear}
                               </span>
                             )}
                             {extraNostalgia.isReunionPost && (
                               <span style={{ background: 'rgba(255, 122, 26, 0.15)', color: 'var(--primary-color)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: 700 }}>
-                                🎉 Reunion meetup
+                                ðŸŽ‰ Reunion meetup
                               </span>
                             )}
                           </div>
                           {extraNostalgia.tagClassmates && (
                             <div style={{ color: 'var(--text-secondary)' }}>
-                              🏷️ Tagged Classmates: <span style={{ color: '#FF7A1A', fontWeight: 500 }}>{extraNostalgia.tagClassmates}</span>
+                              ðŸ·ï¸ Tagged Classmates: <span style={{ color: '#FF7A1A', fontWeight: 500 }}>{extraNostalgia.tagClassmates}</span>
                             </div>
                           )}
                           {extraNostalgia.nostalgicPhotoUrl && !post.media_urls.includes(extraNostalgia.nostalgicPhotoUrl) && (
@@ -2609,7 +3365,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         {/* Quick Emoji Popover Tray */}
                         {isEmojiOpen && (
                           <div className="emoji-tray-popover" onClick={(e) => e.stopPropagation()}>
-                            {['❤️', '🙌', '🔥', '👏', '😂', '😮', '😢', '😍'].map(emoji => (
+                            {['â¤ï¸', 'ðŸ™Œ', 'ðŸ”¥', 'ðŸ‘', 'ðŸ˜‚', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ˜'].map(emoji => (
                               <button
                                   key={emoji}
                                   type="button"
@@ -2702,7 +3458,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <img src={alumnus.profile_photo} alt={alumnus.full_name} style={{ width: '70px', height: '70px', borderRadius: '50%', border: '2px solid var(--primary-color)', objectFit: 'cover' }} />
                   <div>
                     <h4 style={{ color: 'white', fontSize: '0.95rem', fontWeight: 700 }} onClick={() => onViewProfile(alumnus.id)} className="clickable-name">{alumnus.full_name}</h4>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 600 }}>Batch of {alumnus.batch_year} • {alumnus.house}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 600 }}>Batch of {alumnus.batch_year} â€¢ {alumnus.house}</span>
                   </div>
                   {alumnus.profession && (
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>{alumnus.profession} at <strong style={{ color: 'white' }}>{alumnus.company || 'N/A'}</strong></p>
@@ -2882,7 +3638,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       <span style={{ fontWeight: 700, color: 'white' }}>Centenary Silver Cup Fundraiser</span>
                       <span style={{ color: 'var(--text-muted)' }}>3d ago</span>
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Our batch has set a target of ₹10,00,000 for the computer lab upgrade. Click Donations in the sidebar to contribute.</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Our batch has set a target of â‚¹10,00,000 for the computer lab upgrade. Click Donations in the sidebar to contribute.</p>
                   </div>
 
                   <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -3121,7 +3877,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     background: rsvpStatus === 'going' ? 'var(--primary-color)' : 'rgba(255,255,255,0.03)', color: 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer'
                   }}
                 >
-                  ✓ Going
+                  âœ“ Going
                 </button>
                 <button 
                   onClick={() => { setRsvpStatus('maybe'); showToast("RSVP set: Maybe.", "info"); }}
@@ -3139,11 +3895,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     background: rsvpStatus === 'no' ? 'var(--primary-color)' : 'rgba(255,255,255,0.03)', color: 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer'
                   }}
                 >
-                  ✕ Cannot Attend
+                  âœ• Cannot Attend
                 </button>
 
                 <div style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  Total RSVPs: <strong style={{ color: 'white' }}>{248 + (rsvpStatus === 'going' ? 1 : 0)} Attending</strong> • 42 Maybe
+                  Total RSVPs: <strong style={{ color: 'white' }}>{248 + (rsvpStatus === 'going' ? 1 : 0)} Attending</strong> â€¢ 42 Maybe
                 </div>
               </div>
             </div>
@@ -3153,7 +3909,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <h3 style={{ color: 'white', fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Expense & Contribution Ledger</span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--accent-gold)' }}>
-                    Total: ₹{reunionExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}
+                    Total: â‚¹{reunionExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}
                   </span>
                 </h3>
 
@@ -3164,7 +3920,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <strong style={{ color: 'white', display: 'block' }}>{exp.title}</strong>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Payer: {exp.payer}</span>
                       </div>
-                      <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>₹{exp.amount.toLocaleString()}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>â‚¹{exp.amount.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -3179,7 +3935,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     />
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input 
-                        type="number" placeholder="Amount (₹)" 
+                        type="number" placeholder="Amount (â‚¹)" 
                         value={expAmountInput} onChange={(e) => setExpAmountInput(e.target.value)}
                         style={{ flex: 1, padding: '8px 12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.8rem', width: '60%', boxSizing: 'border-box' }}
                       />
@@ -3369,7 +4125,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <h3 className="widget-title" style={{ fontSize: '0.88rem', color: 'var(--accent-gold)' }}>Birthdays & Arrivals</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🎂</span>
+                  <span style={{ fontSize: '1.2rem' }}>ðŸŽ‚</span>
                   <div>
                     <span style={{ fontWeight: 700, color: 'white', display: 'block' }}>Dr. Shubhendu Roy (Batch '85)</span>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Celebrating today! Send wishes</span>
@@ -3417,11 +4173,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
                 <div style={{ background: 'rgba(255,255,255,0.01)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.78rem' }}>
                   <strong style={{ color: 'white', display: 'block' }}>Senior SWE (React/Go)</strong>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Google • Bengaluru (Remote-friendly)</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Google â€¢ Bengaluru (Remote-friendly)</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.01)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.78rem' }}>
                   <strong style={{ color: 'white', display: 'block' }}>Product Manager</strong>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Microsoft • Hyderabad</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem' }}>Microsoft â€¢ Hyderabad</span>
                 </div>
               </div>
             </div>
@@ -3595,6 +4351,130 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         </div>
       )}
 
+      {/* -------------------- INSTAGRAM STORIES VIEWER OVERLAY -------------------- */}
+      {activeStoryGroupIndex !== null && (
+        <div className="story-viewer-overlay">
+          {/* Previous Button (for desktop nav) */}
+          <button 
+            className="story-nav-chevron prev" 
+            onClick={(e) => { e.stopPropagation(); handlePrevStory(); }}
+            title="Previous Story"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          <div className="story-viewer-container" tabIndex={0} onKeyDown={(e) => {
+            if (e.key === 'Escape') closeStoryViewer();
+            if (e.key === 'ArrowRight') handleNextStory();
+            if (e.key === 'ArrowLeft') handlePrevStory();
+          }}>
+            {/* Segmented Progress Bars at the top */}
+            <div className="story-progress-bar-wrap">
+              {getActiveStoriesList().map((item, idx) => {
+                let fillWidth = '0%';
+                if (idx < activeStoryIndex) fillWidth = '100%';
+                else if (idx === activeStoryIndex) fillWidth = `${storyProgress}%`;
+                
+                return (
+                  <div key={item.id} className="story-progress-track">
+                    <div 
+                      className={`story-progress-fill ${idx === activeStoryIndex ? 'active' : idx < activeStoryIndex ? 'filled' : ''}`} 
+                      style={{ width: fillWidth }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Header info */}
+            <div className="story-viewer-header">
+              <img 
+                src={activeStoryGroupIndex === -1 ? currentUser.profile_photo : stories[activeStoryGroupIndex].userAvatar} 
+                alt="Avatar" 
+              />
+              <div className="story-viewer-user-info">
+                <span className="story-viewer-name">
+                  {activeStoryGroupIndex === -1 ? currentUser.full_name : stories[activeStoryGroupIndex].userName}
+                </span>
+                <span className="story-viewer-batch-time">
+                  Class of {activeStoryGroupIndex === -1 ? currentUser.batch_year : stories[activeStoryGroupIndex].userBatch} Â· {getActiveStoriesList()[activeStoryIndex]?.timestamp}
+                </span>
+              </div>
+              
+              <button className="story-close-btn" onClick={closeStoryViewer} title="Close">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Interactive content section (pauses on click/hold, advances on click release) */}
+            <div 
+              className="story-viewer-content" 
+              onMouseDown={() => setStoryPaused(true)}
+              onMouseUp={() => setStoryPaused(false)}
+              onTouchStart={() => setStoryPaused(true)}
+              onTouchEnd={() => setStoryPaused(false)}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX < rect.width * 0.3) {
+                  handlePrevStory();
+                } else {
+                  handleNextStory();
+                }
+              }}
+            >
+              {(() => {
+                const activeStory = getActiveStoriesList()[activeStoryIndex];
+                if (!activeStory) return null;
+
+                if (activeStory.mediaUrl.startsWith('linear-gradient')) {
+                  return (
+                    <div className="story-text-only-bg" style={{ background: activeStory.mediaUrl }}>
+                      <p className="story-text-only-content">{activeStory.text}</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    <img src={activeStory.mediaUrl} className="story-media-image" alt="Story content" />
+                    {activeStory.text && (
+                      <div className="story-overlay-text">{activeStory.text}</div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Reply footer */}
+            <form className="story-viewer-footer" onSubmit={(e) => { e.preventDefault(); if (storyReplyText.trim()) { showToast('Reply sent!', 'success'); setStoryReplyText(''); } }} onClick={(e) => e.stopPropagation()}>
+              <input 
+                type="text" 
+                placeholder={`Reply to ${activeStoryGroupIndex === -1 ? 'yourself' : stories[activeStoryGroupIndex].userName.split(' ')[0]}...`}
+                value={storyReplyText}
+                onChange={(e) => setStoryReplyText(e.target.value)}
+                onFocus={() => setStoryPaused(true)}
+                onBlur={() => setStoryPaused(false)}
+                className="story-reply-input"
+              />
+              <button type="submit" className="story-send-btn" title="Send Reply">
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+
+          {/* Next Button (for desktop nav) */}
+          <button 
+            className="story-nav-chevron next" 
+            onClick={(e) => { e.stopPropagation(); handleNextStory(); }}
+            title="Next Story"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </div>
+      )}
+
+
       {/* -------------------- FLOATING MESSAGING HUB -------------------- */}
       <div 
         style={{
@@ -3616,7 +4496,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1rem' }}>💬</span>
+            <span style={{ fontSize: '1rem' }}>ðŸ’¬</span>
             <span style={{ fontWeight: 700, color: 'white', fontSize: '0.88rem' }}>Alumni Messaging Hub</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -3678,12 +4558,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       {msg.isVoice && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                           {playingVoiceNoteId === msg.id ? (
-                            <button onClick={() => setPlayingVoiceNoteId(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>⏸️</button>
+                            <button onClick={() => setPlayingVoiceNoteId(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>â¸ï¸</button>
                           ) : (
                             <button onClick={() => {
                               setPlayingVoiceNoteId(msg.id);
                               setTimeout(() => setPlayingVoiceNoteId(null), 3000);
-                            }} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>▶️</button>
+                            }} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>â–¶ï¸</button>
                           )}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} className="voice-waves">
                             {[2, 6, 4, 8, 3, 5, 2, 6].map((h, i) => (
@@ -3702,7 +4582,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         </div>
                       )}
                       <span style={{ display: 'block', fontSize: '0.62rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px', textAlign: 'right' }}>
-                        {msg.time} {isMe && '✓✓'}
+                        {msg.time} {isMe && 'âœ“âœ“'}
                       </span>
                     </div>
                   );
@@ -3717,7 +4597,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     const newMsg = {
                       id: 'msg-' + Math.random().toString(36).substr(2, 9),
                       senderId: currentUser.id,
-                      text: '🎤 Voice Note',
+                      text: 'ðŸŽ¤ Voice Note',
                       isVoice: true,
                       time: 'Just now'
                     };
@@ -3730,7 +4610,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   title="Record Voice Note"
                   style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer' }}
                 >
-                  🎙️
+                  ðŸŽ™ï¸
                 </button>
                 <button 
                   type="button" 
@@ -3738,7 +4618,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   title="Attach File"
                   style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer' }}
                 >
-                  📎
+                  ðŸ“Ž
                 </button>
                 <input 
                   type="text" 
@@ -3770,3 +4650,4 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     </div>
   );
 };
+

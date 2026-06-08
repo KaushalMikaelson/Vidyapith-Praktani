@@ -20,7 +20,11 @@ import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 
 // Icons
-import { Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { 
+  Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
+  CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles,
+  Search, BookOpen, Award, Briefcase, GraduationCap, Compass, Heart, Menu, ShieldCheck, ChevronRight
+} from 'lucide-react';
 
 interface ToastMsg {
   id: string;
@@ -63,6 +67,20 @@ export default function App() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
 
+  // Landing Page & Auth Modal States
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowAuthModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const showToast = (message: string, type: 'success' | 'danger' | 'info' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
@@ -94,6 +112,7 @@ export default function App() {
       showToast("Signed in successfully! Welcome back.", "success");
       setLoginEmail('');
       setLoginPass('');
+      setShowAuthModal(false);
     } else {
       showToast(res.error || "Incorrect login credentials.", "danger");
     }
@@ -127,6 +146,7 @@ export default function App() {
       setRegFile(null);
       setAuthTab('login');
       setRegStep(1);
+      setShowAuthModal(false);
     } else {
       showToast(res.error || "Registration failed.", "danger");
     }
@@ -226,443 +246,890 @@ export default function App() {
           {renderActiveScreen()}
         </Layout>
       ) : (
-        <div className="auth-page-wrapper">
-          {/* Ambient Animation Spheres */}
+        <div className="landing-root">
+          {/* Ambient Background Glows */}
           <div className="auth-ambient-glow">
             <div className="auth-sphere sphere-saffron"></div>
             <div className="auth-sphere sphere-gold"></div>
             <div className="auth-sphere sphere-navy"></div>
           </div>
 
-          <div className="auth-premium-container">
-            {/* Brand Logo */}
-            <div className="auth-brand-badge">
-              <img src="/logo.png" alt="Vidyapith Emblem" className="auth-brand-logo-image" />
-            </div>
-            <h2 className="auth-title-gradient">Vidyapith Connect</h2>
-            <p className="auth-subtitle">Ramakrishna Mission Vidyapith, Deoghar Alumni Platform</p>
+          {/* Sticky Navbar */}
+          <nav className="landing-nav">
+            <div className="landing-nav-container">
+              <a href="#" className="landing-nav-brand">
+                <img src="/logo.png" alt="Emblem" className="landing-nav-logo" />
+                <span className="landing-nav-title">Vidyapith Connect</span>
+              </a>
+              
+              <div className="landing-nav-links">
+                <a href="#heritage" className="landing-nav-link">Heritage</a>
+                <a href="#stats" className="landing-nav-link">Network</a>
+                <a href="#features" className="landing-nav-link">Features</a>
+                <a href="#houses" className="landing-nav-link">Houses</a>
+                <a href="#testimonials" className="landing-nav-link">Alumni Spotlight</a>
+              </div>
 
-            {/* Custom Premium Tabs */}
-            <div className="auth-premium-tabs">
-              <button 
-                className={`auth-premium-tab-btn ${authTab === 'login' ? 'active' : ''}`}
-                onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); }}
-              >
-                <Sparkles size={16} />
-                <span>Sign In</span>
+              <div className="landing-nav-actions">
+                <button onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} className="landing-btn-signin">Sign In</button>
+                <button onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); }} className="landing-btn-join">Join Portal</button>
+              </div>
+
+              <button className="landing-nav-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <button 
-                className={`auth-premium-tab-btn ${authTab === 'register' ? 'active' : ''}`}
-                onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); }}
-              >
-                <UserIcon size={16} />
-                <span>Register</span>
-              </button>
             </div>
 
-            {authTab === 'login' ? (
-              selectedLoginRole === null ? (
-                /* Role Selector before Sign In */
-                <div className="auth-role-selection-wrapper">
-                  <div style={{ textAlign: 'center', marginBottom: '16px', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    Select Your Portal Path
-                  </div>
-                  <div className="auth-role-grid">
-                    {/* Alumni Portal */}
-                    <div className="auth-role-card role-alumni">
-                      <div className="auth-role-icon-wrap">
-                        <Sparkles size={24} />
-                      </div>
-                      <h4 className="auth-role-title">Alumni</h4>
-                      <p className="auth-role-desc">Reconnect with classmates, share jobs, and mentor students.</p>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-enter"
-                        onClick={() => { setSelectedLoginRole('alumni'); setLoginEmail(''); setLoginPass(''); }}
-                      >
-                        <span>Sign In</span>
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
-
-                    {/* Student Portal */}
-                    <div className="auth-role-card role-student">
-                      <div className="auth-role-icon-wrap">
-                        <UserIcon size={24} />
-                      </div>
-                      <h4 className="auth-role-title">Student</h4>
-                      <p className="auth-role-desc">Seek career advice, find ex-student mentors, and explore jobs.</p>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-enter"
-                        onClick={() => { setSelectedLoginRole('student'); setLoginEmail(''); setLoginPass(''); }}
-                      >
-                        <span>Sign In</span>
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
-
-                    {/* Admin Portal */}
-                    <div className="auth-role-card role-admin">
-                      <div className="auth-role-icon-wrap">
-                        <Lock size={24} />
-                      </div>
-                      <h4 className="auth-role-title">Admin</h4>
-                      <p className="auth-role-desc">Verify certificate uploads, approve accounts, and manage platform.</p>
-                      <button 
-                        type="button" 
-                        className="auth-role-action-btn btn-enter"
-                        onClick={() => { setSelectedLoginRole('admin'); setLoginEmail(''); setLoginPass(''); }}
-                      >
-                        <span>Sign In</span>
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  </div>
+            {/* Mobile Nav Menu */}
+            {mobileMenuOpen && (
+              <div className="landing-nav-mobile-menu">
+                <a href="#heritage" className="landing-nav-mobile-link" onClick={() => setMobileMenuOpen(false)}>Heritage</a>
+                <a href="#stats" className="landing-nav-mobile-link" onClick={() => setMobileMenuOpen(false)}>Network</a>
+                <a href="#features" className="landing-nav-mobile-link" onClick={() => setMobileMenuOpen(false)}>Features</a>
+                <a href="#houses" className="landing-nav-mobile-link" onClick={() => setMobileMenuOpen(false)}>Houses</a>
+                <a href="#testimonials" className="landing-nav-mobile-link" onClick={() => setMobileMenuOpen(false)}>Alumni Spotlight</a>
+                <div className="landing-nav-mobile-actions">
+                  <button onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); setMobileMenuOpen(false); }} className="landing-btn-signin w-full">Sign In</button>
+                  <button onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); setMobileMenuOpen(false); }} className="landing-btn-join w-full">Join Portal</button>
                 </div>
-              ) : (
-                /* Role Specific Login Form */
-                <form onSubmit={handleLoginSubmit}>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <div className={`auth-role-context-badge ${selectedLoginRole}`}>
-                      {selectedLoginRole === 'admin' ? "🏵️" : selectedLoginRole === 'alumni' ? "👨‍🎓" : "🧑‍💻"}
-                      <span>{selectedLoginRole} Portal Login</span>
-                    </div>
-                  </div>
+              </div>
+            )}
+          </nav>
 
-                  {/* Email Address */}
-                  <div className="auth-input-block">
-                    <label className="auth-input-label">Email Address</label>
-                    <div className="auth-input-field-wrap">
-                      <Mail className="auth-input-icon" size={18} />
-                      <input 
-                        type="email" 
-                        placeholder={selectedLoginRole === 'admin' ? "swami@rkmv.org" : selectedLoginRole === 'alumni' ? "aurobindo@google.com" : "tatha.m@student.org"} 
-                        required 
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                      />
-                      {loginEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail) && (
-                        <div className="auth-field-valid-check">
-                          <Check size={16} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div className="auth-input-block">
-                    <label className="auth-input-label">Password</label>
-                    <div className="auth-input-field-wrap">
-                      <Lock className="auth-input-icon" size={18} />
-                      <input 
-                        type={showLoginPass ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        required 
-                        value={loginPass}
-                        onChange={(e) => setLoginPass(e.target.value)}
-                      />
-                      {loginPass.length >= 6 && (
-                        <div className="auth-field-valid-check" style={{ right: '42px' }}>
-                          <Check size={16} />
-                        </div>
-                      )}
-                      <button 
-                        type="button" 
-                        className="auth-pass-toggle-btn"
-                        onClick={() => setShowLoginPass(!showLoginPass)}
-                      >
-                        {showLoginPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Submit Action */}
-                  <button type="submit" className="btn btn-primary btn-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px', width: '100%', padding: '13px' }}>
-                    <span>Sign In</span>
+          {/* Hero Section */}
+          <header className="landing-hero" id="hero">
+            <div className="landing-hero-bg-wrapper">
+              <img src="/temple.jpg" alt="Universal Temple" className="landing-hero-bg" />
+              <div className="landing-hero-overlay"></div>
+            </div>
+            
+            <div className="landing-hero-content">
+              <div className="landing-hero-text-side">
+                <div className="landing-hero-badge">
+                  <Sparkles size={14} className="text-accent-gold" />
+                  <span>Over a Century of Spiritual & Academic Legacy</span>
+                </div>
+                <h1 className="landing-hero-title">
+                  The Eternal Legacy of <span className="text-gradient-saffron">Vidyapith</span>
+                </h1>
+                <p className="landing-hero-subtitle">
+                  Reconnecting generations of Ramakrishna Mission Vidyapith, Deoghar ex-students worldwide. Fostering a lifetime bond of brotherhood, character, and spiritual values.
+                </p>
+                <div className="landing-hero-actions">
+                  <button 
+                    onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} 
+                    className="landing-btn-primary-glowing"
+                  >
+                    <span>Enter Portal</span>
                     <ArrowRight size={18} />
                   </button>
+                  <a href="#features" className="landing-btn-secondary-glass">
+                    <span>Explore Features</span>
+                  </a>
+                </div>
+              </div>
 
-                  {/* Back to Roles Selector */}
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary btn-block" 
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px', width: '100%', padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white' }}
-                    onClick={() => setSelectedLoginRole(null)}
-                  >
-                    <ArrowLeft size={18} />
-                    <span>Back to Portal Roles</span>
-                  </button>
-                </form>
-              )
-            ) : (
-              <form onSubmit={handleRegisterSubmit}>
-                {/* 3-Step Wizard Stepper */}
-                <div className="auth-stepper-header">
-                  <div className="auth-stepper-line-bg"></div>
-                  <div 
-                    className="auth-stepper-line-active" 
-                    style={{ width: regStep === 1 ? '0%' : regStep === 2 ? '50%' : '100%' }}
-                  ></div>
-
-                  {/* Step 1 Node */}
-                  <div className={`auth-step-node ${regStep > 1 ? 'completed' : regStep === 1 ? 'active' : ''}`}>
-                    <div className="auth-step-circle">
-                      {regStep > 1 ? <Check size={16} /> : "1"}
-                    </div>
-                    <span className="auth-step-name">Credentials</span>
+              <div className="landing-hero-visual-side">
+                <div className="landing-hero-glass-card">
+                  <div className="glass-card-header">
+                    <div className="pulse-dot"></div>
+                    <span>Live Portal Status</span>
                   </div>
-
-                  {/* Step 2 Node */}
-                  <div className={`auth-step-node ${regStep > 2 ? 'completed' : regStep === 2 ? 'active' : ''}`}>
-                    <div className="auth-step-circle">
-                      {regStep > 2 ? <Check size={16} /> : "2"}
-                    </div>
-                    <span className="auth-step-name">Identity</span>
+                  <div className="glass-card-stat">
+                    <span className="stat-num">5,000+</span>
+                    <span className="stat-label">Alumni Registered</span>
                   </div>
+                  <div className="glass-card-list">
+                    <div className="glass-card-list-item">
+                      <GraduationCap size={16} className="text-saffron" />
+                      <span>75+ Graduating Batches active</span>
+                    </div>
+                    <div className="glass-card-list-item">
+                      <Compass size={16} className="text-blue" />
+                      <span>Global reach across 30+ countries</span>
+                    </div>
+                    <div className="glass-card-list-item">
+                      <Award size={16} className="text-gold" />
+                      <span>1,200+ Mentorship Sessions conducted</span>
+                    </div>
+                  </div>
+                  <div className="glass-card-footer">
+                    <button 
+                      onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); }} 
+                      className="landing-glass-card-btn"
+                    >
+                      Verify & Join Network
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
 
-                  {/* Step 3 Node */}
-                  <div className={`auth-step-node ${regStep === 3 ? 'active' : ''}`}>
-                    <div className="auth-step-circle">3</div>
-                    <span className="auth-step-name">Verify</span>
+          {/* Heritage Section */}
+          <section className="landing-heritage-section" id="heritage">
+            <div className="landing-container">
+              <div className="landing-heritage-grid">
+                <div className="landing-heritage-visual">
+                  <div className="emblem-glowing-wrapper">
+                    <img src="/logo.png" alt="Ramakrishna Mission Emblem" className="landing-heritage-emblem" />
+                    <div className="glowing-halo"></div>
+                  </div>
+                </div>
+                <div className="landing-heritage-text">
+                  <div className="section-label">Heritage & Foundation</div>
+                  <h2 className="section-title">Character Building Education</h2>
+                  <p className="section-desc">
+                    Founded in 1922, Ramakrishna Mission Vidyapith, Deoghar is a premier residential institution based on the man-making principles of Swami Vivekananda. The Universal Temple of Sri Ramakrishna stands as a beacon of harmony, spiritual strength, and academic excellence.
+                  </p>
+                  
+                  <div className="vivekananda-quote-card">
+                    <div className="quote-mark">“</div>
+                    <p className="quote-text">
+                      Education is the manifestation of the perfection already in man. We want that education by which character is formed, strength of mind is increased, the intellect is expanded, and by which one can stand on one's own feet.
+                    </p>
+                    <div className="quote-author">— Swami Vivekananda</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Stats Row Section */}
+          <section className="landing-stats-section" id="stats">
+            <div className="landing-container">
+              <div className="landing-stats-row">
+                <div className="landing-stat-card">
+                  <h3 className="stat-title">5,000+</h3>
+                  <p className="stat-desc">Ex-Students Worldwide</p>
+                </div>
+                <div className="landing-stat-card">
+                  <h3 className="stat-title">75+</h3>
+                  <p className="stat-desc">Alumni Batches</p>
+                </div>
+                <div className="landing-stat-card">
+                  <h3 className="stat-title">30+</h3>
+                  <p className="stat-desc">Countries Represented</p>
+                </div>
+                <div className="landing-stat-card">
+                  <h3 className="stat-title">1,200+</h3>
+                  <p className="stat-desc">Mentorship Connections</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className="landing-features-section" id="features">
+            <div className="landing-container">
+              <div className="section-header-centered">
+                <div className="section-label">Portal Experience</div>
+                <h2 className="section-title">Designed for Vidyapith Brotherhood</h2>
+                <p className="section-subtitle">
+                  Reconnecting classmates, offering guidance, and supporting the school's developmental projects.
+                </p>
+              </div>
+
+              <div className="landing-features-grid">
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-saffron-transparent">
+                    <UserIcon size={24} className="text-saffron" />
+                  </div>
+                  <h3 className="feature-card-title">Alumni Directory</h3>
+                  <p className="feature-card-desc">
+                    Find and filter batchmates by location, profession, industry, and student hostel (house).
+                  </p>
+                  <span className="feature-card-link">Explore Directory <ChevronRight size={14} /></span>
+                </div>
+
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-blue-transparent">
+                    <BookOpen size={24} className="text-blue" />
+                  </div>
+                  <h3 className="feature-card-title">Mentorship Platform</h3>
+                  <p className="feature-card-desc">
+                    Experienced ex-students provide direct career counseling, exam guides, and life guidance to younger students.
+                  </p>
+                  <span className="feature-card-link">View Mentors <ChevronRight size={14} /></span>
+                </div>
+
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-gold-transparent">
+                    <Briefcase size={24} className="text-gold" />
+                  </div>
+                  <h3 className="feature-card-title">Careers & Job Board</h3>
+                  <p className="feature-card-desc">
+                    Post job openings, request professional referrals, and discover career opportunities within the trusted alumni circle.
+                  </p>
+                  <span className="feature-card-link">Browse Jobs <ChevronRight size={14} /></span>
+                </div>
+
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-green-transparent">
+                    <Calendar size={24} className="text-green" />
+                  </div>
+                  <h3 className="feature-card-title">Events & Reunions</h3>
+                  <p className="feature-card-desc">
+                    Coordinate batch get-togethers, Maharaj-led virtual satsangs, and regional ex-student meetups.
+                  </p>
+                  <span className="feature-card-link">See Schedule <ChevronRight size={14} /></span>
+                </div>
+
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-purple-transparent">
+                    <Heart size={24} className="text-purple" />
+                  </div>
+                  <h3 className="feature-card-title">Philanthropy & Giving</h3>
+                  <p className="feature-card-desc">
+                    Contribute directly to student scholarship funds, healthcare units, and developmental projects of Vidyapith.
+                  </p>
+                  <span className="feature-card-link">Support Projects <ChevronRight size={14} /></span>
+                </div>
+
+                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                  <div className="feature-icon-wrap bg-pink-transparent">
+                    <Compass size={24} className="text-pink" />
+                  </div>
+                  <h3 className="feature-card-title">Stories & Archives</h3>
+                  <p className="feature-card-desc">
+                    Share text, image, and video stories. Save memories and look back at old campus snapshots.
+                  </p>
+                  <span className="feature-card-link">Enter Feed <ChevronRight size={14} /></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Houses Section */}
+          <section className="landing-houses-section" id="houses">
+            <div className="landing-container">
+              <div className="section-header-centered">
+                <div className="section-label">Campus Brotherhood</div>
+                <h2 className="section-title">The Legend of the Houses</h2>
+                <p className="section-subtitle">
+                  Every Vidyapith ex-student carries a lifelong allegiance to their hostel house. Hover to reveal the house colors.
+                </p>
+              </div>
+
+              <div className="landing-houses-grid">
+                <div className="house-glow-card house-vivekananda">
+                  <div className="house-color-strip bg-house-vivekananda"></div>
+                  <h4 className="house-card-name">Vivekananda House</h4>
+                  <p className="house-card-motto">Saffron - Strength & Renunciation</p>
+                  <p className="house-card-text">Characterized by the fiery spirit of service and fearlessness, carrying the standard of Swami Vivekananda's ideals.</p>
+                </div>
+
+                <div className="house-glow-card house-brahmananda">
+                  <div className="house-color-strip bg-house-brahmananda"></div>
+                  <h4 className="house-card-name">Brahmananda House</h4>
+                  <p className="house-card-motto">Blue - Calmness & Wisdom</p>
+                  <p className="house-card-text">Fostering deep contemplation, balanced excellence, and academic devotion, inspired by the first President of the Order.</p>
+                </div>
+
+                <div className="house-glow-card house-ramakrishnananda">
+                  <div className="house-color-strip bg-house-ramakrishnananda"></div>
+                  <h4 className="house-card-name">Ramakrishnananda House</h4>
+                  <p className="house-card-motto">Gold - Devotion & Steadfastness</p>
+                  <p className="house-card-text">Pioneering in dedication, ritual discipline, and selfless love, mirroring Swami Ramakrishnananda's unshakeable devotion.</p>
+                </div>
+
+                <div className="house-glow-card house-shardananda">
+                  <div className="house-color-strip bg-house-shardananda"></div>
+                  <h4 className="house-card-name">Saradananda House</h4>
+                  <p className="house-card-motto">Green - Harmony & Caring</p>
+                  <p className="house-card-text">Nurturing a supportive brotherhood, organizational diligence, and compassion, in honor of Holy Mother's trusted companion.</p>
+                </div>
+
+                <div className="house-glow-card house-premananda">
+                  <div className="house-color-strip bg-house-premananda"></div>
+                  <h4 className="house-card-name">Premananda House</h4>
+                  <p className="house-card-motto">Purple - Pure Love & Fellowship</p>
+                  <p className="house-card-text">Famous for sweet camaraderie, selfless care, and an open heart, inspired by Swami Premananda's motherly love.</p>
+                </div>
+
+                <div className="house-glow-card house-yogananda">
+                  <div className="house-color-strip bg-house-yogananda"></div>
+                  <h4 className="house-card-name">Yogananda House</h4>
+                  <p className="house-card-motto">Pink - Joy & Service</p>
+                  <p className="house-card-text">Cultivating joy in action, discipline, and aesthetic appreciation, carrying forward Swami Yogananda's noble ideals.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Testimonials Section */}
+          <section className="landing-testimonials-section" id="testimonials">
+            <div className="landing-container">
+              <div className="section-header-centered">
+                <div className="section-label">Alumni Spotlights</div>
+                <h2 className="section-title">Voices of the Brotherhood</h2>
+                <p className="section-subtitle">
+                  Hear from ex-students who are carrying the values of Vidyapith into the professional world.
+                </p>
+              </div>
+
+              <div className="landing-testimonials-grid">
+                <div className="landing-testimonial-card">
+                  <p className="testimonial-text">
+                    “Vidyapith formed the foundation of my moral character. Reconnecting with batchmates and guiding the current students through this portal is a matter of absolute privilege.”
+                  </p>
+                  <div className="testimonial-profile">
+                    <div className="testimonial-avatar-placeholder bg-house-vivekananda">AR</div>
+                    <div className="testimonial-info">
+                      <h4 className="testimonial-name">Dr. Abhijit Ray</h4>
+                      <p className="testimonial-title">Batch of 1988 • Vivekananda House</p>
+                      <p className="testimonial-subtitle">Chief Oncologist, Apollo Hospitals</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Step 1 Contents: Basic Info & Password */}
-                {regStep === 1 && (
-                  <div className="auth-step-container">
-                    {/* Full Name */}
-                    <div className="auth-input-block">
-                      <label className="auth-input-label">Full Name (As in School)</label>
-                      <div className="auth-input-field-wrap">
-                        <UserIcon className="auth-input-icon" size={18} />
-                        <input 
-                          type="text" 
-                          placeholder="Vivekananda Roy" 
-                          required 
-                          value={regName}
-                          onChange={(e) => setRegName(e.target.value)}
-                        />
-                        {regName.trim().length >= 3 && (
-                          <div className="auth-field-valid-check">
-                            <Check size={16} />
-                          </div>
-                        )}
-                      </div>
+                <div className="landing-testimonial-card">
+                  <p className="testimonial-text">
+                    “From the ashram life in Deoghar to leading engineering projects in California, the values of self-reliance and brotherhood taught at Vidyapith are my guiding lights.”
+                  </p>
+                  <div className="testimonial-profile">
+                    <div className="testimonial-avatar-placeholder bg-house-brahmananda">SS</div>
+                    <div className="testimonial-info">
+                      <h4 className="testimonial-name">Subhro Sen</h4>
+                      <p className="testimonial-title">Batch of 2004 • Brahmananda House</p>
+                      <p className="testimonial-subtitle">Principal Software Engineer, Google</p>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Email Address */}
-                    <div className="auth-input-block">
-                      <label className="auth-input-label">Email Address</label>
-                      <div className="auth-input-field-wrap">
-                        <Mail className="auth-input-icon" size={18} />
-                        <input 
-                          type="email" 
-                          placeholder="vivek.roy@example.com" 
-                          required 
-                          value={regEmail}
-                          onChange={(e) => setRegEmail(e.target.value)}
-                        />
-                        {regEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) && (
-                          <div className="auth-field-valid-check">
-                            <Check size={16} />
-                          </div>
-                        )}
-                      </div>
+                <div className="landing-testimonial-card">
+                  <p className="testimonial-text">
+                    “The mentorship program is outstanding. Offering mock interviews and civil service prep suggestions to the younger boys helps us keep the eternal torch of Vidyapith glowing.”
+                  </p>
+                  <div className="testimonial-profile">
+                    <div className="testimonial-avatar-placeholder bg-house-ramakrishnananda">MC</div>
+                    <div className="testimonial-info">
+                      <h4 className="testimonial-name">Manish Chatterjee, IAS</h4>
+                      <p className="testimonial-title">Batch of 1995 • Ramakrishnananda House</p>
+                      <p className="testimonial-subtitle">Joint Secretary, Ministry of Finance</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-                    {/* Create Password */}
-                    <div className="auth-input-block">
-                      <label className="auth-input-label">Create Password</label>
-                      <div className="auth-input-field-wrap">
-                        <Lock className="auth-input-icon" size={18} />
-                        <input 
-                          type={showRegPass ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          required 
-                          value={regPass}
-                          onChange={(e) => setRegPass(e.target.value)}
-                        />
-                        {regPass.length >= 6 && (
-                          <div className="auth-field-valid-check" style={{ right: '42px' }}>
-                            <Check size={16} />
+          {/* CTA Banner Section */}
+          <section className="landing-cta-section">
+            <div className="landing-container">
+              <div className="landing-cta-banner">
+                <div className="cta-banner-content">
+                  <h2 className="cta-title">Join the Vidyapith Connect Brotherhood</h2>
+                  <p className="cta-desc">
+                    Verify your ex-student certificate, find batchmates, share jobs, and give back to the ashram.
+                  </p>
+                  <div className="cta-actions">
+                    <button 
+                      onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); }} 
+                      className="landing-btn-primary-glowing-gold"
+                    >
+                      Verify & Join Now
+                    </button>
+                    <button 
+                      onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} 
+                      className="landing-btn-secondary-outline"
+                    >
+                      Sign In to Your Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Footer Section */}
+          <footer className="landing-footer">
+            <div className="landing-container">
+              <div className="landing-footer-grid">
+                <div className="landing-footer-brand">
+                  <div className="footer-logo-wrap">
+                    <img src="/logo.png" alt="Emblem" className="footer-logo" />
+                    <h4>Vidyapith Connect</h4>
+                  </div>
+                  <p className="footer-brand-desc">
+                    Ramakrishna Mission Vidyapith, Deoghar Alumni Platform. Fostering connections, mentorship, and support since 1922.
+                  </p>
+                </div>
+                <div className="landing-footer-links-col">
+                  <h5>Quick Links</h5>
+                  <a href="#hero">Back to Top</a>
+                  <a href="#heritage">Legacy & Heritage</a>
+                  <a href="#stats">Network Stats</a>
+                  <a href="#features">Features</a>
+                  <a href="#houses">Hostel Houses</a>
+                </div>
+                <div className="landing-footer-links-col">
+                  <h5>Institutional</h5>
+                  <a href="https://rkmvdeoghar.org" target="_blank" rel="noopener noreferrer">Official Website</a>
+                  <a href="https://belurmath.org" target="_blank" rel="noopener noreferrer">Ramakrishna Math & Mission</a>
+                  <a href="#heritage">Sri Ramakrishna Temple</a>
+                </div>
+                <div className="landing-footer-links-col">
+                  <h5>Contact</h5>
+                  <p>Ramakrishna Mission Vidyapith,</p>
+                  <p>Ramakrishna Nagar, Deoghar,</p>
+                  <p>Jharkhand - 814112, India</p>
+                  <p className="mt-2 text-white">praktani@rkmvdeoghar.org</p>
+                </div>
+              </div>
+              <div className="landing-footer-bottom">
+                <p>© 2026 Deoghar Vidyapith Praktani (Alumni) Association. All rights reserved.</p>
+                <div className="footer-bottom-badges">
+                  <span className="badge-item"><ShieldCheck size={14} /> Verified Ex-Students Only</span>
+                </div>
+              </div>
+            </div>
+          </footer>
+
+          {/* Authentication Modal Drawer Overlay */}
+          {showAuthModal && (
+            <div className="landing-auth-modal-overlay" onClick={() => setShowAuthModal(false)}>
+              <div className="landing-auth-modal-content" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  className="landing-auth-modal-close" 
+                  onClick={() => setShowAuthModal(false)}
+                  aria-label="Close form"
+                >
+                  <X size={24} />
+                </button>
+
+                <div className="auth-premium-container">
+                  {/* Brand Logo */}
+                  <div className="auth-brand-badge">
+                    <img src="/logo.png" alt="Vidyapith Emblem" className="auth-brand-logo-image" />
+                  </div>
+                  <h2 className="auth-title-gradient">Vidyapith Connect</h2>
+                  <p className="auth-subtitle">Ramakrishna Mission Vidyapith, Deoghar Alumni Platform</p>
+
+                  {/* Custom Premium Tabs */}
+                  <div className="auth-premium-tabs">
+                    <button 
+                      className={`auth-premium-tab-btn ${authTab === 'login' ? 'active' : ''}`}
+                      onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); }}
+                    >
+                      <Sparkles size={16} />
+                      <span>Sign In</span>
+                    </button>
+                    <button 
+                      className={`auth-premium-tab-btn ${authTab === 'register' ? 'active' : ''}`}
+                      onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); }}
+                    >
+                      <UserIcon size={16} />
+                      <span>Register</span>
+                    </button>
+                  </div>
+
+                  {authTab === 'login' ? (
+                    selectedLoginRole === null ? (
+                      /* Role Selector before Sign In */
+                      <div className="auth-role-selection-wrapper">
+                        <div style={{ textAlign: 'center', marginBottom: '16px', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          Select Your Portal Path
+                        </div>
+                        <div className="auth-role-grid">
+                          {/* Alumni Portal */}
+                          <div className="auth-role-card role-alumni">
+                            <div className="auth-role-icon-wrap">
+                              <Sparkles size={24} />
+                            </div>
+                            <h4 className="auth-role-title">Alumni</h4>
+                            <p className="auth-role-desc">Reconnect with classmates, share jobs, and mentor students.</p>
+                            <button 
+                              type="button" 
+                              className="auth-role-action-btn btn-enter"
+                              onClick={() => { setSelectedLoginRole('alumni'); setLoginEmail(''); setLoginPass(''); }}
+                            >
+                              <span>Sign In</span>
+                              <ArrowRight size={14} />
+                            </button>
                           </div>
-                        )}
+
+                          {/* Student Portal */}
+                          <div className="auth-role-card role-student">
+                            <div className="auth-role-icon-wrap">
+                              <UserIcon size={24} />
+                            </div>
+                            <h4 className="auth-role-title">Student</h4>
+                            <p className="auth-role-desc">Seek career advice, find ex-student mentors, and explore jobs.</p>
+                            <button 
+                              type="button" 
+                              className="auth-role-action-btn btn-enter"
+                              onClick={() => { setSelectedLoginRole('student'); setLoginEmail(''); setLoginPass(''); }}
+                            >
+                              <span>Sign In</span>
+                              <ArrowRight size={14} />
+                            </button>
+                          </div>
+
+                          {/* Admin Portal */}
+                          <div className="auth-role-card role-admin">
+                            <div className="auth-role-icon-wrap">
+                              <Lock size={24} />
+                            </div>
+                            <h4 className="auth-role-title">Admin</h4>
+                            <p className="auth-role-desc">Verify certificate uploads, approve accounts, and manage platform.</p>
+                            <button 
+                              type="button" 
+                              className="auth-role-action-btn btn-enter"
+                              onClick={() => { setSelectedLoginRole('admin'); setLoginEmail(''); setLoginPass(''); }}
+                            >
+                              <span>Sign In</span>
+                              <ArrowRight size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Role Specific Login Form */
+                      <form onSubmit={handleLoginSubmit}>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <div className={`auth-role-context-badge ${selectedLoginRole}`}>
+                            {selectedLoginRole === 'admin' ? "🏵️" : selectedLoginRole === 'alumni' ? "👨‍🎓" : "🧑‍💻"}
+                            <span>{selectedLoginRole} Portal Login</span>
+                          </div>
+                        </div>
+
+                        {/* Email Address */}
+                        <div className="auth-input-block">
+                          <label className="auth-input-label">Email Address</label>
+                          <div className="auth-input-field-wrap">
+                            <Mail className="auth-input-icon" size={18} />
+                            <input 
+                              type="email" 
+                              placeholder={selectedLoginRole === 'admin' ? "swami@rkmv.org" : selectedLoginRole === 'alumni' ? "aurobindo@google.com" : "tatha.m@student.org"} 
+                              required 
+                              value={loginEmail}
+                              onChange={(e) => setLoginEmail(e.target.value)}
+                            />
+                            {loginEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail) && (
+                              <div className="auth-field-valid-check">
+                                <Check size={16} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Password */}
+                        <div className="auth-input-block">
+                          <label className="auth-input-label">Password</label>
+                          <div className="auth-input-field-wrap">
+                            <Lock className="auth-input-icon" size={18} />
+                            <input 
+                              type={showLoginPass ? "text" : "password"} 
+                              placeholder="••••••••" 
+                              required 
+                              value={loginPass}
+                              onChange={(e) => setLoginPass(e.target.value)}
+                            />
+                            {loginPass.length >= 6 && (
+                              <div className="auth-field-valid-check" style={{ right: '42px' }}>
+                                <Check size={16} />
+                              </div>
+                            )}
+                            <button 
+                              type="button" 
+                              className="auth-pass-toggle-btn"
+                              onClick={() => setShowLoginPass(!showLoginPass)}
+                            >
+                              {showLoginPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Submit Action */}
+                        <button type="submit" className="btn btn-primary btn-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px', width: '100%', padding: '13px' }}>
+                          <span>Sign In</span>
+                          <ArrowRight size={18} />
+                        </button>
+
+                        {/* Back to Roles Selector */}
                         <button 
                           type="button" 
-                          className="auth-pass-toggle-btn"
-                          onClick={() => setShowRegPass(!showRegPass)}
+                          className="btn btn-secondary btn-block" 
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px', width: '100%', padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white' }}
+                          onClick={() => setSelectedLoginRole(null)}
                         >
-                          {showRegPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                          <ArrowLeft size={18} />
+                          <span>Back to Portal Roles</span>
                         </button>
-                      </div>
-                    </div>
+                      </form>
+                    )
+                  ) : (
+                    <form onSubmit={handleRegisterSubmit}>
+                      {/* 3-Step Wizard Stepper */}
+                      <div className="auth-stepper-header">
+                        <div className="auth-stepper-line-bg"></div>
+                        <div 
+                          className="auth-stepper-line-active" 
+                          style={{ width: regStep === 1 ? '0%' : regStep === 2 ? '50%' : '100%' }}
+                        ></div>
 
-                    {/* Navigation */}
-                    <div className="auth-btn-row">
-                      <button 
-                        type="button" 
-                        className="btn btn-primary btn-block"
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '13px' }}
-                        disabled={regName.trim().length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) || regPass.length < 6}
-                        onClick={() => setRegStep(2)}
-                      >
-                        <span>Continue to School Info</span>
-                        <ArrowRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2 Contents: Vidyapith Identity */}
-                {regStep === 2 && (
-                  <div className="auth-step-container">
-                    <div className="auth-form-row">
-                      {/* Batch Year */}
-                      <div className="auth-input-block">
-                        <label className="auth-input-label">Batch Year (Leaving Class X/XII)</label>
-                        <div className="auth-input-field-wrap">
-                          <Calendar className="auth-input-icon" size={18} />
-                          <input 
-                            type="number" 
-                            placeholder="2008" 
-                            min="1950" 
-                            max="2026" 
-                            required 
-                            value={regBatch}
-                            onChange={(e) => setRegBatch(e.target.value)}
-                          />
-                          {parseInt(regBatch) >= 1950 && parseInt(regBatch) <= 2026 && (
-                            <div className="auth-field-valid-check">
-                              <Check size={16} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* House Dropdown */}
-                      <div className="auth-input-block">
-                        <label className="auth-input-label">House (Hostel)</label>
-                        <div className="auth-input-field-wrap">
-                          <Home className="auth-input-icon" size={18} />
-                          <select 
-                            required 
-                            value={regHouse}
-                            onChange={(e) => setRegHouse(e.target.value)}
-                          >
-                            <option value="" disabled>Select House...</option>
-                            <option value="Vivekananda House">Vivekananda House</option>
-                            <option value="Brahmananda House">Brahmananda House</option>
-                            <option value="Ramakrishnananda House">Ramakrishnananda House</option>
-                            <option value="Shardananda House">Shardananda House</option>
-                            <option value="Premananda House">Premananda House</option>
-                            <option value="Yogananda House">Yogananda House</option>
-                          </select>
-                          {regHouse && (
-                            <div className="auth-field-valid-check" style={{ right: '28px' }}>
-                              <Check size={16} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Mobile Number */}
-                    <div className="auth-input-block">
-                      <label className="auth-input-label">Mobile Number</label>
-                      <div className="auth-input-field-wrap">
-                        <Phone className="auth-input-icon" size={18} />
-                        <input 
-                          type="tel" 
-                          placeholder="+91 9876543210" 
-                          required 
-                          value={regMobile}
-                          onChange={(e) => setRegMobile(e.target.value)}
-                        />
-                        {regMobile.trim().length >= 10 && (
-                          <div className="auth-field-valid-check">
-                            <Check size={16} />
+                        {/* Step 1 Node */}
+                        <div className={`auth-step-node ${regStep > 1 ? 'completed' : regStep === 1 ? 'active' : ''}`}>
+                          <div className="auth-step-circle">
+                            {regStep > 1 ? <Check size={16} /> : "1"}
                           </div>
-                        )}
+                          <span className="auth-step-name">Credentials</span>
+                        </div>
+
+                        {/* Step 2 Node */}
+                        <div className={`auth-step-node ${regStep > 2 ? 'completed' : regStep === 2 ? 'active' : ''}`}>
+                          <div className="auth-step-circle">
+                            {regStep > 2 ? <Check size={16} /> : "2"}
+                          </div>
+                          <span className="auth-step-name">Identity</span>
+                        </div>
+
+                        {/* Step 3 Node */}
+                        <div className={`auth-step-node ${regStep === 3 ? 'active' : ''}`}>
+                          <div className="auth-step-circle">3</div>
+                          <span className="auth-step-name">Verify</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Navigation */}
-                    <div className="auth-btn-row">
-                      <button 
-                        type="button" 
-                        className="btn btn-secondary"
-                        onClick={() => setRegStep(1)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                      >
-                        <ArrowLeft size={18} />
-                        <span>Back</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        className="btn btn-primary"
-                        style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                        disabled={!regBatch || !regHouse || regMobile.trim().length < 10}
-                        onClick={() => setRegStep(3)}
-                      >
-                        <span>Verify Certificate</span>
-                        <ArrowRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                      {/* Step 1 Contents: Basic Info & Password */}
+                      {regStep === 1 && (
+                        <div className="auth-step-container">
+                          {/* Full Name */}
+                          <div className="auth-input-block">
+                            <label className="auth-input-label">Full Name (As in School)</label>
+                            <div className="auth-input-field-wrap">
+                              <UserIcon className="auth-input-icon" size={18} />
+                              <input 
+                                type="text" 
+                                placeholder="Vivekananda Roy" 
+                                required 
+                                value={regName}
+                                onChange={(e) => setRegName(e.target.value)}
+                              />
+                              {regName.trim().length >= 3 && (
+                                <div className="auth-field-valid-check">
+                                  <Check size={16} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                {/* Step 3 Contents: Leaving Certificate / Marksheet Verification */}
-                {regStep === 3 && (
-                  <div className="auth-step-container">
-                    <div className="auth-input-block">
-                      <label className="auth-input-label">Upload Leaving Certificate / Marksheet</label>
-                      <div 
-                        className={`auth-upload-drag-box ${regFile ? 'has-file' : ''}`}
-                        onClick={() => document.getElementById('certInput')?.click()}
-                      >
-                        <UploadCloud size={32} style={{ color: regFile ? 'var(--text-success)' : 'var(--text-muted)', marginBottom: '8px', display: 'inline-block' }} />
-                        <span style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: regFile ? 'var(--text-success)' : 'white' }}>
-                          {regFile ? `📄 ${regFile.name}` : "Click to select certificate scan (PDF/JPG)"}
-                        </span>
-                        <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          This document is strictly used for school identity validation.
-                        </span>
-                        <input 
-                          type="file" 
-                          id="certInput" 
-                          accept="image/*,application/pdf" 
-                          style={{ display: 'none' }} 
-                          onChange={(e) => e.target.files && setRegFile(e.target.files[0])}
-                        />
-                      </div>
-                    </div>
+                          {/* Email Address */}
+                          <div className="auth-input-block">
+                            <label className="auth-input-label">Email Address</label>
+                            <div className="auth-input-field-wrap">
+                              <Mail className="auth-input-icon" size={18} />
+                              <input 
+                                type="email" 
+                                placeholder="vivek.roy@example.com" 
+                                required 
+                                value={regEmail}
+                                onChange={(e) => setRegEmail(e.target.value)}
+                              />
+                              {regEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) && (
+                                <div className="auth-field-valid-check">
+                                  <Check size={16} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                    {/* Navigation */}
-                    <div className="auth-btn-row">
-                      <button 
-                        type="button" 
-                        className="btn btn-secondary"
-                        onClick={() => setRegStep(2)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                      >
-                        <ArrowLeft size={18} />
-                        <span>Back</span>
-                      </button>
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary"
-                        style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                      >
-                        <span>Submit Registration</span>
-                        <CheckCircle size={18} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </form>
-            )}
-          </div>
+                          {/* Create Password */}
+                          <div className="auth-input-block">
+                            <label className="auth-input-label">Create Password</label>
+                            <div className="auth-input-field-wrap">
+                              <Lock className="auth-input-icon" size={18} />
+                              <input 
+                                type={showRegPass ? "text" : "password"} 
+                                placeholder="••••••••" 
+                                required 
+                                value={regPass}
+                                onChange={(e) => setRegPass(e.target.value)}
+                              />
+                              {regPass.length >= 6 && (
+                                <div className="auth-field-valid-check" style={{ right: '42px' }}>
+                                  <Check size={16} />
+                                </div>
+                              )}
+                              <button 
+                                type="button" 
+                                className="auth-pass-toggle-btn"
+                                onClick={() => setShowRegPass(!showRegPass)}
+                              >
+                                {showRegPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Navigation */}
+                          <div className="auth-btn-row">
+                            <button 
+                              type="button" 
+                              className="btn btn-primary btn-block"
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '13px' }}
+                              disabled={regName.trim().length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) || regPass.length < 6}
+                              onClick={() => setRegStep(2)}
+                            >
+                              <span>Continue to School Info</span>
+                              <ArrowRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Step 2 Contents: Vidyapith Identity */}
+                      {regStep === 2 && (
+                        <div className="auth-step-container">
+                          <div className="auth-form-row">
+                            {/* Batch Year */}
+                            <div className="auth-input-block">
+                              <label className="auth-input-label">Batch Year (Leaving Class X/XII)</label>
+                              <div className="auth-input-field-wrap">
+                                <Calendar className="auth-input-icon" size={18} />
+                                <input 
+                                  type="number" 
+                                  placeholder="2008" 
+                                  min="1950" 
+                                  max="2026" 
+                                  required 
+                                  value={regBatch}
+                                  onChange={(e) => setRegBatch(e.target.value)}
+                                />
+                                {parseInt(regBatch) >= 1950 && parseInt(regBatch) <= 2026 && (
+                                  <div className="auth-field-valid-check">
+                                    <Check size={16} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* House Dropdown */}
+                            <div className="auth-input-block">
+                              <label className="auth-input-label">House (Hostel)</label>
+                              <div className="auth-input-field-wrap">
+                                <Home className="auth-input-icon" size={18} />
+                                <select 
+                                  required 
+                                  value={regHouse}
+                                  onChange={(e) => setRegHouse(e.target.value)}
+                                >
+                                  <option value="" disabled>Select House...</option>
+                                  <option value="Vivekananda House">Vivekananda House</option>
+                                  <option value="Brahmananda House">Brahmananda House</option>
+                                  <option value="Ramakrishnananda House">Ramakrishnananda House</option>
+                                  <option value="Shardananda House">Shardananda House</option>
+                                  <option value="Premananda House">Premananda House</option>
+                                  <option value="Yogananda House">Yogananda House</option>
+                                </select>
+                                {regHouse && (
+                                  <div className="auth-field-valid-check" style={{ right: '28px' }}>
+                                    <Check size={16} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Mobile Number */}
+                          <div className="auth-input-block">
+                            <label className="auth-input-label">Mobile Number</label>
+                            <div className="auth-input-field-wrap">
+                              <Phone className="auth-input-icon" size={18} />
+                              <input 
+                                type="tel" 
+                                placeholder="+91 9876543210" 
+                                required 
+                                value={regMobile}
+                                onChange={(e) => setRegMobile(e.target.value)}
+                              />
+                              {regMobile.trim().length >= 10 && (
+                                <div className="auth-field-valid-check">
+                                  <Check size={16} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Navigation */}
+                          <div className="auth-btn-row">
+                            <button 
+                              type="button" 
+                              className="btn btn-secondary"
+                              onClick={() => setRegStep(1)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                              <ArrowLeft size={18} />
+                              <span>Back</span>
+                            </button>
+                            <button 
+                              type="button" 
+                              className="btn btn-primary"
+                              style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                              disabled={!regBatch || !regHouse || regMobile.trim().length < 10}
+                              onClick={() => setRegStep(3)}
+                            >
+                              <span>Verify Certificate</span>
+                              <ArrowRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Step 3 Contents: Leaving Certificate / Marksheet Verification */}
+                      {regStep === 3 && (
+                        <div className="auth-step-container">
+                          <div className="auth-input-block">
+                            <label className="auth-input-label">Upload Leaving Certificate / Marksheet</label>
+                            <div 
+                              className={`auth-upload-drag-box ${regFile ? 'has-file' : ''}`}
+                              onClick={() => document.getElementById('certInput')?.click()}
+                            >
+                              <UploadCloud size={32} style={{ color: regFile ? 'var(--text-success)' : 'var(--text-muted)', marginBottom: '8px', display: 'inline-block' }} />
+                              <span style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: regFile ? 'var(--text-success)' : 'white' }}>
+                                {regFile ? `📄 ${regFile.name}` : "Click to select certificate scan (PDF/JPG)"}
+                              </span>
+                              <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                This document is strictly used for school identity validation.
+                              </span>
+                              <input 
+                                type="file" 
+                                id="certInput" 
+                                accept="image/*,application/pdf" 
+                                style={{ display: 'none' }} 
+                                onChange={(e) => e.target.files && setRegFile(e.target.files[0])}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Navigation */}
+                          <div className="auth-btn-row">
+                            <button 
+                              type="button" 
+                              className="btn btn-secondary"
+                              onClick={() => setRegStep(2)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                              <ArrowLeft size={18} />
+                              <span>Back</span>
+                            </button>
+                            <button 
+                              type="submit" 
+                              className="btn btn-primary"
+                              style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                            >
+                              <span>Submit Registration</span>
+                              <CheckCircle size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
