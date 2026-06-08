@@ -236,7 +236,9 @@ export default function App() {
 
           <div className="auth-premium-container">
             {/* Brand Logo */}
-            <div className="auth-brand-badge">🏵️</div>
+            <div className="auth-brand-badge">
+              <img src="/logo.png" alt="Vidyapith Emblem" className="auth-brand-logo-image" />
+            </div>
             <h2 className="auth-title-gradient">Vidyapith Connect</h2>
             <p className="auth-subtitle">Ramakrishna Mission Vidyapith, Deoghar Alumni Platform</p>
 

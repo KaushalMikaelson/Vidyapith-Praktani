@@ -329,6 +329,13 @@
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.auth-brand-logo-image {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
 .auth-brand-badge::after {
   content: '';
   position: absolute;

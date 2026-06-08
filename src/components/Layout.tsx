@@ -91,7 +91,7 @@ export const Layout: React.FC<LayoutProps> = ({
           onClick={() => setActiveScreen('feed')}
           title="Vidyapith Alumni"
         >
-          🎓
+          <img src="/logo.png" alt="Vidyapith Logo" className="rail-logo-image" />
           <span className="rail-tooltip">Vidyapith</span>
         </button>
 
