@@ -81,6 +81,29 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Scroll Reveal Observer Effect
+  useEffect(() => {
+    if (currentUser) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    const elements = document.querySelectorAll('.reveal-on-scroll');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, [currentUser]);
+
   const showToast = (message: string, type: 'success' | 'danger' | 'info' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
@@ -254,8 +277,13 @@ export default function App() {
             <div className="auth-sphere sphere-navy"></div>
           </div>
 
+          {/* Decorative Section Glows */}
+          <div className="landing-background-glow glow-left"></div>
+          <div className="landing-background-glow glow-right"></div>
+          <div className="landing-background-glow glow-center"></div>
+
           {/* Sticky Navbar */}
-          <nav className="landing-nav">
+          <nav className="landing-nav anim-fade-in-down">
             <div className="landing-nav-container">
               <a href="#" className="landing-nav-brand">
                 <img src="/logo.png" alt="Emblem" className="landing-nav-logo" />
@@ -301,21 +329,29 @@ export default function App() {
             <div className="landing-hero-bg-wrapper">
               <img src="/temple.jpg" alt="Universal Temple" className="landing-hero-bg" />
               <div className="landing-hero-overlay"></div>
+              {/* Floating Sparkles & Particles */}
+              <div className="landing-particles">
+                <div className="landing-particle particle-1" style={{ left: '10%', animationDelay: '0s', animationDuration: '18s', width: '6px', height: '6px' }}></div>
+                <div className="landing-particle particle-2" style={{ left: '30%', animationDelay: '2s', animationDuration: '22s', width: '8px', height: '8px' }}></div>
+                <div className="landing-particle particle-3" style={{ left: '50%', animationDelay: '5s', animationDuration: '16s', width: '4px', height: '4px' }}></div>
+                <div className="landing-particle particle-4" style={{ left: '70%', animationDelay: '1s', animationDuration: '25s', width: '10px', height: '10px' }}></div>
+                <div className="landing-particle particle-5" style={{ left: '85%', animationDelay: '7s', animationDuration: '20s', width: '5px', height: '5px' }}></div>
+              </div>
             </div>
             
             <div className="landing-hero-content">
               <div className="landing-hero-text-side">
-                <div className="landing-hero-badge">
+                <div className="landing-hero-badge anim-fade-in-up anim-delay-100">
                   <Sparkles size={14} className="text-accent-gold" />
                   <span>Over a Century of Spiritual & Academic Legacy</span>
                 </div>
-                <h1 className="landing-hero-title">
+                <h1 className="landing-hero-title anim-fade-in-up anim-delay-200">
                   The Eternal Legacy of <span className="text-gradient-saffron">Vidyapith</span>
                 </h1>
-                <p className="landing-hero-subtitle">
+                <p className="landing-hero-subtitle anim-fade-in-up anim-delay-300">
                   Reconnecting generations of Ramakrishna Mission Vidyapith, Deoghar ex-students worldwide. Fostering a lifetime bond of brotherhood, character, and spiritual values.
                 </p>
-                <div className="landing-hero-actions">
+                <div className="landing-hero-actions anim-fade-in-up anim-delay-400">
                   <button 
                     onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} 
                     className="landing-btn-primary-glowing"
@@ -330,7 +366,7 @@ export default function App() {
               </div>
 
               <div className="landing-hero-visual-side">
-                <div className="landing-hero-glass-card">
+                <div className="landing-hero-glass-card anim-fade-in-up anim-delay-500">
                   <div className="glass-card-header">
                     <div className="pulse-dot"></div>
                     <span>Live Portal Status</span>
@@ -370,13 +406,13 @@ export default function App() {
           <section className="landing-heritage-section" id="heritage">
             <div className="landing-container">
               <div className="landing-heritage-grid">
-                <div className="landing-heritage-visual">
+                <div className="landing-heritage-visual reveal-on-scroll">
                   <div className="emblem-glowing-wrapper">
                     <img src="/logo.png" alt="Ramakrishna Mission Emblem" className="landing-heritage-emblem" />
                     <div className="glowing-halo"></div>
                   </div>
                 </div>
-                <div className="landing-heritage-text">
+                <div className="landing-heritage-text reveal-on-scroll stagger-1">
                   <div className="section-label">Heritage & Foundation</div>
                   <h2 className="section-title">Character Building Education</h2>
                   <p className="section-desc">
@@ -399,19 +435,19 @@ export default function App() {
           <section className="landing-stats-section" id="stats">
             <div className="landing-container">
               <div className="landing-stats-row">
-                <div className="landing-stat-card">
+                <div className="landing-stat-card reveal-on-scroll stagger-1">
                   <h3 className="stat-title">5,000+</h3>
                   <p className="stat-desc">Ex-Students Worldwide</p>
                 </div>
-                <div className="landing-stat-card">
+                <div className="landing-stat-card reveal-on-scroll stagger-2">
                   <h3 className="stat-title">75+</h3>
                   <p className="stat-desc">Alumni Batches</p>
                 </div>
-                <div className="landing-stat-card">
+                <div className="landing-stat-card reveal-on-scroll stagger-3">
                   <h3 className="stat-title">30+</h3>
                   <p className="stat-desc">Countries Represented</p>
                 </div>
-                <div className="landing-stat-card">
+                <div className="landing-stat-card reveal-on-scroll stagger-4">
                   <h3 className="stat-title">1,200+</h3>
                   <p className="stat-desc">Mentorship Connections</p>
                 </div>
@@ -422,7 +458,7 @@ export default function App() {
           {/* Features Section */}
           <section className="landing-features-section" id="features">
             <div className="landing-container">
-              <div className="section-header-centered">
+              <div className="section-header-centered reveal-on-scroll">
                 <div className="section-label">Portal Experience</div>
                 <h2 className="section-title">Designed for Vidyapith Brotherhood</h2>
                 <p className="section-subtitle">
@@ -431,7 +467,7 @@ export default function App() {
               </div>
 
               <div className="landing-features-grid">
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-1" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-saffron-transparent">
                     <UserIcon size={24} className="text-saffron" />
                   </div>
@@ -442,7 +478,7 @@ export default function App() {
                   <span className="feature-card-link">Explore Directory <ChevronRight size={14} /></span>
                 </div>
 
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-2" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-blue-transparent">
                     <BookOpen size={24} className="text-blue" />
                   </div>
@@ -453,7 +489,7 @@ export default function App() {
                   <span className="feature-card-link">View Mentors <ChevronRight size={14} /></span>
                 </div>
 
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-3" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-gold-transparent">
                     <Briefcase size={24} className="text-gold" />
                   </div>
@@ -464,7 +500,7 @@ export default function App() {
                   <span className="feature-card-link">Browse Jobs <ChevronRight size={14} /></span>
                 </div>
 
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-4" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-green-transparent">
                     <Calendar size={24} className="text-green" />
                   </div>
@@ -475,7 +511,7 @@ export default function App() {
                   <span className="feature-card-link">See Schedule <ChevronRight size={14} /></span>
                 </div>
 
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-5" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-purple-transparent">
                     <Heart size={24} className="text-purple" />
                   </div>
@@ -486,7 +522,7 @@ export default function App() {
                   <span className="feature-card-link">Support Projects <ChevronRight size={14} /></span>
                 </div>
 
-                <div className="landing-feature-card" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
+                <div className="landing-feature-card reveal-on-scroll stagger-6" onClick={() => { setAuthTab('login'); setShowAuthModal(true); }}>
                   <div className="feature-icon-wrap bg-pink-transparent">
                     <Compass size={24} className="text-pink" />
                   </div>
