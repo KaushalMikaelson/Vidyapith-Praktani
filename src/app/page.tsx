@@ -93,11 +93,18 @@ export default function App() {
           }
         });
       },
-      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
     );
 
     const elements = document.querySelectorAll('.reveal-on-scroll');
-    elements.forEach((el) => observer.observe(el));
+    elements.forEach((el) => {
+      // Immediately reveal elements already in the viewport
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('is-revealed');
+      }
+      observer.observe(el);
+    });
 
     return () => {
       elements.forEach((el) => observer.unobserve(el));
@@ -326,76 +333,82 @@ export default function App() {
 
           {/* Hero Section */}
           <header className="landing-hero" id="hero">
-            <div className="landing-hero-bg-wrapper">
-              <img src="/temple.jpg" alt="Universal Temple" className="landing-hero-bg" />
-              <div className="landing-hero-overlay"></div>
-              {/* Floating Sparkles & Particles */}
-              <div className="landing-particles">
-                <div className="landing-particle particle-1" style={{ left: '10%', animationDelay: '0s', animationDuration: '18s', width: '6px', height: '6px' }}></div>
-                <div className="landing-particle particle-2" style={{ left: '30%', animationDelay: '2s', animationDuration: '22s', width: '8px', height: '8px' }}></div>
-                <div className="landing-particle particle-3" style={{ left: '50%', animationDelay: '5s', animationDuration: '16s', width: '4px', height: '4px' }}></div>
-                <div className="landing-particle particle-4" style={{ left: '70%', animationDelay: '1s', animationDuration: '25s', width: '10px', height: '10px' }}></div>
-                <div className="landing-particle particle-5" style={{ left: '85%', animationDelay: '7s', animationDuration: '20s', width: '5px', height: '5px' }}></div>
-              </div>
+            {/* Floating Sparkles & Particles */}
+            <div className="landing-particles">
+              <div className="landing-particle particle-1" style={{ left: '10%', animationDelay: '0s', animationDuration: '18s', width: '6px', height: '6px' }}></div>
+              <div className="landing-particle particle-2" style={{ left: '30%', animationDelay: '2s', animationDuration: '22s', width: '8px', height: '8px' }}></div>
+              <div className="landing-particle particle-3" style={{ left: '50%', animationDelay: '5s', animationDuration: '16s', width: '4px', height: '4px' }}></div>
+              <div className="landing-particle particle-4" style={{ left: '70%', animationDelay: '1s', animationDuration: '25s', width: '10px', height: '10px' }}></div>
+              <div className="landing-particle particle-5" style={{ left: '85%', animationDelay: '7s', animationDuration: '20s', width: '5px', height: '5px' }}></div>
             </div>
-            
-            <div className="landing-hero-content">
-              <div className="landing-hero-text-side">
-                <div className="landing-hero-badge anim-fade-in-up anim-delay-100">
-                  <Sparkles size={14} className="text-accent-gold" />
-                  <span>Over a Century of Spiritual & Academic Legacy</span>
-                </div>
-                <h1 className="landing-hero-title anim-fade-in-up anim-delay-200">
-                  The Eternal Legacy of <span className="text-gradient-saffron">Vidyapith</span>
-                </h1>
-                <p className="landing-hero-subtitle anim-fade-in-up anim-delay-300">
-                  Reconnecting generations of Ramakrishna Mission Vidyapith, Deoghar ex-students worldwide. Fostering a lifetime bond of brotherhood, character, and spiritual values.
-                </p>
-                <div className="landing-hero-actions anim-fade-in-up anim-delay-400">
-                  <button 
-                    onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} 
-                    className="landing-btn-primary-glowing"
-                  >
-                    <span>Enter Portal</span>
-                    <ArrowRight size={18} />
-                  </button>
-                  <a href="#features" className="landing-btn-secondary-glass">
-                    <span>Explore Features</span>
-                  </a>
+
+            <div className="landing-hero-inner">
+              {/* Bright Temple Image Showcase Banner */}
+              <div className="landing-hero-banner-wrapper anim-banner-zoom-in">
+                <img src="/temple.jpg" alt="Universal Temple of Sri Ramakrishna" className="landing-hero-banner-img" />
+                <div className="landing-hero-banner-glass-overlay">
+                  <span>Universal Sri Ramakrishna Temple, Deoghar Vidyapith</span>
                 </div>
               </div>
-
-              <div className="landing-hero-visual-side">
-                <div className="landing-hero-glass-card anim-fade-in-up anim-delay-500">
-                  <div className="glass-card-header">
-                    <div className="pulse-dot"></div>
-                    <span>Live Portal Status</span>
+              
+              <div className="landing-hero-content below-image">
+                <div className="landing-hero-text-side">
+                  <div className="landing-hero-badge anim-fade-in-up anim-delay-100">
+                    <Sparkles size={14} className="text-accent-gold" />
+                    <span>Over a Century of Spiritual & Academic Legacy</span>
                   </div>
-                  <div className="glass-card-stat">
-                    <span className="stat-num">5,000+</span>
-                    <span className="stat-label">Alumni Registered</span>
-                  </div>
-                  <div className="glass-card-list">
-                    <div className="glass-card-list-item">
-                      <GraduationCap size={16} className="text-saffron" />
-                      <span>75+ Graduating Batches active</span>
-                    </div>
-                    <div className="glass-card-list-item">
-                      <Compass size={16} className="text-blue" />
-                      <span>Global reach across 30+ countries</span>
-                    </div>
-                    <div className="glass-card-list-item">
-                      <Award size={16} className="text-gold" />
-                      <span>1,200+ Mentorship Sessions conducted</span>
-                    </div>
-                  </div>
-                  <div className="glass-card-footer">
+                  <h1 className="landing-hero-title anim-fade-in-up anim-delay-200">
+                    The Eternal Legacy of <span className="text-gradient-saffron">Vidyapith</span>
+                  </h1>
+                  <p className="landing-hero-subtitle anim-fade-in-up anim-delay-300">
+                    Reconnecting generations of Ramakrishna Mission Vidyapith, Deoghar ex-students worldwide. Fostering a lifetime bond of brotherhood, character, and spiritual values.
+                  </p>
+                  <div className="landing-hero-actions anim-fade-in-up anim-delay-400">
                     <button 
-                      onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); }} 
-                      className="landing-glass-card-btn"
+                      onClick={() => { setAuthTab('login'); setSelectedLoginRole(null); setShowAuthModal(true); }} 
+                      className="landing-btn-primary-glowing"
                     >
-                      Verify & Join Network
+                      <span>Enter Portal</span>
+                      <ArrowRight size={18} />
                     </button>
+                    <a href="#features" className="landing-btn-secondary-glass">
+                      <span>Explore Features</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="landing-hero-visual-side">
+                  <div className="landing-hero-glass-card anim-fade-in-up anim-delay-500">
+                    <div className="glass-card-header">
+                      <div className="pulse-dot"></div>
+                      <span>Live Portal Status</span>
+                    </div>
+                    <div className="glass-card-stat">
+                      <span className="stat-num">5,000+</span>
+                      <span className="stat-label">Alumni Registered</span>
+                    </div>
+                    <div className="glass-card-list">
+                      <div className="glass-card-list-item">
+                        <GraduationCap size={16} className="text-saffron" />
+                        <span>75+ Graduating Batches active</span>
+                      </div>
+                      <div className="glass-card-list-item">
+                        <Compass size={16} className="text-blue" />
+                        <span>Global reach across 30+ countries</span>
+                      </div>
+                      <div className="glass-card-list-item">
+                        <Award size={16} className="text-gold" />
+                        <span>1,200+ Mentorship Sessions conducted</span>
+                      </div>
+                    </div>
+                    <div className="glass-card-footer">
+                      <button 
+                        onClick={() => { setAuthTab('register'); setSelectedLoginRole(null); setShowAuthModal(true); setRegStep(1); }} 
+                        className="landing-glass-card-btn"
+                      >
+                        Verify & Join Network
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
