@@ -5275,12 +5275,15 @@ textarea:focus {
 /* ─── Create Screen ─── */
 .create-type-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-  border-color: var(--primary-color) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.10);
 }
 
 .create-type-card:active {
   transform: translateY(-1px);
+}
+
+.create-type-card:hover button {
+  transform: scale(1.03);
 }
 
 /* ─────────────────────────────────────────────────────────

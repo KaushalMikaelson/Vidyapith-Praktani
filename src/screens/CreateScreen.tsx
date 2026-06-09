@@ -329,8 +329,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem',
           fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-          background: method === m ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-          color: 'white', border: method === m ? 'none' : '1px solid var(--border-color)',
+          background: method === m ? 'var(--primary-color)' : '#f0f0f0',
+          color: method === m ? '#fff' : 'var(--heritage-ink, #161719)',
+          border: method === m ? 'none' : '1px solid var(--heritage-line, #e7e7e7)',
         }}>
           {m === 'device' ? <Upload size={14} /> : <Link size={14} />}
           {m === 'device' ? 'From Device' : 'Paste URL'}
@@ -355,34 +356,122 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span>🏵️</span> Create a Publication
           </h1>
-          <p>Share updates, visual memories, videos or long-form insights with the Vidyapith family.</p>
+          <p>Share your story with the Vidyapith family</p>
         </div>
       </div>
 
       {/* ── Type Selection ── */}
       {!selectedType && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginTop: '32px' }}>
-          {[
-            { type: 'image' as PostType, icon: <Image size={30} />, color: 'var(--primary-color)', bg: 'rgba(255,122,26,0.1)', title: 'Share Images', desc: 'Upload photos from your device or paste URLs — campus snapshots, batch photos, archives.' },
-            { type: 'video' as PostType, icon: <Video size={30} />, color: 'var(--accent-gold)',    bg: 'rgba(212,175,55,0.1)', title: 'Share Video',  desc: 'Upload an MP4 from your device or embed a YouTube / direct MP4 link.' },
-            { type: 'article' as PostType, icon: <FileText size={30} />, color: '#48bb78',          bg: 'rgba(72,187,120,0.1)', title: 'Write Article', desc: 'Compose long-form thought-pieces, guides, career advice, or memoirs.' },
-          ].map(({ type, icon, color, bg, title, desc }) => (
-            <div key={type} className="glass-panel create-type-card" onClick={() => setSelectedType(type)}
-              style={{ padding: '40px 30px', textAlign: 'center', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', borderRadius: '16px', transition: 'transform 0.2s, box-shadow 0.2s' }}
-            >
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>{icon}</div>
-              <h3 style={{ color: 'white', fontSize: '1.2rem', margin: 0 }}>{title}</h3>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>{desc}</p>
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginTop: '32px' }}>
+            {[
+              { type: 'image' as PostType, icon: <Image size={28} />, gradient: 'linear-gradient(135deg, #f857a6, #ff5858)', title: 'Share Images', desc: 'Upload photos from your device or paste URLs — campus snapshots, batch photos, archives.', btnLabel: 'Add Images', btnIcon: <Upload size={14} /> },
+              { type: 'video' as PostType, icon: <Video size={28} />, gradient: 'linear-gradient(135deg, #a855f7, #6366f1)', title: 'Share Video', desc: 'Upload an MP4 from your device or embed a YouTube / direct MP4 link.', btnLabel: 'Add Video', btnIcon: <Play size={14} /> },
+              { type: 'article' as PostType, icon: <FileText size={28} />, gradient: 'linear-gradient(135deg, #f857a6, #c026d3)', title: 'Write Article', desc: 'Compose long-form thought-pieces, guides, career advice, or memoirs.', btnLabel: 'Start Writing', btnIcon: <FileText size={14} /> },
+            ].map(({ type, icon, gradient, title, desc, btnLabel, btnIcon }) => (
+              <div key={type} className="create-type-card" onClick={() => setSelectedType(type)}
+                style={{
+                  background: 'var(--heritage-card, #ffffff)',
+                  borderRadius: '16px',
+                  padding: '36px 28px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '14px',
+                  border: '1px solid var(--heritage-line, #e7e7e7)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+              >
+                <div style={{
+                  width: '60px', height: '60px', borderRadius: '50%',
+                  background: gradient,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                }}>{icon}</div>
+                <h3 style={{ color: 'var(--heritage-ink, #161719)', fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>{title}</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--heritage-muted, #77797d)', lineHeight: '1.6', margin: 0 }}>{desc}</p>
+                <button type="button" style={{
+                  background: gradient,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 24px',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '4px',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+                  transition: 'transform 0.15s',
+                }}>{btnIcon} {btnLabel}</button>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent Drafts Section */}
+          <div style={{
+            marginTop: '40px',
+            background: 'var(--heritage-card, #ffffff)',
+            borderRadius: '16px',
+            padding: '24px 28px',
+            border: '1px solid var(--heritage-line, #e7e7e7)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: '1rem'
+                }}>📂</span>
+                <div>
+                  <strong style={{ fontSize: '0.95rem', color: 'var(--heritage-ink, #161719)', display: 'block' }}>Recent Drafts</strong>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted, #77797d)' }}>Pick up where you left off</span>
+                </div>
+              </div>
+              <button type="button" onClick={() => showToast('Drafts feature coming soon!', 'info')} style={{
+                background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer',
+                fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px'
+              }}>View all ›</button>
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+              {[
+                { title: 'Batch of 2015 Reunion Photos', meta: 'Edited 2 hours ago · 24 images', gradient: 'linear-gradient(135deg, #f857a6, #ff5858)', emoji: '📸' },
+                { title: 'My Journey After Graduation', meta: 'Edited yesterday · Draft', gradient: 'linear-gradient(135deg, #a855f7, #c026d3)', emoji: '📝' },
+              ].map(draft => (
+                <div key={draft.title} onClick={() => showToast('Opening draft...', 'info')} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
+                  borderRadius: '12px', border: '1px solid var(--heritage-line, #e7e7e7)',
+                  cursor: 'pointer', transition: 'background 0.15s',
+                  background: 'rgba(0,0,0,0.01)'
+                }}>
+                  <span style={{
+                    width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
+                    background: draft.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: '1.1rem'
+                  }}>{draft.emoji}</span>
+                  <div>
+                    <strong style={{ fontSize: '0.88rem', color: 'var(--heritage-ink, #161719)', display: 'block' }}>{draft.title}</strong>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--heritage-muted, #77797d)' }}>{draft.meta}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {/* ── Create Form ── */}
       {selectedType && (
-        <form onSubmit={handlePublish} className="glass-panel" style={{ padding: '32px', marginTop: '24px', borderRadius: '16px' }}>
+        <form onSubmit={handlePublish} style={{ padding: '32px', marginTop: '24px', borderRadius: '16px', background: 'var(--heritage-card, #ffffff)', border: '1px solid var(--heritage-line, #e7e7e7)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
 
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-gold)', fontWeight: 700, marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-color)', fontWeight: 700, marginBottom: '24px' }}>
             Creating {selectedType === 'image' ? 'Image Post' : selectedType === 'video' ? 'Video Post' : 'Article'}
           </div>
 
@@ -390,26 +479,26 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {selectedType === 'article' && (
             <>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Article Title</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Article Title</label>
                 <input type="text" value={articleTitle} onChange={e => setArticleTitle(e.target.value)} required
                   placeholder="Enter a compelling title..."
-                  style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Category</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Category</label>
                   <select value={articleCategory} onChange={e => setArticleCategory(e.target.value)}
-                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', cursor: 'pointer', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', cursor: 'pointer', boxSizing: 'border-box' }}
                   >
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Cover Image URL (Optional)</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Cover Image URL (Optional)</label>
                   <input type="text" value={coverImageUrl} onChange={e => setCoverImageUrl(e.target.value)}
                     placeholder="https://..."
-                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -419,7 +508,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {/* ── Images ── */}
           {selectedType === 'image' && (
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '12px' }}>Add Images</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Add Images</label>
               <UploadMethodToggle method={imageUploadMethod} setMethod={setImageUploadMethod} />
 
               {imageUploadMethod === 'device' ? (
@@ -429,14 +518,14 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   onDrop={handleImageDrop}
                   onClick={() => imageInputRef.current?.click()}
                   style={{
-                    border: `2px dashed ${isDraggingImage ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                    border: `2px dashed ${isDraggingImage ? 'var(--primary-color)' : 'var(--heritage-line, #e7e7e7)'}`,
                     borderRadius: '12px', padding: '32px 24px', textAlign: 'center', cursor: 'pointer',
-                    background: isDraggingImage ? 'rgba(255,122,26,0.05)' : 'rgba(0,0,0,0.15)', transition: 'all 0.2s', marginBottom: '16px'
+                    background: isDraggingImage ? 'rgba(255,122,26,0.05)' : '#f8f8f8', transition: 'all 0.2s', marginBottom: '16px'
                   }}
                 >
                   <Upload size={28} style={{ color: 'var(--primary-color)', marginBottom: '8px' }} />
-                  <p style={{ color: 'white', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop</p>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>JPG, PNG, GIF, WebP · Max 10 images · Each uploaded to Cloudinary CDN</p>
+                  <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop</p>
+                  <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>JPG, PNG, GIF, WebP · Max 10 images · Each uploaded to Cloudinary CDN</p>
                   <input ref={imageInputRef} type="file" accept="image/*" multiple onChange={handleImageFileChange} style={{ display: 'none' }} />
                 </div>
               ) : (
@@ -444,7 +533,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   <input type="text" value={tempImageUrl} onChange={e => setTempImageUrl(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageUrl(); } }}
                     placeholder="Paste image URL..."
-                    style={{ flexGrow: 1, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem' }}
+                    style={{ flexGrow: 1, padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem' }}
                   />
                   <button type="button" onClick={handleAddImageUrl} className="heritage-primary-btn"
                     style={{ padding: '0 20px', borderRadius: '8px', flexShrink: 0, cursor: 'pointer' }}
@@ -456,7 +545,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
               {imageItems.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                   {imageItems.map((item, idx) => (
-                    <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${item.error ? '#fc8181' : 'var(--border-color)'}`, background: 'rgba(0,0,0,0.3)' }}>
+                    <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${item.error ? '#fc8181' : 'var(--heritage-line, #e7e7e7)'}`, background: '#f0f0f0' }}>
                       <img src={item.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: item.uploading ? 0.4 : 1, transition: 'opacity 0.3s' }} />
 
                       {/* Uploading spinner */}
@@ -498,19 +587,19 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
               {/* Image Layout Settings */}
               {imageItems.length > 0 && (
                 <div style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border-color)',
+                  background: '#fafafa',
+                  border: '1px solid var(--heritage-line, #e7e7e7)',
                   borderRadius: '12px',
                   padding: '20px',
                   marginBottom: '20px'
                 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', marginBottom: '14px', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary-color)', textTransform: 'uppercase', marginBottom: '14px', letterSpacing: '0.05em' }}>
                     🏵️ Image Layout & Fit Settings
                   </div>
                   
                   {/* Aspect Ratio */}
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Aspect Ratio</label>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--heritage-muted, #77797d)', marginBottom: '8px', fontWeight: 600 }}>Aspect Ratio</label>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {[
                         { id: 'original', label: 'Original / Auto' },
@@ -529,9 +618,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                             fontSize: '0.78rem',
                             fontWeight: 600,
                             cursor: 'pointer',
-                            background: aspectRatio === opt.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                            color: 'white',
-                            border: aspectRatio === opt.id ? 'none' : '1px solid var(--border-color)',
+                            background: aspectRatio === opt.id ? 'var(--primary-color)' : '#f0f0f0',
+                            color: aspectRatio === opt.id ? '#fff' : 'var(--heritage-ink, #161719)',
+                            border: aspectRatio === opt.id ? 'none' : '1px solid var(--heritage-line, #e7e7e7)',
                           }}
                         >
                           {opt.label}
@@ -542,7 +631,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
                   {/* Fit Mode */}
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Fit Mode</label>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--heritage-muted, #77797d)', marginBottom: '8px', fontWeight: 600 }}>Fit Mode</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {[
                         { id: 'contain', label: 'Fit (Show Whole Image)' },
@@ -558,9 +647,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                             fontSize: '0.78rem',
                             fontWeight: 600,
                             cursor: 'pointer',
-                            background: fitMode === opt.id ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
-                            color: 'white',
-                            border: fitMode === opt.id ? 'none' : '1px solid var(--border-color)',
+                            background: fitMode === opt.id ? 'var(--primary-color)' : '#f0f0f0',
+                            color: fitMode === opt.id ? '#fff' : 'var(--heritage-ink, #161719)',
+                            border: fitMode === opt.id ? 'none' : '1px solid var(--heritage-line, #e7e7e7)',
                           }}
                         >
                           {opt.label}
@@ -571,14 +660,14 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
                   {/* Live Preview of first image */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Live Feed Preview</label>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--heritage-muted, #77797d)', marginBottom: '8px', fontWeight: 600 }}>Live Feed Preview</label>
                     <div style={{
                       width: '100%',
                       maxWidth: '400px',
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      border: '1px solid var(--border-color)',
-                      background: '#09152c',
+                      border: '1px solid var(--heritage-line, #e7e7e7)',
+                      background: '#f0f0f0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -595,8 +684,8 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                         }}
                       />
                     </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
-                      {fitMode === 'contain' ? '💡 Full image will be displayed with dark bars on sides/top.' : '⚠️ Portions of your image may be cropped to fit the aspect ratio.'}
+                    <span style={{ fontSize: '0.72rem', color: 'var(--heritage-muted, #77797d)', display: 'block', marginTop: '6px' }}>
+                      {fitMode === 'contain' ? '💡 Full image will be displayed with letterbox bars.' : '⚠️ Portions of your image may be cropped to fit the aspect ratio.'}
                     </span>
                   </div>
                 </div>
@@ -604,9 +693,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
               {/* Tag classmates */}
               <div style={{ marginTop: '8px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tag Classmates (Optional)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Tag Classmates (Optional)</label>
                 <input type="text" value={tagClassmates} onChange={e => setTagClassmates(e.target.value)} placeholder="e.g. Aurobindo, Shubhendu"
-                  style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -615,7 +704,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {/* ── Video ── */}
           {selectedType === 'video' && (
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '12px' }}>Video</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Video</label>
               <UploadMethodToggle method={videoUploadMethod} setMethod={m => { setVideoUploadMethod(m); clearVideo(); setVideoUrl(''); }} />
 
               {videoUploadMethod === 'device' ? (
@@ -626,30 +715,30 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                     onDrop={handleVideoDrop}
                     onClick={() => videoInputRef.current?.click()}
                     style={{
-                      border: `2px dashed ${isDraggingVideo ? 'var(--accent-gold)' : 'var(--border-color)'}`,
+                      border: `2px dashed ${isDraggingVideo ? 'var(--primary-color)' : 'var(--heritage-line, #e7e7e7)'}`,
                       borderRadius: '12px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer',
-                      background: isDraggingVideo ? 'rgba(212,175,55,0.05)' : 'rgba(0,0,0,0.15)', transition: 'all 0.2s'
+                      background: isDraggingVideo ? 'rgba(255,122,26,0.05)' : '#f8f8f8', transition: 'all 0.2s'
                     }}
                   >
-                    <Play size={32} style={{ color: 'var(--accent-gold)', marginBottom: '10px' }} />
-                    <p style={{ color: 'white', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop a video</p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>MP4, MOV, WebM · Max 100 MB · Uploaded to Cloudinary CDN</p>
+                    <Play size={32} style={{ color: 'var(--primary-color)', marginBottom: '10px' }} />
+                    <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop a video</p>
+                    <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>MP4, MOV, WebM · Max 100 MB · Uploaded to Cloudinary CDN</p>
                     <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoFileChange} style={{ display: 'none' }} />
                   </div>
                 ) : (
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)' }}>
+                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--heritage-line, #e7e7e7)', background: '#f8f8f8' }}>
                     <video src={videoPreviewSrc} controls style={{ width: '100%', maxHeight: '280px', display: 'block', objectFit: 'contain' }} />
                     <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {videoUploading && <Loader2 size={16} style={{ color: 'var(--accent-gold)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
+                        {videoUploading && <Loader2 size={16} style={{ color: 'var(--primary-color)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
                         {!videoUploading && videoCloudUrl && <CheckCircle2 size={16} style={{ color: '#48bb78', flexShrink: 0 }} />}
                         {!videoUploading && videoUploadError && <AlertCircle size={16} style={{ color: '#fc8181', flexShrink: 0 }} />}
-                        <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--heritage-muted, #77797d)' }}>
                           {videoUploading ? 'Uploading to Cloudinary…' : videoUploadError ? `Error: ${videoUploadError}` : `✅ Ready · ${videoFileName}`}
                         </span>
                       </div>
                       <button type="button" onClick={clearVideo}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--heritage-muted, #77797d)', cursor: 'pointer', fontSize: '0.82rem' }}
                       ><X size={14} /> Remove</button>
                     </div>
                   </div>
@@ -658,10 +747,10 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                 <>
                   <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
                     placeholder="YouTube URL or direct MP4 URL..."
-                    style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
                   />
                   {videoUrl.trim() && getYouTubeId(videoUrl) && (
-                    <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                    <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--heritage-line, #e7e7e7)' }}>
                       <iframe src={`https://www.youtube.com/embed/${getYouTubeId(videoUrl)}`} style={{ width: '100%', height: '220px', border: 'none' }} title="YouTube Preview" allowFullScreen />
                     </div>
                   )}
@@ -672,27 +761,27 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
           {/* Caption / Body */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'white', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>
               {selectedType === 'article' ? 'Article Body' : 'Caption / Description'}
             </label>
             <textarea rows={selectedType === 'article' ? 12 : 5} value={content} onChange={e => setContent(e.target.value)}
               placeholder={selectedType === 'article' ? 'Write your article body here...' : "What's on your mind?..."}
               required
-              style={{ width: '100%', padding: '14px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', lineHeight: '1.6', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '14px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', lineHeight: '1.6', boxSizing: 'border-box' }}
             />
           </div>
 
           {/* Footer: Audience + Actions */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--heritage-line, #e7e7e7)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 600 }}>Publish to</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--heritage-muted, #77797d)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 600 }}>Publish to</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button type="button" onClick={() => setGroup('grp-all')}
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group === 'grp-all' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)', color: 'white', border: group === 'grp-all' ? 'none' : '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group === 'grp-all' ? 'var(--primary-color)' : '#f0f0f0', color: group === 'grp-all' ? '#fff' : 'var(--heritage-ink, #161719)', border: group === 'grp-all' ? 'none' : '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '6px', cursor: 'pointer' }}
                 ><Globe size={14} /> All Alumni</button>
                 {currentUser?.batch_year && (
                   <button type="button" onClick={() => setGroup(`grp-${currentUser.batch_year}`)}
-                    style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group !== 'grp-all' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)', color: 'white', border: group !== 'grp-all' ? 'none' : '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer' }}
+                    style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group !== 'grp-all' ? 'var(--primary-color)' : '#f0f0f0', color: group !== 'grp-all' ? '#fff' : 'var(--heritage-ink, #161719)', border: group !== 'grp-all' ? 'none' : '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '6px', cursor: 'pointer' }}
                   ><Users size={14} /> Class of {currentUser.batch_year}</button>
                 )}
               </div>
@@ -700,7 +789,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button type="button" onClick={() => setSelectedType(null)}
-                style={{ padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'white', background: 'none', cursor: 'pointer', fontSize: '0.95rem' }}
+                style={{ padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--heritage-line, #e7e7e7)', color: 'var(--heritage-ink, #161719)', background: '#fff', cursor: 'pointer', fontSize: '0.95rem' }}
               >Cancel</button>
               <button type="submit" disabled={isSubmitting} className="heritage-primary-btn"
                 style={{ padding: '12px 28px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', cursor: isSubmitting ? 'wait' : 'pointer', opacity: isSubmitting ? 0.8 : 1 }}
