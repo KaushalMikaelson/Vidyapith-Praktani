@@ -1718,62 +1718,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           )}
         </main>
 
-        {/* Right panel */}
-        <aside className="ig-feed-right">
-          <section className="heritage-widget reunion-widget">
-            {['Centenary Grand Gala', 'Batch 2012 Meetup', "Founders' Day Sports Meet"].map((title, index) => (
-              <div key={title} style={{ marginBottom: '14px' }}>
-                <strong style={{ fontSize: '0.88rem' }}>{title}</strong>
-                <p style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', margin: '2px 0 6px' }}>
-                  {index === 0 ? 'Dec 14, 2026 Â· 6:00 PM' : index === 1 ? 'Jan 20, 2027 Â· 4:00 PM' : 'Feb 08, 2027 Â· 9:00 AM'}
-                </p>
-                <button onClick={() => showToast(`RSVP noted for ${title}.`, 'success')} style={{ fontSize: '0.78rem', padding: '4px 12px' }}>RSVP</button>
-              </div>
-            ))}
-          </section>
-          <section className="spotlight-widget" style={{ marginTop: '20px' }}>
-            <h3><Star size={18} /> Alumni Spotlight</h3>
-            <img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=220&h=220&fit=crop&q=80" alt="Dr. Edward Whitman" />
-            <h2>Dr. Edward Whitman</h2>
-            <span>Class of 1968</span>
-            <p>A pioneering neurosurgeon and recipient of national honors.</p>
-            <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More â€º</button>
-          </section>
 
-          {/* Suggested Alumni */}
-          <section className="heritage-widget" style={{ marginTop: '20px' }}>
-            <h3><UserPlus size={18} /> Suggested Alumni</h3>
-            {discoverAlumni.filter(u => u.id !== currentUser?.id).slice(0, 4).map(sUser => (
-              <div key={sUser.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onViewProfile(sUser.id)}>
-                  <img src={sUser.profile_photo} alt={sUser.full_name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <div>
-                    <strong style={{ fontSize: '0.82rem', display: 'block' }}>{sUser.full_name}</strong>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--heritage-muted)' }}>Class of {sUser.batch_year || '—'}</span>
-                  </div>
-                </div>
-                <button onClick={() => handleConnectRequest(sUser.id, sUser.full_name)} style={{ fontSize: '0.72rem', padding: '4px 12px' }}>Connect</button>
-              </div>
-            ))}
-          </section>
-
-          {/* Upcoming Events */}
-          <section className="heritage-widget" style={{ marginTop: '20px' }}>
-            <h3><Calendar size={18} /> Upcoming Events</h3>
-            {[['Durga Puja Alumni Meet', 'Oct 18, 2026', 'Deoghar Campus'], ['Civil Services Seminar', 'Jun 15, 2026', 'Zoom Webinar']].map(([eTitle, eDate, eLoc]) => (
-              <div key={eTitle} style={{ marginBottom: '14px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '12px' }}>
-                <strong style={{ fontSize: '0.85rem', display: 'block' }}>{eTitle}</strong>
-                <span style={{ fontSize: '0.74rem', color: 'var(--heritage-muted)', display: 'block', marginTop: '2px' }}>📅 {eDate} · 📍 {eLoc}</span>
-                <button 
-                  onClick={() => showToast(`Registered for ${eTitle}!`, 'success')} 
-                  style={{ padding: '4px 10px', fontSize: '0.7rem', marginTop: '8px' }}
-                >
-                  Join Event
-                </button>
-              </div>
-            ))}
-          </section>
-        </aside>
       </div>
     );
   }
