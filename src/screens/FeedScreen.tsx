@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Post, Comment } from '../database/database';
 import { 
-  Send, Image, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, Bell,
+  Send, Image, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, Bell, Grid,
   Smile, Share2, Film, Link, FileText, Clipboard, Play, ExternalLink, 
   Sparkles, Check, ChevronLeft, ChevronRight, Download, BookOpen, Eye, 
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe
+  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
@@ -300,7 +300,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   const [profileUser, setProfileUser] = useState<any>(null);
   const [profilePosts, setProfilePosts] = useState<Post[]>([]);
-  const [profileTab, setProfileTab] = useState<'posts' | 'notes' | 'reels' | 'achievements' | 'saved'>('posts');
+  const [profileTab, setProfileTab] = useState<'posts' | 'reels' | 'connections' | 'network' | 'career' | 'achievements' | 'saved' | 'notes'>('posts');
+  const [selectedPostForModal, setSelectedPostForModal] = useState<any | null>(null);
+  const [selectedHighlightForGallery, setSelectedHighlightForGallery] = useState<string | null>(null);
+  const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
+  const [connectedUserIds, setConnectedUserIds] = useState<string[]>([]);
 
   // Profile Settings form states
   const [settingsBio, setSettingsBio] = useState(currentUser?.bio || '');
@@ -499,6 +503,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       setProfileUser(uDetails);
       const allPosts = await apiFetch(`/posts?groupId=grp-all`);
       setProfilePosts(allPosts.filter((p: any) => p.author_id === targetId));
+      const allAlumni = await apiFetch('/directory');
+      setDiscoverAlumni(allAlumni);
     } catch (err: any) {
       showToast("Failed to load profile details", "danger");
     }
@@ -1733,6 +1739,40 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <p>A pioneering neurosurgeon and recipient of national honors.</p>
             <button onClick={() => showToast('Opening full spotlight story.', 'info')}>Read More â€º</button>
           </section>
+
+          {/* Suggested Alumni */}
+          <section className="heritage-widget" style={{ marginTop: '20px' }}>
+            <h3><UserPlus size={18} /> Suggested Alumni</h3>
+            {discoverAlumni.filter(u => u.id !== currentUser?.id).slice(0, 4).map(sUser => (
+              <div key={sUser.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onViewProfile(sUser.id)}>
+                  <img src={sUser.profile_photo} alt={sUser.full_name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div>
+                    <strong style={{ fontSize: '0.82rem', display: 'block' }}>{sUser.full_name}</strong>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--heritage-muted)' }}>Class of {sUser.batch_year || '—'}</span>
+                  </div>
+                </div>
+                <button onClick={() => handleConnectRequest(sUser.id, sUser.full_name)} style={{ fontSize: '0.72rem', padding: '4px 12px' }}>Connect</button>
+              </div>
+            ))}
+          </section>
+
+          {/* Upcoming Events */}
+          <section className="heritage-widget" style={{ marginTop: '20px' }}>
+            <h3><Calendar size={18} /> Upcoming Events</h3>
+            {[['Durga Puja Alumni Meet', 'Oct 18, 2026', 'Deoghar Campus'], ['Civil Services Seminar', 'Jun 15, 2026', 'Zoom Webinar']].map(([eTitle, eDate, eLoc]) => (
+              <div key={eTitle} style={{ marginBottom: '14px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '12px' }}>
+                <strong style={{ fontSize: '0.85rem', display: 'block' }}>{eTitle}</strong>
+                <span style={{ fontSize: '0.74rem', color: 'var(--heritage-muted)', display: 'block', marginTop: '2px' }}>📅 {eDate} · 📍 {eLoc}</span>
+                <button 
+                  onClick={() => showToast(`Registered for ${eTitle}!`, 'success')} 
+                  style={{ padding: '4px 10px', fontSize: '0.7rem', marginTop: '8px' }}
+                >
+                  Join Event
+                </button>
+              </div>
+            ))}
+          </section>
         </aside>
       </div>
     );
@@ -1836,39 +1876,814 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   if (screenMode === 'profile' && profileUser) {
     const person = profileUser.profile || profileUser;
+
+    // Helper states for follow and connection actions
+    const isFollowed = followedUserIds.includes(profileUser.id);
+    const isConnected = connectedUserIds.includes(profileUser.id) || connectionSentIds.includes(profileUser.id);
+
+    const toggleFollow = () => {
+      if (isFollowed) {
+        setFollowedUserIds(prev => prev.filter(id => id !== profileUser.id));
+        showToast(`Unfollowed ${person.full_name}`, 'info');
+      } else {
+        setFollowedUserIds(prev => [...prev, profileUser.id]);
+        showToast(`Followed ${person.full_name}`, 'success');
+      }
+    };
+
+    const handleConnectClick = () => {
+      if (isConnected) {
+        showToast(`Already requested/connected with ${person.full_name}`, 'info');
+      } else {
+        handleConnectRequest(profileUser.id, person.full_name);
+        setConnectedUserIds(prev => [...prev, profileUser.id]);
+      }
+    };
+
+    // Special badges helper
+    const userBadges: { label: string; icon: string; color: string; border: string; textColor: string }[] = [];
+    if (profileUser.role === 'admin') {
+      userBadges.push({ label: 'Admin', icon: '🛡️', color: 'rgba(255, 122, 26, 0.1)', border: '1px solid rgba(255, 122, 26, 0.3)', textColor: 'var(--primary-color)' });
+    }
+    if (profileUser.verify_status === 'approved') {
+      userBadges.push({ label: 'Verified Alumni', icon: '✓', color: 'rgba(0, 149, 246, 0.1)', border: '1px solid rgba(0, 149, 246, 0.3)', textColor: '#0095f6' });
+    }
+    if (person.batch_year && person.batch_year <= 2005) {
+      userBadges.push({ label: 'Distinguished', icon: '🏆', color: 'rgba(212, 175, 55, 0.1)', border: '1px solid rgba(212, 175, 55, 0.3)', textColor: '#b38b10' });
+    }
+    if (person.profession && (person.profession.includes('Architect') || person.profession.includes('Consultant') || person.profession.includes('Officer') || person.profession.includes('Doctor'))) {
+      userBadges.push({ label: 'Mentor', icon: '💼', color: 'rgba(255, 122, 26, 0.15)', border: '1px solid rgba(255, 122, 26, 0.3)', textColor: '#FF7A1A' });
+    }
+    if (profileUser.email === 'aurobindo@google.com') {
+      userBadges.push({ label: 'Founder', icon: '🚀', color: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', textColor: '#8b5cf6' });
+      userBadges.push({ label: 'Speaker', icon: '🎤', color: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', textColor: '#3b82f6' });
+      userBadges.push({ label: 'Contributor', icon: '❤️', color: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', textColor: '#ec4899' });
+    }
+
+    // Circular Highlights configuration
+    const highlights = [
+      { id: 'education', label: '🎓 Education', emoji: '🎓', labelShort: 'Education' },
+      { id: 'achievements', label: '🏆 Achievements', emoji: '🏆', labelShort: 'Achievements' },
+      { id: 'reunion', label: '📸 Reunion', emoji: '📸', labelShort: 'Reunion' },
+      { id: 'career', label: '💼 Career', emoji: '💼', labelShort: 'Career' },
+      { id: 'events', label: '🎤 Events', emoji: '🎤', labelShort: 'Events' },
+      { id: 'travel', label: '🌍 Travel', emoji: '🌍', labelShort: 'Travel' },
+      { id: 'mentorship', label: '🤝 Mentorship', emoji: '🤝', labelShort: 'Mentorship' },
+    ];
+
+    const highlightGalleries = {
+      education: {
+        title: "🎓 Academic Journey",
+        desc: "Scholastic memories, high school years, and graduation events.",
+        images: [
+          "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      achievements: {
+        title: "🏆 Honors & Trophies",
+        desc: "Special awards, competitions, and scholastic achievements.",
+        images: [
+          "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1496469888073-80de7e9527c6?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      reunion: {
+        title: "📸 Campus Reunions",
+        desc: "Durga Puja gatherings, silver jubilee meetups, and batch dinners.",
+        images: [
+          "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      career: {
+        title: "💼 Professional Path",
+        desc: "Work milestones, office spaces, developer talks, and tech teams.",
+        images: [
+          "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      events: {
+        title: "🎤 Events & Keynotes",
+        desc: "Panel discussions, tech conferences, guest lectures, and webinars.",
+        images: [
+          "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      travel: {
+        title: "🌍 Global Journeys",
+        desc: "Travel, exploration, and alumni chapters across the globe.",
+        images: [
+          "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=600&fit=crop&q=80"
+        ]
+      },
+      mentorship: {
+        title: "🤝 Mentorship & Guidance",
+        desc: "Helping students, career advice sessions, mock interview prep.",
+        images: [
+          "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=600&h=600&fit=crop&q=80",
+          "https://images.unsplash.com/photo-1521791136368-1a869372658b?w=600&h=600&fit=crop&q=80"
+        ]
+      }
+    };
+
+    // Filter posts for Saved tab (from bookmarks stored in localStorage)
+    const savedPosts = posts.filter(p => bookmarks.includes(p.id));
+
+    // Connected users (connections tab mock data)
+    const activeConnections = discoverAlumni.filter(u => u.id !== profileUser.id).slice(0, 4);
+
     return (
-      <div className="heritage-page profile-redesign">
-        <section className="profile-cover-hero">
-          <img src="https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1500&h=380&fit=crop&q=80" alt="Campus" />
-        </section>
-        <section className="profile-head-card">
-          <img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} />
-          <div><h1>{person.full_name || currentUser.full_name}</h1><p><Briefcase size={17} /> {person.profession || currentUser.profession} <MapPin size={17} /> {person.city || currentUser.city}, {person.country || currentUser.country}</p></div>
-          <span>Class of {person.batch_year || currentUser.batch_year}</span>
-          <button><UserPlus size={18} /> Connect</button><button><MessageCircle size={18} /> Message</button><button><Plus size={18} /> Follow</button>
-        </section>
-        <nav className="profile-tabs"><button>Posts</button><button className="active">About</button><button>Batch Mates</button><button>Photos</button><button>Memories</button></nav>
-        <div className="profile-content-grid">
-          <aside>
-            <section className="heritage-widget about-card">
-              <h2>About</h2><p>Alumni profile details</p>
-              {[['Education', 'Heritage High School', `Attended 1991 - ${person.batch_year || currentUser.batch_year}`], ['Current Work', person.profession || currentUser.profession, `${person.company || currentUser.company} Â· Since 2014`], ['Location', `${person.city || currentUser.city}, ${person.country || currentUser.country}`, '']].map(([label, value, meta]) => (
-                <div key={label}><BookOpen size={22} /><p><span>{label}</span><strong>{value}</strong><small>{meta}</small></p></div>
-              ))}
-            </section>
-            <section className="heritage-widget social-card"><h2>Social Links</h2><p>linkedin.com/in/rajatmehra</p><p>rajatmehra.design</p><p>@rajat.builds</p></section>
-          </aside>
-          <main>
-            {profilePosts.slice(0, 3).concat(profilePosts.length ? [] : posts.slice(0, 2)).map((post: any, index) => (
-              <article key={post.id || index} className="profile-post-card">
-                <header><img src={person.profile_photo || currentUser.profile_photo} alt={person.full_name} /><div><h3>{person.full_name || currentUser.full_name}</h3><p>{post.created_at ? formatTimeAgo(post.created_at) : '2 hours ago'} Â· Class of {person.batch_year || currentUser.batch_year}</p></div></header>
-                <p>{post.content || "Wonderful catching up with the batch at the centenary reunion this weekend. The bonds still feel like yesterday."}</p>
-                <img src={post.media_urls?.[0] || (index === 0 ? 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=520&fit=crop&q=80' : 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=520&fit=crop&q=80')} alt="Profile post" />
-                <footer><span><Heart size={19} /> {(post.likes || []).length || 128}</span><span><MessageSquare size={19} /> 34 Comments</span><span><Share2 size={19} /> Share</span></footer>
-              </article>
+      <div className="profile-ig-layout">
+        {/* Main Content Area */}
+        <main className="profile-ig-left">
+          
+          {/* PROFILE HEADER */}
+          <div className="profile-ig-header">
+            <div className="profile-ig-avatar-wrapper">
+              <img 
+                src={person.profile_photo || currentUser.profile_photo} 
+                alt={person.full_name} 
+                className="profile-ig-avatar"
+              />
+            </div>
+
+            <div className="profile-ig-info">
+              <div className="profile-ig-name-row">
+                <h1 className="profile-ig-name">{person.full_name || currentUser.full_name}</h1>
+                
+                {/* Badges beside username */}
+                {userBadges.map((badge, idx) => (
+                  <span 
+                    key={idx} 
+                    className="badge-verified-alumni" 
+                    style={{ 
+                      background: badge.color, 
+                      border: badge.border, 
+                      color: badge.textColor,
+                      padding: '3px 10px',
+                      fontSize: '0.68rem'
+                    }}
+                    title={badge.label}
+                  >
+                    {badge.icon} {badge.label}
+                  </span>
+                ))}
+
+                <span className="badge-grad-batch">
+                  Class of {person.batch_year || currentUser.batch_year}
+                </span>
+              </div>
+
+              <div className="badge-professional-status">
+                <strong style={{ color: 'var(--heritage-ink, #111)' }}>
+                  {person.profession || currentUser.profession}
+                </strong>
+                {person.company && ` at ${person.company || currentUser.company}`}
+              </div>
+
+              <div className="badge-location">
+                <MapPin size={14} style={{ color: 'var(--primary-color)' }} /> 
+                {person.city || currentUser.city}, {person.country || currentUser.country || 'India'}
+              </div>
+
+              {/* Action buttons */}
+              <div className="profile-ig-actions">
+                {profileUser.id !== currentUser.id && (
+                  <>
+                    <button onClick={toggleFollow} className={isFollowed ? "btn-ig-secondary" : "btn-ig-primary"}>
+                      {isFollowed ? "✓ Following" : "Follow"}
+                    </button>
+                    <button onClick={handleConnectClick} className="btn-ig-secondary">
+                      {isConnected ? "✓ Connected" : "Connect"}
+                    </button>
+                  </>
+                )}
+                <button onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} className="btn-ig-secondary">
+                  <MessageCircle size={16} /> Message
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* STATISTICS ROW */}
+          <div className="profile-ig-stats">
+            <div className="profile-ig-stat-item">
+              <strong>{profilePosts.length}</strong> posts
+            </div>
+            <div className="profile-ig-stat-item">
+              <strong>{142 + (isFollowed ? 1 : 0)}</strong> followers
+            </div>
+            <div className="profile-ig-stat-item">
+              <strong>89</strong> following
+            </div>
+            <div className="profile-ig-stat-item">
+              <strong>{45 + (isConnected ? 1 : 0)}</strong> connections
+            </div>
+            <div className="profile-ig-stat-item">
+              <strong>{person.batch_year && person.batch_year <= 2005 ? 12 : 3}</strong> mentorships
+            </div>
+          </div>
+
+          {/* BIO SECTION */}
+          <div className="profile-ig-bio">
+            <div className="profile-ig-bio-text" style={{ fontStyle: 'italic', color: '#4a5568', paddingBottom: '8px' }}>
+              {person.bio || "Alumni Portal member contributing to Deoghar Vidyapith's development and spiritual ecosystem. Dedicated to character-building values."}
+            </div>
+            
+            {/* Website & Social Links */}
+            <div className="profile-ig-bio-links">
+              {person.linkedin_url && (
+                <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" className="profile-ig-bio-link">
+                  <Link size={13} /> LinkedIn Profile
+                </a>
+              )}
+              <a href="#" onClick={(e) => { e.preventDefault(); showToast("Opening alumni portfolio website...", "info"); }} className="profile-ig-bio-link">
+                <Globe size={13} /> {person.full_name ? person.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
+              </a>
+            </div>
+          </div>
+
+          {/* ALUMNI HIGHLIGHTS */}
+          <div className="profile-ig-highlights">
+            {highlights.map(h => (
+              <div 
+                key={h.id} 
+                className="profile-ig-highlight-item" 
+                onClick={() => setSelectedHighlightForGallery(h.id)}
+              >
+                <div className="profile-ig-highlight-ring">
+                  <div className="profile-ig-highlight-circle">
+                    {h.emoji}
+                  </div>
+                </div>
+                <span className="profile-ig-highlight-label">{h.labelShort}</span>
+              </div>
             ))}
-          </main>
-        </div>
+          </div>
+
+          {/* PROFILE NAVIGATION (TABS) */}
+          <div className="profile-ig-tabs">
+            <button 
+              onClick={() => setProfileTab('posts')} 
+              className={`profile-ig-tab-btn ${profileTab === 'posts' ? 'active' : ''}`}
+            >
+              <Grid size={14} /> Posts
+            </button>
+            <button 
+              onClick={() => setProfileTab('reels')} 
+              className={`profile-ig-tab-btn ${profileTab === 'reels' ? 'active' : ''}`}
+            >
+              <Film size={14} /> Reels
+            </button>
+            <button 
+              onClick={() => setProfileTab('connections')} 
+              className={`profile-ig-tab-btn ${profileTab === 'connections' ? 'active' : ''}`}
+            >
+              <Users size={14} /> Connections
+            </button>
+            <button 
+              onClick={() => setProfileTab('network')} 
+              className={`profile-ig-tab-btn ${profileTab === 'network' ? 'active' : ''}`}
+            >
+              <GraduationCap size={14} /> Network
+            </button>
+            <button 
+              onClick={() => setProfileTab('career')} 
+              className={`profile-ig-tab-btn ${profileTab === 'career' ? 'active' : ''}`}
+            >
+              <Briefcase size={14} /> Career
+            </button>
+            <button 
+              onClick={() => setProfileTab('achievements')} 
+              className={`profile-ig-tab-btn ${profileTab === 'achievements' ? 'active' : ''}`}
+            >
+              <Trophy size={14} /> Badges
+            </button>
+            <button 
+              onClick={() => setProfileTab('saved')} 
+              className={`profile-ig-tab-btn ${profileTab === 'saved' ? 'active' : ''}`}
+            >
+              <Bookmark size={14} /> Saved
+            </button>
+          </div>
+
+          {/* DYNAMIC TAB CONTENT */}
+          <div style={{ minHeight: '300px' }}>
+            
+            {/* Posts Tab */}
+            {profileTab === 'posts' && (
+              profilePosts.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem', padding: '40px 0' }}>No posts published yet.</p>
+              ) : (
+                <div className="profile-ig-post-grid">
+                  {profilePosts.map((post: any) => {
+                    const postImages = (post.media_urls || []).filter((url: string) => url && url.startsWith('http') && !url.startsWith('{'));
+                    const hasImage = postImages.length > 0;
+                    return (
+                      <div 
+                        key={post.id} 
+                        className="profile-ig-post-card" 
+                        onClick={() => setSelectedPostForModal(post)}
+                      >
+                        {hasImage ? (
+                          <img src={postImages[0]} alt="Post media" className="profile-ig-post-card-img" />
+                        ) : (
+                          <div className="profile-ig-post-card-text">
+                            <div className="profile-ig-post-card-text-header">
+                              <span>📝 Text Share</span>
+                              <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTimeAgo(post.created_at)}</span>
+                            </div>
+                            <p style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', margin: '8px 0 0 0', fontWeight: 500 }}>
+                              {post.content}
+                            </p>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--primary-color)', fontWeight: 700 }}>Read full post ›</span>
+                          </div>
+                        )}
+                        <div className="profile-ig-post-card-overlay">
+                          <span className="profile-ig-post-card-overlay-item">
+                            <Heart size={18} fill="white" /> {(post.likes || []).length || 0}
+                          </span>
+                          <span className="profile-ig-post-card-overlay-item">
+                            <MessageSquare size={18} fill="white" /> {((post as any).comments || []).length || 0}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+            {/* Reels Tab */}
+            {profileTab === 'reels' && (
+              (() => {
+                const reels = profilePosts.filter(p => p.post_type === 'video');
+                return reels.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem', padding: '40px 0' }}>No video reels uploaded yet.</p>
+                ) : (
+                  <div className="profile-ig-post-grid">
+                    {reels.map((post: any) => {
+                      const videoSrc = post.media_urls?.[0];
+                      return (
+                        <div 
+                          key={post.id} 
+                          className="profile-ig-post-card" 
+                          onClick={() => setSelectedPostForModal(post)}
+                        >
+                          <div className="profile-ig-post-card-text" style={{ background: '#000', color: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                            <Play size={40} style={{ color: 'var(--primary-color)', opacity: 0.8 }} />
+                            <span style={{ position: 'absolute', bottom: '12px', left: '12px', fontSize: '0.75rem', fontWeight: 600 }}>📹 Video Reel</span>
+                          </div>
+                          <div className="profile-ig-post-card-overlay">
+                            <span className="profile-ig-post-card-overlay-item">
+                              <Heart size={18} fill="white" /> {(post.likes || []).length || 0}
+                            </span>
+                            <span className="profile-ig-post-card-overlay-item">
+                              <MessageSquare size={18} fill="white" /> {((post as any).comments || []).length || 0}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            )}
+
+            {/* Connections Tab */}
+            {profileTab === 'connections' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {activeConnections.map(cUser => (
+                  <div 
+                    key={cUser.id} 
+                    className="profile-ig-widget" 
+                    style={{ display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}
+                    onClick={() => onViewProfile(cUser.id)}
+                  >
+                    <img src={cUser.profile_photo} alt={cUser.full_name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700 }}>{cUser.full_name}</h4>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.74rem', color: 'var(--text-muted)' }}>Class of {cUser.batch_year} · {cUser.profession}</p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); showToast(`Opening chat with ${cUser.full_name}`, 'info'); }}
+                      className="btn-ig-secondary" 
+                      style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                    >
+                      Chat
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Network Tab */}
+            {profileTab === 'network' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="profile-ig-widget">
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 700 }}>Monastic and School Leadership</h4>
+                  <p style={{ fontSize: '0.82rem', lineHeight: 1.5, color: '#4a5568' }}>
+                    Connected directly via Ramakrishna Mission Vidyapith, Deoghar administration team. Verified members can request academic logs and support services.
+                  </p>
+                  <div style={{ borderTop: '1px solid #efefef', paddingTop: '10px', marginTop: '10px', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Principal Secretary Office</span>
+                    <a href="mailto:deoghar@rkmm.org" style={{ color: 'var(--primary-color)', fontWeight: 600 }}>deoghar@rkmm.org</a>
+                  </div>
+                </div>
+                <div className="profile-ig-widget">
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 700 }}>Global RKMV Alumni Committee</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <span>President (Dr. E. Whitman)</span>
+                    <strong style={{ color: '#4a5568' }}>Class of 1968</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span>Secretary (A. Ghosh)</span>
+                    <strong style={{ color: '#4a5568' }}>Class of 1995</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Career Tab */}
+            {profileTab === 'career' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="profile-ig-widget">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--primary-color)', fontWeight: 700 }}>Career referral posting</span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Active</span>
+                  </div>
+                  <h4 style={{ margin: '8px 0 4px 0', fontSize: '1rem', fontWeight: 700 }}>Senior Software Architect - Google Cloud</h4>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#4a5568', lineHeight: 1.45 }}>
+                    Referring junior alumni developers for Kubernetes & distributed platforms teams. Mentoring eligible applicants who have 2+ years experience.
+                  </p>
+                  <button onClick={() => showToast("Job referral guidelines copied to message window.", "success")} className="btn-ig-secondary" style={{ marginTop: '12px', width: '100%', fontSize: '0.78rem' }}>Request Referral</button>
+                </div>
+              </div>
+            )}
+
+            {/* Achievements Tab */}
+            {profileTab === 'achievements' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="profile-ig-widget" style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '2rem' }}>🏆</span>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>Centenary Valedictorian Honor</h4>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Awarded for dedication towards building the Vidyapith Connect digital portal.</p>
+                  </div>
+                </div>
+                <div className="profile-ig-widget" style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '2rem' }}>🎓</span>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>Ramakrishna Order Scholarship Award</h4>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Received for scholastic excellence during high school boarding years.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Saved Tab */}
+            {profileTab === 'saved' && (
+              savedPosts.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem', padding: '40px 0' }}>No bookmarked posts found.</p>
+              ) : (
+                <div className="profile-ig-post-grid">
+                  {savedPosts.map((post: any) => {
+                    const postImages = (post.media_urls || []).filter((url: string) => url && url.startsWith('http') && !url.startsWith('{'));
+                    const hasImage = postImages.length > 0;
+                    return (
+                      <div 
+                        key={post.id} 
+                        className="profile-ig-post-card" 
+                        onClick={() => setSelectedPostForModal(post)}
+                      >
+                        {hasImage ? (
+                          <img src={postImages[0]} alt="Post media" className="profile-ig-post-card-img" />
+                        ) : (
+                          <div className="profile-ig-post-card-text">
+                            <div className="profile-ig-post-card-text-header">
+                              <span>📝 Text Share</span>
+                            </div>
+                            <p style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', margin: '8px 0 0 0', fontSize: '0.8rem' }}>
+                              {post.content}
+                            </p>
+                          </div>
+                        )}
+                        <div className="profile-ig-post-card-overlay">
+                          <span className="profile-ig-post-card-overlay-item">
+                            <Heart size={18} fill="white" /> {(post.likes || []).length || 0}
+                          </span>
+                          <span className="profile-ig-post-card-overlay-item">
+                            <MessageSquare size={18} fill="white" /> {((post as any).comments || []).length || 0}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+          </div>
+
+        </main>
+
+
+
+        {/* POST MODAL OVERLAY */}
+        {selectedPostForModal && (
+          (() => {
+            const author = selectedPostForModal.author || profileUser;
+            const postImages = (selectedPostForModal.media_urls || []).filter((url: string) => url && url.startsWith('http') && !url.startsWith('{'));
+            const isTextOnly = postImages.length === 0;
+            return (
+              <div 
+                className="modal-overlay" 
+                onClick={() => setSelectedPostForModal(null)}
+                style={{ zIndex: 1100 }}
+              >
+                <div 
+                  className="modal-card" 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ 
+                    maxWidth: '960px', 
+                    width: '90%', 
+                    padding: 0, 
+                    display: 'flex', 
+                    flexDirection: 'row', 
+                    borderRadius: '16px',
+                    height: '80vh',
+                    maxHeight: '650px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Left Column: Media */}
+                  <div style={{ 
+                    flex: '1.2', 
+                    background: '#000', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100%',
+                    position: 'relative'
+                  }}>
+                    {!isTextOnly ? (
+                      <img 
+                        src={postImages[0]} 
+                        alt="Post media" 
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                      />
+                    ) : (
+                      <div style={{
+                        padding: '40px',
+                        color: 'white',
+                        textAlign: 'center',
+                        background: 'linear-gradient(135deg, #FF7A1A 0%, #d4af37 100%)',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        fontWeight: 600,
+                        lineHeight: 1.6
+                      }}>
+                        "{selectedPostForModal.content}"
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Author, comments, input */}
+                  <div style={{ 
+                    flex: '1', 
+                    background: '#fff', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    height: '100%',
+                    color: '#111',
+                    borderLeft: '1px solid #efefef'
+                  }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', borderBottom: '1px solid #efefef' }}>
+                      <img src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700 }}>{author.full_name || 'Vidyapith Alumnus'}</h4>
+                        <span style={{ fontSize: '0.74rem', color: '#8e8e8e' }}>Class of {author.batch_year || '—'}</span>
+                      </div>
+                      <button onClick={handleConnectClick} className="btn-ig-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
+                        {isConnected ? "✓ Connected" : "Connect"}
+                      </button>
+                    </div>
+
+                    {/* Scrollable Comments/Content */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+                      {/* Caption */}
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                        <img src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <div>
+                          <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.45 }}>
+                            <strong style={{ marginRight: '6px' }}>{author.full_name}</strong>
+                            {selectedPostForModal.content}
+                          </p>
+                          <span style={{ fontSize: '0.72rem', color: '#8e8e8e', display: 'block', marginTop: '4px' }}>
+                            {formatTimeAgo(selectedPostForModal.created_at)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div style={{ height: '1px', background: '#efefef', margin: '14px 0' }} />
+
+                      {/* Comments list */}
+                      {((selectedPostForModal as any).comments || []).length === 0 ? (
+                        <p style={{ textAlign: 'center', color: '#8e8e8e', fontSize: '0.8rem', marginTop: '20px' }}>No comments yet. Be the first to share your thoughts!</p>
+                      ) : (
+                        (selectedPostForModal as any).comments.map((comment: any, cIdx: number) => {
+                          const commentAuthor = comment.author || { full_name: "Alumnus", profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80", batch_year: 2012 };
+                          return (
+                            <div key={cIdx} style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+                              <img src={commentAuthor.profile_photo} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                              <div>
+                                <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.4 }}>
+                                  <strong style={{ marginRight: '6px' }}>{commentAuthor.full_name}</strong>
+                                  {comment.content}
+                                </p>
+                                <span style={{ fontSize: '0.68rem', color: '#8e8e8e', display: 'block', marginTop: '2px' }}>
+                                  {formatTimeAgo(comment.created_at || new Date().toISOString())}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer stats & Actions */}
+                    <div style={{ padding: '12px 16px', borderTop: '1px solid #efefef', background: '#fafafa' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <Heart 
+                            size={20} 
+                            style={{ cursor: 'pointer', color: (selectedPostForModal.likes || []).includes(currentUser.id) ? '#e0245e' : 'inherit' }}
+                            fill={(selectedPostForModal.likes || []).includes(currentUser.id) ? '#e0245e' : 'none'}
+                            onClick={() => {
+                              handleLike(selectedPostForModal.id);
+                              // Simple update in local modal state too
+                              const isLiked = (selectedPostForModal.likes || []).includes(currentUser.id);
+                              const newLikes = isLiked 
+                                ? selectedPostForModal.likes.filter((id: string) => id !== currentUser.id)
+                                : [...(selectedPostForModal.likes || []), currentUser.id];
+                              setSelectedPostForModal({ ...selectedPostForModal, likes: newLikes });
+                            }} 
+                          />
+                          <MessageSquare size={20} style={{ cursor: 'pointer' }} />
+                          <Share2 size={20} style={{ cursor: 'pointer' }} onClick={() => showToast("Link copied to clipboard!", "success")} />
+                        </div>
+                        <Bookmark 
+                          size={20} 
+                          style={{ cursor: 'pointer', color: bookmarks.includes(selectedPostForModal.id) ? 'var(--primary-color)' : 'inherit' }}
+                          fill={bookmarks.includes(selectedPostForModal.id) ? 'var(--primary-color)' : 'none'}
+                          onClick={() => {
+                            toggleBookmark(selectedPostForModal.id);
+                          }}
+                        />
+                      </div>
+                      <strong style={{ fontSize: '0.85rem' }}>{(selectedPostForModal.likes || []).length || 0} likes</strong>
+                    </div>
+
+                    {/* Comment Form */}
+                    <form 
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const inputEl = e.currentTarget.elements.namedItem('commentInput') as HTMLInputElement;
+                        const content = inputEl.value.trim();
+                        if (!content) return;
+                        
+                        try {
+                          const newComment = await apiFetch(`/posts/${selectedPostForModal.id}/comment`, {
+                            method: 'POST',
+                            body: JSON.stringify({ content })
+                          });
+                          
+                          // Update comments local list inside modal
+                          const updatedComments = [...(selectedPostForModal.comments || []), {
+                            ...newComment,
+                            author: currentUser
+                          }];
+                          setSelectedPostForModal({ ...selectedPostForModal, comments: updatedComments });
+                          inputEl.value = '';
+                          showToast("Comment published!", "success");
+                        } catch (err: any) {
+                          showToast(err.message, "danger");
+                        }
+                      }}
+                      style={{ display: 'flex', borderTop: '1px solid #efefef' }}
+                    >
+                      <input 
+                        type="text" 
+                        name="commentInput" 
+                        placeholder="Add a comment..." 
+                        autoComplete="off"
+                        style={{ flex: 1, padding: '16px', border: 'none', outline: 'none', fontSize: '0.85rem' }} 
+                      />
+                      <button 
+                        type="submit" 
+                        style={{ padding: '0 16px', background: 'none', border: 'none', color: '#0095f6', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                      >
+                        Post
+                      </button>
+                    </form>
+
+                  </div>
+                </div>
+              </div>
+            );
+          })()
+        )}
+
+        {/* HIGHLIGHT STORY LIGHTBOX MODAL */}
+        {selectedHighlightForGallery && (
+          (() => {
+            const gallery = (highlightGalleries as any)[selectedHighlightForGallery];
+            return (
+              <div 
+                className="modal-overlay" 
+                onClick={() => setSelectedHighlightForGallery(null)}
+                style={{ zIndex: 1100, background: 'rgba(0, 0, 0, 0.95)' }}
+              >
+                <div 
+                  className="modal-card" 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ 
+                    maxWidth: '480px', 
+                    width: '90%', 
+                    padding: '24px', 
+                    borderRadius: '16px', 
+                    background: '#1a1a1a', 
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}
+                >
+                  <button 
+                    onClick={() => setSelectedHighlightForGallery(null)}
+                    style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
+                  >
+                    <X size={20} />
+                  </button>
+
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary-color)' }}>{gallery.title}</h3>
+                  <p style={{ margin: '0 0 20px 0', fontSize: '0.82rem', color: '#aaa', textAlign: 'center' }}>{gallery.desc}</p>
+                  
+                  {/* Carousel of images */}
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
+                    <img src={gallery.images[0]} alt="Gallery image" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                    {gallery.images.map((imgUrl: string, imgIdx: number) => (
+                      <div 
+                        key={imgIdx} 
+                        style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: imgIdx === 0 ? 'var(--primary-color)' : '#555' 
+                        }} 
+                      />
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      showToast("Opened full gallery inside archives tab.", "info");
+                      setSelectedHighlightForGallery(null);
+                    }}
+                    className="btn-ig-primary" 
+                    style={{ width: '100%', marginTop: '24px' }}
+                  >
+                    View Full Gallery
+                  </button>
+                </div>
+              </div>
+            );
+          })()
+        )}
+
       </div>
     );
   }

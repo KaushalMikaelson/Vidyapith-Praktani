@@ -74,6 +74,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'search',        label: 'Search',         icon: Search },
     { id: 'notifications', label: 'Notifications',  icon: Bell, badge: unreadNotifCount },
     { id: 'messages',      label: 'Messages',       icon: MessageCircle },
+    { id: 'profile',       label: 'My Profile',     icon: UserIcon },
     ...(currentUser.role === 'admin'
       ? [{ id: 'admin', label: 'Admin', icon: ShieldCheck, badge: pendingCount }]
       : []),
