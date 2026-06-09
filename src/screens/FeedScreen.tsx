@@ -27,6 +27,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0 
 }) => {
   const { currentUser } = useAuth();
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  useEffect(() => {
+    const loadNotificationCount = async () => {
+      try {
+        const notifs = await apiFetch('/notifications');
+        setUnreadNotifCount(notifs.filter((n: any) => !n.read).length);
+      } catch {}
+    };
+    loadNotificationCount();
+    const interval = setInterval(loadNotificationCount, 5000);
+    return () => clearInterval(interval);
+  }, []);
   // Stories Tray & Viewer States
   interface StoryItem {
     id: string;
@@ -48,30 +61,23 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [stories, setStories] = useState<StoryGroup[]>([
     {
       userId: 'usr-alumni-2',
-      userName: 'Dr. Marcus Adeyemi',
+      userName: 'Dr. Mehta',
       userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&q=80',
-      userBatch: '1998',
+      userBatch: '1988',
       hasUnviewed: true,
       stories: [
         {
           id: 'story-1-1',
           mediaUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=1400&fit=crop&q=80',
-          text: 'Visiting the new research wing today! ðŸ”¬',
+          text: 'Visiting the new research wing today! 🔬',
           timestamp: '2h ago',
-          viewed: false
-        },
-        {
-          id: 'story-1-2',
-          mediaUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=1400&fit=crop&q=80',
-          text: 'The advanced laboratory setup is amazing!',
-          timestamp: '1h ago',
           viewed: false
         }
       ]
     },
     {
       userId: 'usr-alumni-3',
-      userName: 'Sophia Patel',
+      userName: 'Sophia',
       userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&q=80',
       userBatch: '2005',
       hasUnviewed: true,
@@ -79,7 +85,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         {
           id: 'story-2-1',
           mediaUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=1400&fit=crop&q=80',
-          text: 'Speech at the UN Assembly done. Proud alumni! ðŸ‡ºðŸ‡³',
+          text: 'Speech at the UN Assembly done. Proud alumni! 🇺🇸',
           timestamp: '4h ago',
           viewed: false
         }
@@ -87,32 +93,48 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     },
     {
       userId: 'usr-alumni-4',
-      userName: 'Sameer Khan',
+      userName: 'Sameer',
       userAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&q=80',
       userBatch: '1985',
-      hasUnviewed: false,
+      hasUnviewed: true,
       stories: [
         {
           id: 'story-3-1',
           mediaUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=1400&fit=crop&q=80',
-          text: 'Found a photo of the chemistry lab from 1983! ðŸ§ª',
+          text: 'Found a photo of the chemistry lab from 1983! 🧪',
           timestamp: '12h ago',
-          viewed: true
+          viewed: false
         }
       ]
     },
     {
       userId: 'usr-alumni-5',
-      userName: 'Dr. Elena Wong',
-      userAvatar: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=120&h=120&fit=crop&q=80',
+      userName: 'Dr. Rao',
+      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&q=80',
       userBatch: '1992',
       hasUnviewed: true,
       stories: [
         {
           id: 'story-4-1',
           mediaUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=1400&fit=crop&q=80',
-          text: 'Congratulations to the graduating class! ðŸŽ‰',
+          text: 'Congratulations to the graduating class! 🎓',
           timestamp: '6h ago',
+          viewed: false
+        }
+      ]
+    },
+    {
+      userId: 'usr-alumni-6',
+      userName: 'Priya',
+      userAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&q=80',
+      userBatch: '2010',
+      hasUnviewed: true,
+      stories: [
+        {
+          id: 'story-5-1',
+          mediaUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=1400&fit=crop&q=80',
+          text: 'Enjoying the evening alumni get-together! 🌅',
+          timestamp: '8h ago',
           viewed: false
         }
       ]
@@ -1141,13 +1163,29 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   };
 
   if (screenMode === 'feed') {
-    // Sort newest first (backend already orders desc, but ensure client-side too)
     const sortedPosts = [...filteredPosts].sort((a, b) =>
       new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime()
     );
 
     return (
       <div className="ig-feed-layout">
+        {/* Custom Instagram-style Feed Header */}
+        <div className="feed-header-ig">
+          <div>
+            <h1>Vidyapith Alumni</h1>
+            <p>Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Rahul'} 👋</p>
+          </div>
+          <div className="feed-header-actions">
+            <button className="header-action-btn" title="Search" onClick={() => showToast('Search panel is available in the sidebar.', 'info')}>
+              <Search size={22} />
+            </button>
+            <button className="header-action-btn" title="Notifications" onClick={() => showToast('View notifications in the sidebar.', 'info')}>
+              <Bell size={22} />
+              {unreadNotifCount > 0 && <span className="notif-badge-dot" />}
+            </button>
+          </div>
+        </div>
+
         {/* Center: post composer + feed */}
         <main className="ig-feed-main">
           {/* Instagram-style Stories Tray */}
@@ -1192,7 +1230,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     className="story-avatar" 
                   />
                 </div>
-                <span className="story-username">{group.userName.split(' ')[0]}</span>
+                <span className="story-username">{group.userName}</span>
               </div>
             ))}
           </div>
@@ -1205,7 +1243,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
           {!loading && sortedPosts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--heritage-muted)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>ðŸµï¸</div>
+              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🐒</div>
               <p style={{ fontWeight: 600, marginBottom: '6px' }}>No posts yet</p>
               <p style={{ fontSize: '0.85rem' }}>Be the first to share something with the Vidyapith family!</p>
             </div>
@@ -1242,52 +1280,48 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             const isLiked = (post.likes || []).includes(currentUser.id);
 
             return (
-              <article key={post.id} className="feed-story-card" style={{ marginBottom: '16px' }}>
+              <article key={post.id} className="feed-story-card">
                 {/* Post Header */}
-                <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', cursor: 'pointer' }}
-                  onClick={() => author?.id && onViewProfile(author.id)}
-                >
-                  <img
-                    src={author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'}
-                    alt={author?.full_name}
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>{author?.full_name || 'Vidyapith Alumnus'}</h3>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--heritage-muted)' }}>
-                      {formatTimeAgo(post.created_at)} Â· Class of {author?.batch_year || 'â€”'}
-                    </p>
+                <header className="feed-card-header" onClick={() => author?.id && onViewProfile(author.id)}>
+                  <div className="post-avatar-ring">
+                    <img
+                      src={author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'}
+                      alt={author?.full_name}
+                      className="post-avatar"
+                    />
                   </div>
-                  <MoreHorizontal size={20} style={{ color: 'var(--heritage-muted)', cursor: 'pointer', flexShrink: 0 }} />
+                  <div className="post-header-info">
+                    <h3>{author?.full_name || 'Vidyapith Alumnus'}</h3>
+                    <p>{formatTimeAgo(post.created_at)} · Class of {author?.batch_year || '—'}</p>
+                  </div>
+                  <button className="post-more-btn" type="button" aria-label="More options" onClick={(e) => e.stopPropagation()}>
+                    <MoreHorizontal size={20} />
+                  </button>
                 </header>
 
                 {/* Caption */}
                 {post.content && (
-                  <p style={{ margin: '0 16px 12px', fontSize: '0.93rem', lineHeight: '1.55', whiteSpace: 'pre-wrap' }}>
+                  <p className="feed-card-caption">
                     {post.content}
                   </p>
                 )}
 
                 {/* Article card */}
                 {isArticle && (
-                  <div style={{ margin: '0 16px 12px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--heritage-border, #e0e0e0)', background: 'rgba(0,0,0,0.02)' }}>
+                  <div className="feed-card-article-preview">
                     {articleCoverImg && articleCoverImg.startsWith('http') && (
-                      <img src={articleCoverImg} alt={articleTitle || ''} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+                      <img src={articleCoverImg} alt={articleTitle || ''} />
                     )}
-                    <div style={{ padding: '12px 14px' }}>
-                      {articleCategory && <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: 'var(--primary-color)', letterSpacing: '0.05em' }}>{articleCategory}</span>}
-                      {articleTitle && <p style={{ margin: '4px 0 0', fontWeight: 700, fontSize: '1rem' }}>{articleTitle}</p>}
+                    <div className="article-details">
+                      {articleCategory && <span className="article-category">{articleCategory}</span>}
+                      {articleTitle && <p className="article-title">{articleTitle}</p>}
                     </div>
                   </div>
                 )}
 
                 {/* Photo grid */}
                 {isPhoto && postImages.length > 0 && (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: postImages.length === 1 ? '1fr' : postImages.length === 2 ? '1fr 1fr' : 'repeat(3, 1fr)',
-                    gap: '2px', marginBottom: '0'
-                  }}>
+                  <div className={`feed-card-media-grid cols-${postImages.length === 1 ? '1' : postImages.length === 2 ? '2' : '3'}`}>
                     {postImages.slice(0, 9).map((url: string, imgIdx: number) => {
                       const finalAspectRatio = imageLayout.aspectRatio === 'original' 
                         ? 'auto' 
@@ -1311,15 +1345,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             display: 'block',
                             maxHeight: '550px',
                             background: (postImages.length === 1 && imageLayout.objectFit === 'contain') ? '#0f172a' : 'transparent',
-                            borderRadius: postImages.length === 1 ? '0' : imgIdx === 0 ? '0 0 0 0' : ''
                           }}
                         />
                       );
                     })}
                     {postImages.length > 9 && (
-                      <div style={{ position: 'relative' }}>
-                        <img src={postImages[8]} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block', filter: 'brightness(0.4)' }} />
-                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '1.2rem' }}>+{postImages.length - 9}</span>
+                      <div className="more-images-overlay">
+                        <img src={postImages[8]} alt="" />
+                        <span>+{postImages.length - 9}</span>
                       </div>
                     )}
                   </div>
@@ -1327,41 +1360,48 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
                 {/* Video */}
                 {isVideo && videoSrc && (
-                  <div style={{ marginBottom: '0' }}>
+                  <div className="feed-card-video">
                     {videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be') ? (
                       (() => {
                         const ytId = (() => { const m = videoSrc.match(/(?:youtu\.be\/|v=|embed\/)([^#&?]{11})/); return m ? m[1] : null; })();
                         return ytId ? (
-                          <iframe src={`https://www.youtube.com/embed/${ytId}`} style={{ width: '100%', height: '300px', border: 'none', display: 'block' }} allowFullScreen title="Video" />
+                          <iframe src={`https://www.youtube.com/embed/${ytId}`} allowFullScreen title="Video" />
                         ) : null;
                       })()
                     ) : (
-                      <video src={videoSrc} controls style={{ width: '100%', maxHeight: '400px', display: 'block', objectFit: 'contain', background: '#000' }} />
+                      <video src={videoSrc} controls />
                     )}
                   </div>
                 )}
 
                 {/* Actions */}
-                <footer style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '10px 12px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <footer className="feed-card-actions">
                   <button
                     onClick={() => handleLike(post.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: isLiked ? '#e0245e' : 'inherit', padding: '6px 10px', borderRadius: '8px', fontWeight: isLiked ? 700 : 400, fontSize: '0.88rem' }}
+                    className={`action-btn like-btn ${isLiked ? 'liked' : ''}`}
+                    type="button"
                   >
-                    <Heart size={20} fill={isLiked ? '#e0245e' : 'none'} /> {(post.likes || []).length || 0}
+                    <Heart size={20} fill={isLiked ? '#e0245e' : 'none'} />
+                    <span>{(post.likes || []).length || 0}</span>
                   </button>
                   <button
                     onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}
+                    className="action-btn comment-btn"
+                    type="button"
                   >
-                    <MessageCircle size={20} /> {((post as any).comments || []).length || 0}
+                    <MessageCircle size={20} />
+                    <span>{((post as any).comments || []).length || 0}</span>
                   </button>
-                  <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}>
-                    <Share2 size={20} /> Share
+                  <button className="action-btn share-btn" type="button" onClick={() => showToast('Link copied to clipboard!', 'success')}>
+                    <Share2 size={20} />
+                    <span>Share</span>
                   </button>
                   <div style={{ flex: 1 }} />
                   <button
                     onClick={() => handleBookmark(post.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: bookmarks.includes(post.id) ? 'var(--primary-color)' : 'inherit', padding: '6px 10px', borderRadius: '8px', fontSize: '0.88rem' }}
+                    className={`action-btn bookmark-btn ${bookmarks.includes(post.id) ? 'bookmarked' : ''}`}
+                    type="button"
+                    aria-label="Bookmark"
                   >
                     <Bookmark size={20} fill={bookmarks.includes(post.id) ? 'var(--primary-color)' : 'none'} />
                   </button>
@@ -1369,24 +1409,24 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
                 {/* Comments */}
                 {expandedComments[post.id] && (
-                  <div style={{ padding: '0 16px 14px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <div className="feed-card-comments">
                     {((post as any).comments || []).slice(0, 5).map((comment: any) => (
-                      <div key={comment.id} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                        <div>
-                          <strong style={{ fontSize: '0.82rem' }}>{comment.author?.full_name || 'Alumnus'}</strong>
-                          <p style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>{comment.content}</p>
+                      <div key={comment.id} className="comment-item">
+                        <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" />
+                        <div className="comment-text-wrap">
+                          <strong>{comment.author?.full_name || 'Alumnus'}</strong>
+                          <p>{comment.content}</p>
                         </div>
                       </div>
                     ))}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                      <img src={currentUser.profile_photo} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    <div className="comment-input-wrap">
+                      <img src={currentUser.profile_photo} alt="" />
                       <input
                         value={commentInputs[post.id] || ''}
                         onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
                         onKeyDown={e => { if (e.key === 'Enter') handleCommentSubmit(post.id, commentInputs[post.id] || ''); }}
                         placeholder="Add a comment..."
-                        style={{ flex: 1, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '20px', padding: '6px 14px', fontSize: '0.85rem' }}
+                        className="comment-input"
                       />
                     </div>
                   </div>
