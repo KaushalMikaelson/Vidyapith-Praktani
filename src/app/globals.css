@@ -144,8 +144,8 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Icon Rail Sidebar ──────────────────────────────── */
 .icon-rail {
   width: var(--sidebar-width);
-  background: transparent;
-  border-right: none;
+  background: #ffffff;
+  border-right: 1px solid #efefef;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -173,19 +173,19 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
 }
-.rail-logo:hover { background: rgba(255,255,255,0.07); }
+.rail-logo:hover { background: rgba(0,0,0,0.04); }
 
 .rail-logo-image {
   width: 36px;
   height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.10));
 }
 
 .rail-divider {
   display: none;
   height: 1px;
-  background: var(--border-color);
+  background: #efefef;
   margin: 8px 0 12px;
   flex-shrink: 0;
 }
@@ -195,8 +195,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
-  margin-top: 24px;
+  gap: 6px;
+  margin-top: 20px;
   flex: 1;
   width: 100%;
   padding: 0 8px;
@@ -211,25 +211,52 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: none;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
-  color: var(--text-secondary);
-  transition: background 0.15s ease, color 0.15s ease;
+  color: #262626;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   flex-shrink: 0;
 }
 
 .rail-btn:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary);
+  background: rgba(0,0,0,0.05);
+  color: #000;
 }
 
 .rail-btn.active {
-  background: rgba(255,122,26,0.12);
-  color: var(--primary-color);
+  color: #000;
+  background: none;
+}
+
+.rail-btn.active .rail-icon svg {
+  stroke-width: 2.8;
+}
+
+/* Create button — gradient */
+.rail-btn.rail-create-btn {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #f857a6, #c026d3);
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(200,38,211,0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rail-btn.rail-create-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 5px 18px rgba(200,38,211,0.4);
+  background: linear-gradient(135deg, #f857a6, #c026d3);
+  color: #fff;
+}
+
+.rail-btn.rail-create-btn.active {
+  background: linear-gradient(135deg, #f857a6, #c026d3);
+  color: #fff;
 }
 
 /* Icon wrapper (for badge positioning) */
@@ -258,7 +285,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   padding: 0 3px;
-  border: 2px solid var(--bg-dark);
+  border: 2px solid #ffffff;
   pointer-events: none;
 }
 
@@ -268,15 +295,15 @@ h1, h2, h3, h4, h5, h6 {
   left: calc(100% + 14px);
   top: 50%;
   transform: translateY(-50%) scale(0.9);
-  background: var(--bg-dark);
-  color: var(--text-primary);
+  background: #fff;
+  color: #262626;
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  border: 1px solid #efefef;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease, transform 0.15s ease;
@@ -292,7 +319,7 @@ h1, h2, h3, h4, h5, h6 {
   top: 50%;
   transform: translateY(-50%);
   border: 6px solid transparent;
-  border-right-color: var(--border-color);
+  border-right-color: #efefef;
 }
 .rail-tooltip::after {
   content: '';
@@ -301,7 +328,7 @@ h1, h2, h3, h4, h5, h6 {
   top: 50%;
   transform: translateY(-50%);
   border: 6px solid transparent;
-  border-right-color: var(--bg-dark);
+  border-right-color: #fff;
 }
 
 .rail-btn:hover .rail-tooltip,
@@ -316,7 +343,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--primary-color);
+  border: 2px solid #efefef;
   display: block;
 }
 
@@ -342,12 +369,12 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   left: calc(100% + 12px);
   bottom: 0;
-  background: var(--bg-dark);
-  border: 1px solid var(--border-color);
+  background: #ffffff;
+  border: 1px solid #efefef;
   border-radius: 14px;
   padding: 6px;
   min-width: 200px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -366,7 +393,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--primary-color);
+  border: 2px solid #efefef;
   flex-shrink: 0;
 }
 
@@ -379,7 +406,7 @@ h1, h2, h3, h4, h5, h6 {
 .rail-popup-user strong {
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #262626;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -387,12 +414,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .rail-popup-user span {
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: #8e8e8e;
 }
 
 .rail-popup-divider {
   height: 1px;
-  background: var(--border-color);
+  background: #efefef;
   margin: 3px 0;
 }
 
@@ -403,7 +430,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: #262626;
   font-size: 0.88rem;
   font-weight: 500;
   padding: 9px 12px;
@@ -415,12 +442,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .rail-popup-item:hover {
-  background: rgba(255,255,255,0.07);
-  color: var(--text-primary);
+  background: rgba(0,0,0,0.04);
+  color: #000;
 }
 
-.rail-popup-item.danger { color: var(--text-danger); }
-.rail-popup-item.danger:hover { background: rgba(252,129,129,0.1); }
+.rail-popup-item.danger { color: #ed4956; }
+.rail-popup-item.danger:hover { background: rgba(237,73,86,0.06); }
 
 /* Legacy sidebar classes — hidden but kept to avoid errors */
 .app-sidebar, .sidebar-header, .sidebar-nav, .sidebar-footer,

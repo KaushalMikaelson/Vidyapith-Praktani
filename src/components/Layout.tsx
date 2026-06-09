@@ -107,12 +107,12 @@ export const Layout: React.FC<LayoutProps> = ({
             return (
               <button
                 key={item.id}
-                className={`rail-btn ${isActive ? 'active' : ''}`}
+                className={`rail-btn ${isActive ? 'active' : ''} ${item.id === 'create' ? 'rail-create-btn' : ''}`}
                 onClick={() => setActiveScreen(item.id)}
                 aria-label={item.label}
               >
                 <span className="rail-icon">
-                  <Icon size={24} strokeWidth={isActive ? 2.5 : 1.8} />
+                  <Icon size={item.id === 'create' ? 22 : 24} strokeWidth={isActive && item.id !== 'create' ? 2.5 : 1.8} />
                   {item.badge && item.badge > 0 ? (
                     <span className="rail-badge">{item.badge > 9 ? '9+' : item.badge}</span>
                   ) : null}
