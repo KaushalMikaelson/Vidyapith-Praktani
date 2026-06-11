@@ -318,7 +318,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           </div>
 
           {/* Grid of Redesigned Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
+          <div className="directory-cards-grid">
             {loading && alumniList.length === 0 ? (
               <div className="glass-panel" style={{ gridColumn: '1 / -1', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
                 <RefreshCw size={36} style={{ animation: 'spin 1.2s linear infinite', color: '#8b5cf6' }} />
@@ -358,7 +358,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     <div 
                       className="avatar-gradient-ring" 
                       style={{ 
-                        background: getAvatarGradient(alumnus.department),
+                        background: isRequestSent ? '#e2e8f0' : 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
                         padding: '3px',
                         borderRadius: '50%',
                         display: 'inline-block',
@@ -512,7 +512,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
                   <span style={{ fontWeight: 600, color: '#475569' }}>{item.label}</span>
                   <span style={{
-                    background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                    background: '#f43f5e',
                     color: 'white',
                     fontWeight: 700,
                     padding: '2px 10px',

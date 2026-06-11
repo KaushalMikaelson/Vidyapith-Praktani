@@ -3669,6 +3669,7 @@ textarea:focus {
 .screen-memories .main-viewport,
 .screen-discover .main-viewport,
 .screen-directory .main-viewport,
+.screen-search .main-viewport,
 .screen-profile .main-viewport {
   background: var(--heritage-page);
   background-image: none;
@@ -3682,6 +3683,7 @@ textarea:focus {
 .screen-memories .app-header,
 .screen-discover .app-header,
 .screen-directory .app-header,
+.screen-search .app-header,
 .screen-profile .app-header {
   display: none !important;
 }
@@ -6774,5 +6776,20 @@ textarea:focus {
   margin: 0;
 }
 
+.directory-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
 
+@media (max-width: 1200px) {
+  .directory-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
+@media (max-width: 640px) {
+  .directory-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
