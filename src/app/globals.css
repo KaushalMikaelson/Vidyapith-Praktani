@@ -3670,6 +3670,7 @@ textarea:focus {
 .screen-discover .main-viewport,
 .screen-directory .main-viewport,
 .screen-search .main-viewport,
+.screen-notifications .main-viewport,
 .screen-profile .main-viewport {
   background: var(--heritage-page);
   background-image: none;
@@ -3684,6 +3685,7 @@ textarea:focus {
 .screen-discover .app-header,
 .screen-directory .app-header,
 .screen-search .app-header,
+.screen-notifications .app-header,
 .screen-profile .app-header {
   display: none !important;
 }
