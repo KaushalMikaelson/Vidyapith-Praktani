@@ -1197,103 +1197,156 @@ export default function App() {
 
       {/* Single Detailed Profile View Modal Overlay */}
       {selectedProfile && (
-        <div className="modal-overlay" style={{ display: 'flex' }}>
-          <div className="modal-card profile-modal-card" style={{ maxWidth: '650px', background: 'var(--bg-dark)' }}>
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(8px)', zIndex: 1000 }}>
+          <div className="modal-card" style={{ maxWidth: '680px', width: '90%', background: '#ffffff', borderRadius: '24px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', overflowY: 'auto', maxHeight: '90vh', position: 'relative', color: '#1e293b' }}>
             
-            {/* Cover header */}
-            <div className="profile-cover" style={{ background: `linear-gradient(135deg, var(--secondary-color) 0%, ${getHouseColor(selectedProfile.house)} 100%)`, height: '140px', position: 'relative' }}>
-              <button 
-                className="icon-btn" 
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.4)', border: 'none' }} 
-                onClick={() => setSelectedProfileId(null)}
-              >
-                <X size={16} style={{ color: 'white' }} />
-              </button>
-              
-              <div className="profile-avatar-large-wrap" style={{ position: 'absolute', bottom: '-40px', left: '30px' }}>
+            {/* Close button */}
+            <button 
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', outline: 'none' }} 
+              onClick={() => setSelectedProfileId(null)}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Top Section Info */}
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
+              <div className="profile-avatar-gradient-ring">
                 <img 
                   src={selectedProfile.profile_photo} 
                   alt={selectedProfile.full_name} 
-                  className="profile-avatar-large" 
-                  style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--bg-dark)' }} 
+                  style={{ width: '100px', height: '100px' }}
                 />
               </div>
+
+              <div style={{ flex: 1, minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>{selectedProfile.full_name}</h3>
+                  <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>
+                    Class of {selectedProfile.batch_year}
+                  </span>
+                  {selectedProfile.role === 'admin' && (
+                    <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>🛡️ Admin</span>
+                  )}
+                  {selectedProfile.verify_status === 'approved' && (
+                    <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>✓ Verified</span>
+                  )}
+                </div>
+
+                <div style={{ fontSize: '0.88rem', color: '#64748b', fontWeight: 600 }}>
+                  {selectedProfile.profession} at {selectedProfile.company || 'Not specified'}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: '#64748b' }}>
+                  <MapPin size={12} style={{ color: '#f43f5e' }} /> 
+                  {selectedProfile.city}, {selectedProfile.country}
+                </div>
+              </div>
             </div>
 
-            {/* Modal Body content */}
-            <div className="profile-modal-body" style={{ padding: '60px 30px 30px' }}>
-              
-              <div className="profile-details-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              {currentUser && currentUser.id !== selectedProfile.id && (
+                <button 
+                  className="btn-ig-black" 
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    handleProfileConnect(selectedProfile.id, selectedProfile.full_name);
+                  }}
+                >
+                  <UserPlus size={16} /> Connect Request
+                </button>
+              )}
+              <button 
+                className="btn-ig-grey" 
+                style={{ flex: 1 }}
+                onClick={() => showToast(`Opening chat with ${selectedProfile.full_name}`, 'info')}
+              >
+                <MessageCircle size={16} /> Message
+              </button>
+            </div>
+
+            {/* Metrics Row */}
+            <div className="profile-stats-grid" style={{ marginTop: 0, marginBottom: '24px' }}>
+              <div className="profile-stat-box" style={{ padding: '12px' }}>
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>128</span>
+                <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Posts</span>
+              </div>
+              <div className="profile-stat-box" style={{ padding: '12px' }}>
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>24.8K</span>
+                <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Followers</span>
+              </div>
+              <div className="profile-stat-box" style={{ padding: '12px' }}>
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>312</span>
+                <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Following</span>
+              </div>
+              <div className="profile-stat-box" style={{ padding: '12px' }}>
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>1.2K</span>
+                <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Connections</span>
+              </div>
+              <div className="profile-stat-box" style={{ padding: '12px' }}>
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>48</span>
+                <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Mentorships</span>
+              </div>
+            </div>
+
+            {/* Side-by-Side Widgets */}
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              {/* About Column */}
+              <div style={{ flex: 1.3, minWidth: '260px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <h3 className="profile-details-name" style={{ fontSize: '1.4rem', color: 'white' }}>{selectedProfile.full_name}</h3>
-                  <div className="profile-details-sub" style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>Batch of {selectedProfile.batch_year}</span>
-                    <span>•</span>
-                    <span>{selectedProfile.house}</span>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} style={{ color: '#a855f7' }} /> About
+                  </h4>
+                  <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
+                    {selectedProfile.bio || "Alumni Portal member contributing to Deoghar Vidyapith's development and spiritual ecosystem."}
+                  </p>
+                </div>
+
+                {/* Contact details */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569' }}>
+                    <span>Email Address:</span>
+                    <strong style={{ color: '#0f172a' }}>
+                      {selectedProfile.privacy?.show_email ? selectedProfile.email : "📧 Locked"}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569' }}>
+                    <span>Mobile Contact:</span>
+                    <strong style={{ color: '#0f172a' }}>
+                      {selectedProfile.privacy?.show_mobile ? selectedProfile.mobile : "📞 Locked"}
+                    </strong>
                   </div>
                 </div>
-                <div className="badge badge-role" style={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>{selectedProfile.role}</div>
-              </div>
 
-              {/* Specifications grid */}
-              <div className="profile-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px', marginBottom: '20px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', padding: '16px', borderRadius: '6px' }}>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Current Designation</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>{selectedProfile.profession}</span>
-                </div>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Company / Institute</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>{selectedProfile.company}</span>
-                </div>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Location City</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>{selectedProfile.city}</span>
-                </div>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Country</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>{selectedProfile.country}</span>
-                </div>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Email Address</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>
-                    {selectedProfile.privacy?.show_email ? selectedProfile.email : "📧 Locked by User"}
-                  </span>
-                </div>
-                <div className="profile-detail-item">
-                  <span className="profile-detail-label" style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Mobile Contact</span>
-                  <span className="profile-detail-value" style={{ fontWeight: 600, color: 'white', fontSize: '0.9rem' }}>
-                    {selectedProfile.privacy?.show_mobile ? selectedProfile.mobile : "📞 Locked by User"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Bio and memories */}
-              <div className="profile-bio-box" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '6px', marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '8px' }}>Alumni Bio & School Memories</h4>
-                <p className="profile-bio-text" style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  {selectedProfile.bio}
-                </p>
-              </div>
-
-              {/* Actions row */}
-              <div className="profile-modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                {selectedProfile.linkedin_url && (
-                  <a href={selectedProfile.linkedin_url} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-                    <span>LinkedIn</span>
-                  </a>
-                )}
-                {currentUser && currentUser.id !== selectedProfile.id && (
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => handleProfileConnect(selectedProfile.id, selectedProfile.full_name)}
+                <div>
+                  <a 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); showToast("Opening website...", "info"); }} 
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}
                   >
-                    <span>Connect Request</span>
-                  </button>
-                )}
+                    <Globe size={14} style={{ color: '#3b82f6' }} /> {selectedProfile.full_name ? selectedProfile.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
+                  </a>
+                </div>
               </div>
 
+              {/* Highlights Column */}
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={14} style={{ color: '#22c55e' }} /> Highlights
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {['Education', 'Achievements', 'Reunion', 'Career', 'Events', 'Travel', 'Mentorship'].map(tag => (
+                    <span 
+                      key={tag} 
+                      style={{ background: '#f1f5f9', color: '#0f172a', padding: '6px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid #e2e8f0' }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       )}

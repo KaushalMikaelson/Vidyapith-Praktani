@@ -1989,175 +1989,216 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     const activeConnections = discoverAlumni.filter(u => u.id !== profileUser.id).slice(0, 4);
 
     return (
-      <div className="profile-ig-layout">
-        {/* Main Content Area */}
-        <main className="profile-ig-left">
-          
-          {/* PROFILE HEADER */}
-          <div className="profile-ig-header">
-            <div className="profile-ig-avatar-wrapper">
+      <div className="profile-ig-layout" style={{ maxWidth: '960px', margin: '0 auto', padding: '24px 16px' }}>
+        
+        {/* 1. TOP CARD: Header, details, and stats */}
+        <div className="profile-card">
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Avatar with colorful story gradient ring */}
+            <div className="profile-avatar-gradient-ring">
               <img 
                 src={person.profile_photo || currentUser.profile_photo} 
                 alt={person.full_name} 
-                className="profile-ig-avatar"
+                style={{ width: '130px', height: '130px' }}
               />
             </div>
 
-            <div className="profile-ig-info">
-              <div className="profile-ig-name-row">
-                <h1 className="profile-ig-name">{person.full_name || currentUser.full_name}</h1>
+            {/* Profile Info Details */}
+            <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                  {person.full_name || currentUser.full_name}
+                </h2>
                 
-                {/* Badges beside username */}
+                {/* Badge pills */}
                 {userBadges.map((badge, idx) => (
-                  <span 
-                    key={idx} 
-                    className="badge-verified-alumni" 
-                    style={{ 
-                      background: badge.color, 
-                      border: badge.border, 
-                      color: badge.textColor,
-                      padding: '3px 10px',
-                      fontSize: '0.68rem'
-                    }}
-                    title={badge.label}
-                  >
-                    {badge.icon} {badge.label}
+                  <span key={idx} className="profile-header-badge" title={badge.label}>
+                    <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
                   </span>
                 ))}
 
-                <span className="badge-grad-batch">
+                <span className="profile-header-badge">
                   Class of {person.batch_year || currentUser.batch_year}
                 </span>
               </div>
 
-              <div className="badge-professional-status">
-                <strong style={{ color: 'var(--heritage-ink, #111)' }}>
-                  {person.profession || currentUser.profession}
-                </strong>
-                {person.company && ` at ${person.company || currentUser.company}`}
+              <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
+                {person.profession || currentUser.profession} at {person.company || currentUser.company || 'Not specified'}
               </div>
 
-              <div className="badge-location">
-                <MapPin size={14} style={{ color: 'var(--primary-color)' }} /> 
-                {person.city || currentUser.city}, {person.country || currentUser.country || 'India'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#64748b' }}>
+                <MapPin size={14} style={{ color: '#f43f5e' }} /> 
+                {person.city || currentUser.city || 'Not specified'}, {person.country || currentUser.country || 'India'}
               </div>
 
               {/* Action buttons */}
-              <div className="profile-ig-actions">
+              <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
                 {profileUser.id !== currentUser.id && (
                   <>
-                    <button onClick={toggleFollow} className={isFollowed ? "btn-ig-secondary" : "btn-ig-primary"}>
-                      {isFollowed ? "✓ Following" : "Follow"}
+                    <button 
+                      onClick={toggleFollow} 
+                      className={isFollowed ? "btn-ig-grey" : "btn-ig-black"}
+                    >
+                      {isFollowed ? '✓ Following' : 'Follow'}
                     </button>
-                    <button onClick={handleConnectClick} className="btn-ig-secondary">
-                      {isConnected ? "✓ Connected" : "Connect"}
+                    <button 
+                      onClick={handleConnectClick} 
+                      className="btn-ig-grey"
+                    >
+                      {isConnected ? (
+                        <>
+                          <Check size={16} /> Connected
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={16} /> Connect
+                        </>
+                      )}
                     </button>
                   </>
                 )}
-                <button onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} className="btn-ig-secondary">
+                <button 
+                  onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} 
+                  className="btn-ig-grey"
+                >
                   <MessageCircle size={16} /> Message
                 </button>
               </div>
             </div>
           </div>
 
-          {/* STATISTICS ROW */}
-          <div className="profile-ig-stats">
-            <div className="profile-ig-stat-item">
-              <strong>{profilePosts.length}</strong> posts
+          {/* Metrics/Stats Row at the bottom of the top card */}
+          <div className="profile-stats-grid">
+            <div className="profile-stat-box">
+              <span className="profile-stat-number">{profilePosts.length}</span>
+              <span className="profile-stat-label">Posts</span>
             </div>
-            <div className="profile-ig-stat-item">
-              <strong>{142 + (isFollowed ? 1 : 0)}</strong> followers
+            <div className="profile-stat-box">
+              <span className="profile-stat-number">{142 + (isFollowed ? 1 : 0)}</span>
+              <span className="profile-stat-label">Followers</span>
             </div>
-            <div className="profile-ig-stat-item">
-              <strong>89</strong> following
+            <div className="profile-stat-box">
+              <span className="profile-stat-number">312</span>
+              <span className="profile-stat-label">Following</span>
             </div>
-            <div className="profile-ig-stat-item">
-              <strong>{45 + (isConnected ? 1 : 0)}</strong> connections
+            <div className="profile-stat-box">
+              <span className="profile-stat-number">{45 + (isConnected ? 1 : 0)}</span>
+              <span className="profile-stat-label">Connections</span>
             </div>
-            <div className="profile-ig-stat-item">
-              <strong>{person.batch_year && person.batch_year <= 2005 ? 12 : 3}</strong> mentorships
+            <div className="profile-stat-box">
+              <span className="profile-stat-number">{person.batch_year && person.batch_year <= 2005 ? 12 : 3}</span>
+              <span className="profile-stat-label">Mentorships</span>
             </div>
           </div>
+        </div>
 
-          {/* BIO SECTION */}
-          <div className="profile-ig-bio">
-            <div className="profile-ig-bio-text" style={{ fontStyle: 'italic', color: '#4a5568', paddingBottom: '8px' }}>
-              {person.bio || "Alumni Portal member contributing to Deoghar Vidyapith's development and spiritual ecosystem. Dedicated to character-building values."}
-            </div>
-            
-            {/* Website & Social Links */}
-            <div className="profile-ig-bio-links">
-              {person.linkedin_url && (
-                <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" className="profile-ig-bio-link">
-                  <Link size={13} /> LinkedIn Profile
-                </a>
-              )}
-              <a href="#" onClick={(e) => { e.preventDefault(); showToast("Opening alumni portfolio website...", "info"); }} className="profile-ig-bio-link">
-                <Globe size={13} /> {person.full_name ? person.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
+        {/* 2. MIDDLE ROW: About & Highlights Cards side-by-side */}
+        <div className="profile-middle-grid">
+          {/* About Card */}
+          <div className="profile-card profile-middle-left" style={{ marginBottom: 0 }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={16} style={{ color: '#a855f7' }} /> About
+            </h3>
+            <p style={{ fontSize: '0.92rem', color: '#334155', lineHeight: 1.6, margin: '0 0 20px 0' }}>
+              {person.bio || "Proud alumnus of RKMV Deoghar, joining the Vidyapith Connect network to share experiences, support students, and stay connected with the community."}
+            </p>
+            <div>
+              <a 
+                href="#" 
+                onClick={(e) => { e.preventDefault(); showToast("Opening alumni portfolio website...", "info"); }} 
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}
+              >
+                <Globe size={14} style={{ color: '#3b82f6' }} /> {person.full_name ? person.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
               </a>
             </div>
           </div>
 
-          {/* ALUMNI HIGHLIGHTS */}
-          <div className="profile-ig-highlights">
-            {highlights.map(h => (
-              <div 
-                key={h.id} 
-                className="profile-ig-highlight-item" 
-                onClick={() => setSelectedHighlightForGallery(h.id)}
-              >
-                <div className="profile-ig-highlight-ring">
-                  <div className="profile-ig-highlight-circle">
-                    {h.emoji}
-                  </div>
+          {/* Highlights Card */}
+          <div className="profile-card profile-middle-right" style={{ marginBottom: 0 }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={16} style={{ color: '#22c55e' }} /> Highlights
+            </h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {highlights.map(h => (
+                <div 
+                  key={h.id} 
+                  onClick={() => setSelectedHighlightForGallery(h.id)}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#0f172a',
+                    borderRadius: '9999px',
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = '#e2e8f0';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = '#f1f5f9';
+                  }}
+                >
+                  {h.emoji} {h.labelShort}
                 </div>
-                <span className="profile-ig-highlight-label">{h.labelShort}</span>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. BOTTOM CARD: Profile Tabs Navigation */}
+        <div className="profile-card" style={{ padding: '24px 32px' }}>
+          <div className="profile-tabs-header">
+            <span className="profile-tabs-title">
+              <Grid size={16} /> Profile Tabs
+            </span>
+            <span className="profile-tabs-selected-label">
+              {profileTab.charAt(0).toUpperCase() + profileTab.slice(1)} selected
+            </span>
           </div>
 
-          {/* PROFILE NAVIGATION (TABS) */}
-          <div className="profile-ig-tabs">
+          <div className="profile-tabs-pills-row">
             <button 
               onClick={() => setProfileTab('posts')} 
-              className={`profile-ig-tab-btn ${profileTab === 'posts' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'posts' ? 'active' : ''}`}
             >
               <Grid size={14} /> Posts
             </button>
             <button 
               onClick={() => setProfileTab('reels')} 
-              className={`profile-ig-tab-btn ${profileTab === 'reels' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'reels' ? 'active' : ''}`}
             >
               <Film size={14} /> Reels
             </button>
             <button 
               onClick={() => setProfileTab('connections')} 
-              className={`profile-ig-tab-btn ${profileTab === 'connections' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'connections' ? 'active' : ''}`}
             >
               <Users size={14} /> Connections
             </button>
             <button 
               onClick={() => setProfileTab('network')} 
-              className={`profile-ig-tab-btn ${profileTab === 'network' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'network' ? 'active' : ''}`}
             >
               <GraduationCap size={14} /> Network
             </button>
             <button 
               onClick={() => setProfileTab('career')} 
-              className={`profile-ig-tab-btn ${profileTab === 'career' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'career' ? 'active' : ''}`}
             >
               <Briefcase size={14} /> Career
             </button>
             <button 
               onClick={() => setProfileTab('achievements')} 
-              className={`profile-ig-tab-btn ${profileTab === 'achievements' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'achievements' ? 'active' : ''}`}
             >
               <Trophy size={14} /> Badges
             </button>
             <button 
               onClick={() => setProfileTab('saved')} 
-              className={`profile-ig-tab-btn ${profileTab === 'saved' ? 'active' : ''}`}
+              className={`profile-tab-pill ${profileTab === 'saved' ? 'active' : ''}`}
             >
               <Bookmark size={14} /> Saved
             </button>
@@ -2378,10 +2419,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 </div>
               )
             )}
-
           </div>
-
-        </main>
+        </div>
 
 
 
