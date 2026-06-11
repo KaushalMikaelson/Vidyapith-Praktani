@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../middlewares/auth.js';
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { search, batchYear, house, city, role, profession, sortBy } = req.query;
+    const { search, batchYear, house, city, role, profession, sortBy, department, industry } = req.query;
 
     // Build Prisma query condition
     const whereCondition: any = {
@@ -31,6 +31,12 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     }
     if (profession) {
       profileConditions.profession_category = { contains: profession as string, mode: 'insensitive' };
+    }
+    if (department && department !== 'all') {
+      profileConditions.department = department as string;
+    }
+    if (industry && industry !== 'all') {
+      profileConditions.industry = industry as string;
     }
 
     if (Object.keys(profileConditions).length > 0) {
@@ -73,18 +79,32 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
           profile: {
             country: { contains: searchStr, mode: 'insensitive' }
           }
+        },
+        {
+          profile: {
+            department: { contains: searchStr, mode: 'insensitive' }
+          }
+        },
+        {
+          profile: {
+            industry: { contains: searchStr, mode: 'insensitive' }
+          }
         }
       ];
     }
 
     // Sorting logic
     let orderByCondition: any = {
-      profile: {
-        batch_year: 'desc'
-      }
+      created_at: 'asc'
     };
 
-    if (sortBy === 'batch_asc') {
+    if (sortBy === 'batch_desc') {
+      orderByCondition = {
+        profile: {
+          batch_year: 'desc'
+        }
+      };
+    } else if (sortBy === 'batch_asc') {
       orderByCondition = {
         profile: {
           batch_year: 'asc'
@@ -105,6 +125,10 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     } else if (sortBy === 'recent') {
       orderByCondition = {
         created_at: 'desc'
+      };
+    } else if (sortBy === 'seed_order') {
+      orderByCondition = {
+        created_at: 'asc'
       };
     }
 
@@ -136,7 +160,9 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
           show_email: u.profile?.show_email ?? true,
           show_mobile: u.profile?.show_phone ?? false
         },
-        created_at: u.created_at
+        created_at: u.created_at,
+        department: u.profile?.department || "",
+        industry: u.profile?.industry || ""
       };
     });
 
@@ -217,9 +243,11 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       linkedin_url: user.profile?.linkedin_url || "",
       privacy: {
         show_email: user.profile?.show_email ?? true,
-        show_mobile: user.profile?.show_phone ?? false
+        show_phone: user.profile?.show_phone ?? false
       },
-      created_at: user.created_at
+      created_at: user.created_at,
+      department: user.profile?.department || "",
+      industry: user.profile?.industry || ""
     };
 
     res.status(200).json(formattedUser);

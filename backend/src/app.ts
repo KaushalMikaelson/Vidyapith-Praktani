@@ -17,6 +17,17 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Routing Gateway
 app.use('/api/v1', apiRouter);
 
+// Chrome devtools & Service Worker stubs to prevent 404 errors in background logs
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.status(200).send('// Service worker stub');
+});
+
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({});
+});
+
 // Global 404 Error handler
 app.use((req, res) => {
   res.status(404).json({ error: `Path not found: ${req.originalUrl}` });

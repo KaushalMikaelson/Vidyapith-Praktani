@@ -35,6 +35,8 @@ model AlumniProfile {
   show_email          Boolean  @default(true)
   show_phone          Boolean  @default(false)
   certificate_url     String?
+  department          String?
+  industry            String?
 }
 
 model Mentorship {

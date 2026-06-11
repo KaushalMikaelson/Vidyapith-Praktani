@@ -11,7 +11,7 @@ export interface User {
   password_hash: string;
   batch_year: number;
   house: string;
-  role: 'admin' | 'alumni' | 'student';
+  role: 'admin' | 'alumni' | 'student' | 'faculty';
   verify_status: 'approved' | 'pending' | 'rejected';
   profile_photo: string;
   bio: string;
@@ -23,6 +23,8 @@ export interface User {
   privacy: { show_email: boolean; show_mobile: boolean };
   created_at: string;
   certificate_url?: string;
+  department?: string;
+  industry?: string;
 }
 
 export interface Post {

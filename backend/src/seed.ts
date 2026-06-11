@@ -7,7 +7,15 @@ async function main() {
   console.log("Seeding Neon database with Vidyapith Connect demo data...");
 
   // Clear existing entries to prevent duplication
+  await prisma.comment.deleteMany({});
+  await prisma.post.deleteMany({});
+  await prisma.mentorship.deleteMany({});
+  await prisma.donation.deleteMany({});
+  await prisma.event.deleteMany({});
+  await prisma.job.deleteMany({});
   await prisma.notification.deleteMany({});
+  await prisma.news.deleteMany({});
+  await prisma.heritage.deleteMany({});
   await prisma.alumniProfile.deleteMany({});
   await prisma.user.deleteMany({});
 
@@ -16,7 +24,8 @@ async function main() {
   const alumniHash = await bcrypt.hash("alumni123", salt);
   const studentHash = await bcrypt.hash("student123", salt);
 
-  const usersData = [
+  const mainUsers = [
+    // Admin
     {
       email: "swami@rkmv.org",
       phone: "+91 9431320000",
@@ -36,9 +45,336 @@ async function main() {
         linkedin_url: "",
         show_email: true,
         show_phone: true,
-        certificate_url: "Leaving_Certificate_Scan.pdf"
+        certificate_url: "Leaving_Certificate_Scan.pdf",
+        department: "Administration",
+        industry: "Education"
       }
     },
+    // 10 screenshot profiles
+    {
+      email: "rahul.sharma@gmail.com",
+      phone: "+91 9876500001",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Rahul Sharma",
+        profile_photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop&q=80",
+        batch_year: 2000,
+        house: "Tagore House",
+        bio: "Tech entrepreneur. Passionate about software engineering and machine learning.",
+        profession_category: "Software Engineer",
+        company: "Tech Solutions Inc.",
+        city: "Mumbai",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Engineering",
+        industry: "Technology"
+      }
+    },
+    {
+      email: "sophia.verma@gmail.com",
+      phone: "+91 9876500002",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Sophia Verma",
+        profile_photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&q=80",
+        batch_year: 2005,
+        house: "Gandhi House",
+        bio: "Scientific researcher. Exploring biotechnology and genomic datasets.",
+        profession_category: "Biotech Researcher",
+        company: "Genomics Lab",
+        city: "Delhi",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Science",
+        industry: "Research"
+      }
+    },
+    {
+      email: "mehta@gmail.com",
+      phone: "+91 9876500003",
+      password_hash: alumniHash,
+      role: "faculty",
+      verify_status: "approved",
+      profile: {
+        full_name: "Dr. Mehta",
+        profile_photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&q=80",
+        batch_year: 1985,
+        house: "Monastery",
+        bio: "Dedicated Physics professor. Over 30 years of teaching experience.",
+        profession_category: "Physics Professor",
+        company: "Ramakrishna Mission Vidyapith",
+        city: "Pune",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: true,
+        department: "Physics",
+        industry: "Education"
+      }
+    },
+    {
+      email: "sameer.khan@gmail.com",
+      phone: "+91 9876500004",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Sameer Khan",
+        profile_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&q=80",
+        batch_year: 2010,
+        house: "Bose House",
+        bio: "Financial analyst and investment portfolio manager.",
+        profession_category: "Investment Analyst",
+        company: "Capital Markets Corp",
+        city: "Bangalore",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Commerce",
+        industry: "Finance"
+      }
+    },
+    {
+      email: "priya.singh@gmail.com",
+      phone: "+91 9876500005",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Priya Singh",
+        profile_photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&q=80",
+        batch_year: 2015,
+        house: "Nehru House",
+        bio: "Creative art designer. Focused on visual arts and UI design.",
+        profession_category: "UI/UX Designer",
+        company: "Design Studio",
+        city: "Mumbai",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Arts",
+        industry: "Art"
+      }
+    },
+    {
+      email: "anita.rao@gmail.com",
+      phone: "+91 9876500006",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Anita Rao",
+        profile_photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80",
+        batch_year: 2020,
+        house: "Tagore House",
+        bio: "Data scientist. Passionate about machine learning and data analytics.",
+        profession_category: "Data Scientist",
+        company: "Analytics Co.",
+        city: "Delhi",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Science",
+        industry: "Research"
+      }
+    },
+    {
+      email: "rohan.das@gmail.com",
+      phone: "+91 9876500007",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Rohan Das",
+        profile_photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80",
+        batch_year: 2012,
+        house: "Bose House",
+        bio: "DevOps Engineer. Passionate about cloud architecture and Kubernetes.",
+        profession_category: "DevOps Engineer",
+        company: "CloudTech Solutions",
+        city: "Pune",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Engineering",
+        industry: "Technology"
+      }
+    },
+    {
+      email: "nikhil.joshi@gmail.com",
+      phone: "+91 9876500008",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Nikhil Joshi",
+        profile_photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&q=80",
+        batch_year: 2008,
+        house: "Nehru House",
+        bio: "Accountant and financial auditor. Helping startups manage taxes.",
+        profession_category: "Chartered Accountant",
+        company: "Joshi & Associates",
+        city: "Mumbai",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Commerce",
+        industry: "Finance"
+      }
+    },
+    {
+      email: "divya.nair@gmail.com",
+      phone: "+91 9876500009",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Divya Nair",
+        profile_photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&q=80",
+        batch_year: 2018,
+        house: "Gandhi House",
+        bio: "Writer and content creator. Passionate about literature and fine arts.",
+        profession_category: "Content Strategist",
+        company: "Media Group",
+        city: "Bangalore",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: false,
+        department: "Arts",
+        industry: "Art"
+      }
+    },
+    {
+      email: "arun.pillai@gmail.com",
+      phone: "+91 9876500010",
+      password_hash: alumniHash,
+      role: "faculty",
+      verify_status: "approved",
+      profile: {
+        full_name: "Arun Pillai",
+        profile_photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80",
+        batch_year: 1990,
+        house: "Monastery",
+        bio: "Chemistry teacher. Dedicated to explaining chemical reactions and formulas.",
+        profession_category: "Chemistry Professor",
+        company: "Ramakrishna Mission Vidyapith",
+        city: "Delhi",
+        country: "India",
+        linkedin_url: "https://linkedin.com",
+        show_email: true,
+        show_phone: true,
+        department: "Chemistry",
+        industry: "Education"
+      }
+    },
+    // 4 house representatives
+    {
+      email: "arjun.nair@gmail.com",
+      phone: "+91 9876500011",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Arjun Nair",
+        profile_photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80",
+        batch_year: 2001,
+        house: "Tagore House",
+        bio: "Tagore House representative.",
+        profession_category: "Architect",
+        company: "Nair & Partners",
+        city: "Cochin",
+        country: "India",
+        linkedin_url: "",
+        show_email: true,
+        show_phone: false,
+        department: "Engineering",
+        industry: "Technology"
+      }
+    },
+    {
+      email: "meera.pillai@gmail.com",
+      phone: "+91 9876500012",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Meera Pillai",
+        profile_photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&q=80",
+        batch_year: 2004,
+        house: "Gandhi House",
+        bio: "Gandhi House representative.",
+        profession_category: "Medical Resident",
+        company: "General Hospital",
+        city: "Trivandrum",
+        country: "India",
+        linkedin_url: "",
+        show_email: true,
+        show_phone: false,
+        department: "Science",
+        industry: "Healthcare"
+      }
+    },
+    {
+      email: "vikram.bose@gmail.com",
+      phone: "+91 9876500013",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Vikram Bose",
+        profile_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&q=80",
+        batch_year: 2002,
+        house: "Bose House",
+        bio: "Bose House representative.",
+        profession_category: "Manager",
+        company: "Bose Corp",
+        city: "Kolkata",
+        country: "India",
+        linkedin_url: "",
+        show_email: true,
+        show_phone: false,
+        department: "Commerce",
+        industry: "Finance"
+      }
+    },
+    {
+      email: "kavya.iyer@gmail.com",
+      phone: "+91 9876500014",
+      password_hash: alumniHash,
+      role: "alumni",
+      verify_status: "approved",
+      profile: {
+        full_name: "Kavya Iyer",
+        profile_photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80",
+        batch_year: 2003,
+        house: "Nehru House",
+        bio: "Nehru House representative.",
+        profession_category: "Research Scholar",
+        company: "Nehru Center",
+        city: "Chennai",
+        country: "India",
+        linkedin_url: "",
+        show_email: true,
+        show_phone: false,
+        department: "Arts",
+        industry: "Research"
+      }
+    },
+    // 3 legacy users for dependency links
     {
       email: "aurobindo@google.com",
       phone: "+91 9876543210",
@@ -49,8 +385,8 @@ async function main() {
         full_name: "Aurobindo Ghosh",
         profile_photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&q=80",
         batch_year: 1995,
-        house: "Vivekananda House",
-        bio: "Principal Software Architect at Google Cloud. Alumnus of RKMV Deoghar (1995 batch). Enthusiastic about mentoring young minds and contributing to Vidyapith's development.",
+        house: "Tagore House",
+        bio: "Principal Software Architect at Google Cloud. Alumnus of RKMV Deoghar (1995 batch). Enthusiastic about mentoring young minds.",
         profession_category: "Principal Architect",
         company: "Google Cloud",
         city: "Bengaluru",
@@ -58,7 +394,9 @@ async function main() {
         linkedin_url: "https://linkedin.com/in/aurobindo-ghosh-rkmv",
         show_email: true,
         show_phone: false,
-        certificate_url: "Leaving_Certificate_Scan.pdf"
+        certificate_url: "Leaving_Certificate_Scan.pdf",
+        department: "Engineering",
+        industry: "Technology"
       }
     },
     {
@@ -71,8 +409,8 @@ async function main() {
         full_name: "Dr. Shubhendu Roy",
         profile_photo: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&h=150&fit=crop&q=80",
         batch_year: 1988,
-        house: "Brahmananda House",
-        bio: "Senior Consultant Cardiologist at Apollo Gleneagles. Proud ex-Vidyapith student. Regular volunteer at health camps organized in Jharkhand.",
+        house: "Gandhi House",
+        bio: "Senior Consultant Cardiologist at Apollo Gleneagles. Proud ex-Vidyapith student.",
         profession_category: "Consultant Cardiologist",
         company: "Apollo Hospitals",
         city: "Kolkata",
@@ -80,29 +418,9 @@ async function main() {
         linkedin_url: "https://linkedin.com/in/dr-shubhendu-roy-cardiologist",
         show_email: true,
         show_phone: true,
-        certificate_url: "Leaving_Certificate_Scan.pdf"
-      }
-    },
-    {
-      email: "rishi.sen@ifs.gov.in",
-      phone: "+91 9988776655",
-      password_hash: alumniHash,
-      role: "alumni",
-      verify_status: "approved",
-      profile: {
-        full_name: "Rishi Kumar Sen",
-        profile_photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80",
-        batch_year: 2005,
-        house: "Shardananda House",
-        bio: "Indian Foreign Service (IFS) officer, 2012 batch. Currently serving as First Secretary at the Embassy of India. RKMV shaped my moral canvas.",
-        profession_category: "IFS Officer",
-        company: "Ministry of External Affairs, India",
-        city: "New Delhi",
-        country: "India",
-        linkedin_url: "",
-        show_email: false,
-        show_phone: false,
-        certificate_url: "Leaving_Certificate_Scan.pdf"
+        certificate_url: "Leaving_Certificate_Scan.pdf",
+        department: "Science",
+        industry: "Healthcare"
       }
     },
     {
@@ -115,8 +433,8 @@ async function main() {
         full_name: "Tathagata Mukhopadhyay",
         profile_photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop&q=80",
         batch_year: 2025,
-        house: "Ramakrishnananda House",
-        bio: "Passed Class X from Vidyapith in 2025. Currently pursuing Higher Secondary education with focus on STEM. Interested in AI, robotics, and sanskrit literature.",
+        house: "Nehru House",
+        bio: "Passed Class X from Vidyapith in 2025. Pursuing Higher Secondary education.",
         profession_category: "High School Student",
         company: "RKMV Deoghar",
         city: "Deoghar",
@@ -124,58 +442,17 @@ async function main() {
         linkedin_url: "",
         show_email: true,
         show_phone: true,
-        certificate_url: "Leaving_Certificate_Scan.pdf"
-      }
-    },
-    {
-      email: "debasish.lahiri@outlook.com",
-      phone: "+91 9776655443",
-      password_hash: alumniHash,
-      role: "alumni",
-      verify_status: "pending",
-      profile: {
-        full_name: "Debasish Lahiri",
-        profile_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&q=80",
-        batch_year: 2012,
-        house: "Yogananda House",
-        bio: "Senior Associate at PwC Consulting. Looking to reconnect with my batchmates and hostel brothers.",
-        profession_category: "Management Consultant",
-        company: "PricewaterhouseCoopers",
-        city: "Pune",
-        country: "India",
-        linkedin_url: "https://linkedin.com/in/debasish-lahiri-pwc",
-        show_email: false,
-        show_phone: false,
-        certificate_url: "Leaving_Certificate_Debasish.pdf"
-      }
-    },
-    {
-      email: "amitabha.b@gmail.com",
-      phone: "+91 9007123456",
-      password_hash: alumniHash,
-      role: "alumni",
-      verify_status: "pending",
-      profile: {
-        full_name: "Amitabha Banik",
-        profile_photo: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&h=150&fit=crop&q=80",
-        batch_year: 2018,
-        house: "Premananda House",
-        bio: "PhD Scholar at IISER Kolkata doing research in Quantum Physics. Vidyapith instilled the spirit of curiosity and Swami-ji's teachings in my heart.",
-        profession_category: "Research Fellow",
-        company: "IISER Kolkata",
-        city: "Kalyani",
-        country: "India",
-        linkedin_url: "",
-        show_email: true,
-        show_phone: false,
-        certificate_url: "RKMV_Marskheet_2018.jpg"
+        certificate_url: "Leaving_Certificate_Scan.pdf",
+        department: "Science",
+        industry: "Research"
       }
     }
   ];
 
-  for (const item of usersData) {
+  // Seed the main users
+  for (const item of mainUsers) {
     const { profile, ...userData } = item;
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         ...userData,
         profile: {
@@ -183,8 +460,81 @@ async function main() {
         }
       }
     });
-    console.log(`Created user: ${user.email} (${user.role})`);
   }
+  console.log("Main screenshot profiles seeded.");
+
+  // Lists for generating 238 random profiles
+  const firstNamesAD = ["Amit", "Abhishek", "Anuj", "Akash", "Aman", "Bobby", "Bipin", "Bhupesh", "Chandan", "Chirag", "Deepak", "Debasish", "Dinesh", "Dev"];
+  const firstNamesEH = ["Eshwar", "Ekansh", "Farhan", "Faisal", "Gaurav", "Gopal", "Gautam", "Girish", "Hari", "Himanshu", "Harish", "Hrithik"];
+  const firstNamesIL = ["Ishan", "Indrajit", "Imran", "Jitendra", "Jatin", "Joy", "Kunal", "Kartik", "Ketan", "Lokesh", "Lalit", "Lakshay"];
+  const firstNamesMP = ["Manish", "Manoj", "Mayank", "Mohit", "Nitin", "Naveen", "Nikhil", "Pradeep", "Pankaj", "Piyush", "Parth", "Pranav"];
+  const firstNamesQT = ["Raj", "Ranjan", "Rohan", "Rishi", "Sandeep", "Sanjay", "Suresh", "Sameer", "Tarun", "Tushar", "Tanmay"];
+  const firstNamesUZ = ["Uday", "Ujjwal", "Utkarsh", "Vivek", "Vikram", "Vinay", "Vijay", "Yash", "Yogesh", "Zaheer", "Zeeshan"];
+
+  const lastNames = ["Sharma", "Verma", "Gupta", "Roy", "Sen", "Das", "Joshi", "Nair", "Pillai", "Singh", "Rao", "Kumar", "Banik", "Lahiri", "Mehta", "Khan", "Bose", "Iyer", "Patel", "Mishra", "Mukhopadhyay", "Choudhury", "Bhattacharya"];
+
+  const ranges = [
+    { target: 35, names: firstNamesAD }, // A-D (42 total - 7 main)
+    { target: 38, names: firstNamesEH }, // E-H (38 total - 0 main)
+    { target: 28, names: firstNamesIL }, // I-L (29 total - 1 main)
+    { target: 58, names: firstNamesMP }, // M-P (61 total - 3 main)
+    { target: 42, names: firstNamesQT }, // Q-T (47 total - 5 main)
+    { target: 30, names: firstNamesUZ }  // U-Z (31 total - 1 main)
+  ];
+
+  let idCounter = 100;
+  for (const range of ranges) {
+    for (let i = 0; i < range.target; i++) {
+      const firstName = range.names[Math.floor(Math.random() * range.names.length)];
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      
+      const id = `usr-gen-${idCounter++}`;
+      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${idCounter}@vidyapith.org`;
+      const phone = `+91 9${Math.floor(100000000 + Math.random() * 900000000)}`;
+      
+      const role = Math.random() > 0.15 ? "alumni" : "student";
+      const batch_year = role === 'student' ? 2025 + Math.floor(Math.random() * 2) : 1980 + Math.floor(Math.random() * 45);
+      
+      const house = ["Tagore House", "Gandhi House", "Bose House", "Nehru House"][Math.floor(Math.random() * 4)];
+      const department = ["Engineering", "Science", "Commerce", "Arts"][Math.floor(Math.random() * 4)];
+      const industry = ["Technology", "Healthcare", "Finance", "Government", "Research", "Art"][Math.floor(Math.random() * 6)];
+      const city = ["Mumbai", "Delhi", "Pune", "Bangalore", "Kolkata", "Deoghar"][Math.floor(Math.random() * 6)];
+
+      await prisma.user.create({
+        data: {
+          id,
+          email,
+          phone,
+          password_hash: alumniHash,
+          role,
+          verify_status: "approved",
+          profile: {
+            create: {
+              full_name: `${firstName} ${lastName}`,
+              profile_photo: `https://images.unsplash.com/photo-${[
+                "1535713875002-d1d0cf377fde", "1570295999919-56ceb5ecca61", "1527983359383-4758693f760c",
+                "1500648767791-00dcc994a43e", "1544005313-94ddf0286df2", "1506794778202-cad84cf45f1d",
+                "1534528741775-53994a69daeb", "1494790108377-be9c29b29330", "1517841905240-472988babdf9"
+              ][Math.floor(Math.random() * 9)]}?w=150&h=150&fit=crop&q=80`,
+              batch_year,
+              house,
+              bio: `Vidyapith ex-student. Proud of our legacy.`,
+              profession_category: role === 'student' ? 'High School Student' : 'Professional Analyst',
+              company: role === 'student' ? 'RKMV Deoghar' : 'Global Corporation',
+              city,
+              country: "India",
+              linkedin_url: "",
+              show_email: true,
+              show_phone: false,
+              department,
+              industry
+            }
+          }
+        }
+      });
+    }
+  }
+  console.log("All 248 search directory users seeded.");
 
   // Pre-seed some notifications, posts, comments, events, jobs
   const adminUser = await prisma.user.findFirst({ where: { role: 'admin' } });
