@@ -251,40 +251,42 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
 
   return (
     <div style={{
-      height: 'calc(100vh - 40px)',
+      height: 'calc(100vh - 48px)',
       display: 'flex',
-      background: 'rgba(255,255,255,0.01)',
-      border: '1px solid var(--border-color)',
-      borderRadius: '20px',
+      gap: '20px',
       overflow: 'hidden'
     }}>
 
       {/* ── LEFT: Conversation List ───────────────────────────── */}
       <div style={{
-        width: '340px', flexShrink: 0,
-        borderRight: '1px solid var(--border-color)',
+        width: '320px', flexShrink: 0,
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
         display: 'flex', flexDirection: 'column',
-        background: 'rgba(0,0,0,0.2)',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)',
+        overflow: 'hidden',
         transform: isMobileConvOpen ? 'translateX(-100%)' : 'none',
+        transition: 'transform 0.3s ease'
       }} className="messages-sidebar">
 
         {/* Sidebar Header */}
-        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'white' }}>Messages</h2>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>Messages</h2>
+              <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
                 {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-              </p>
+              </span>
             </div>
             <button
               onClick={() => { setShowNewChat(true); loadDirectory(); }}
               title="New Message"
               style={{
-                width: '38px', height: '38px', borderRadius: '12px',
-                background: 'linear-gradient(135deg, var(--primary-color), var(--accent-gold))',
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
                 border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,122,26,0.4)'
+                cursor: 'pointer', boxShadow: '0 4px 10px rgba(236, 72, 153, 0.2)'
               }}
             >
               <Plus size={18} style={{ color: 'white' }} />
@@ -295,7 +297,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
           <div style={{ position: 'relative' }}>
             <Search size={15} style={{
               position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text-muted)', pointerEvents: 'none'
+              color: '#64748b', pointerEvents: 'none'
             }} />
             <input
               type="text"
@@ -304,8 +306,8 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
               onChange={e => setSearchQuery(e.target.value)}
               style={{
                 width: '100%', padding: '10px 12px 10px 36px',
-                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-                borderRadius: '12px', color: 'white', fontSize: '0.85rem',
+                background: '#f1f5f9', border: '1px solid #e2e8f0',
+                borderRadius: '12px', color: '#1e293b', fontSize: '0.88rem',
                 boxSizing: 'border-box', outline: 'none'
               }}
             />
@@ -313,32 +315,41 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         </div>
 
         {/* Conversation List */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           {loadingConvs ? (
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[1, 2, 3].map(i => (
                 <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '46px', height: '46px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#f1f5f9', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ height: '13px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginBottom: '6px', width: '60%' }} />
-                    <div style={{ height: '11px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', width: '80%' }} />
+                    <div style={{ height: '13px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '6px', width: '60%' }} />
+                    <div style={{ height: '11px', background: '#f8fafc', borderRadius: '4px', width: '80%' }} />
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredConvs.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <MessageCircle size={36} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                {searchQuery ? 'No conversations found' : 'No messages yet'}
+            <div style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '14px',
+                background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '16px', color: '#64748b'
+              }}>
+                <MessageCircle size={28} />
+              </div>
+              <h4 style={{ color: '#1e293b', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 6px' }}>
+                No messages yet
+              </h4>
+              <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 0 20px', lineHeight: 1.4, maxWidth: '200px' }}>
+                Start a conversation with alumni or mentors
               </p>
               {!searchQuery && (
                 <button
                   onClick={() => { setShowNewChat(true); loadDirectory(); }}
+                  className="btn-connect-gradient"
                   style={{
-                    marginTop: '12px', padding: '8px 16px', borderRadius: '8px',
-                    background: 'var(--primary-color)', border: 'none',
-                    color: 'white', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 600
+                    padding: '8px 24px', borderRadius: '9999px',
+                    fontSize: '0.85rem', cursor: 'pointer', fontWeight: 700
                   }}
                 >
                   Start a conversation
@@ -346,96 +357,104 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
               )}
             </div>
           ) : (
-            filteredConvs.map(conv => (
-              <div
-                key={conv.partnerId}
-                onClick={() => openConversation(conv.partnerId)}
-                style={{
-                  padding: '14px 20px', display: 'flex', gap: '12px', alignItems: 'center',
-                  cursor: 'pointer', transition: 'background 0.15s',
-                  background: activePartnerId === conv.partnerId ? 'rgba(255,122,26,0.1)' : 'transparent',
-                  borderLeft: activePartnerId === conv.partnerId ? '3px solid var(--primary-color)' : '3px solid transparent',
-                  position: 'relative'
-                }}
-                onMouseEnter={e => {
-                  if (activePartnerId !== conv.partnerId)
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                }}
-                onMouseLeave={e => {
-                  if (activePartnerId !== conv.partnerId)
-                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                }}
-              >
-                {/* Avatar */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img
-                    src={conv.partnerPhoto}
-                    alt={conv.partnerName}
-                    style={{ width: '46px', height: '46px', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
-                  />
-                  {/* Online dot (simulated) */}
-                  <div style={{
-                    position: 'absolute', bottom: '1px', right: '1px',
-                    width: '11px', height: '11px', borderRadius: '50%',
-                    background: '#48bb78', border: '2px solid var(--bg-dark)'
-                  }} />
-                </div>
+            filteredConvs.map(conv => {
+              const isActive = activePartnerId === conv.partnerId;
+              return (
+                <div
+                  key={conv.partnerId}
+                  onClick={() => openConversation(conv.partnerId)}
+                  style={{
+                    padding: '14px 20px', display: 'flex', gap: '12px', alignItems: 'center',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                    background: isActive ? 'rgba(236,72,153,0.05)' : 'transparent',
+                    borderLeft: isActive ? '3px solid #ec4899' : '3px solid transparent',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={e => {
+                    if (!isActive)
+                      (e.currentTarget as HTMLElement).style.background = '#f8fafc';
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive)
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  }}
+                >
+                  {/* Avatar */}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <img
+                      src={conv.partnerPhoto}
+                      alt={conv.partnerName}
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                    />
+                    {/* Online dot */}
+                    <div style={{
+                      position: 'absolute', bottom: '1px', right: '1px',
+                      width: '10px', height: '10px', borderRadius: '50%',
+                      background: '#48bb78', border: '2px solid #ffffff'
+                    }} />
+                  </div>
 
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{
-                      fontWeight: conv.unreadCount > 0 ? 700 : 600,
-                      color: 'white', fontSize: '0.88rem',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                    }}>
-                      {conv.partnerName}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, marginLeft: '8px' }}>
-                      {timeAgo(conv.lastMessageAt)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
-                    <span style={{
-                      fontSize: '0.78rem',
-                      color: conv.unreadCount > 0 ? 'var(--text-secondary)' : 'var(--text-muted)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      flex: 1
-                    }}>
-                      {conv.isLastFromMe && <span style={{ color: 'var(--text-muted)' }}>You: </span>}
-                      {conv.lastMessage || <em>Start a conversation</em>}
-                    </span>
-                    {conv.unreadCount > 0 && (
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{
-                        background: 'var(--primary-color)', color: 'white', borderRadius: '20px',
-                        padding: '1px 7px', fontSize: '0.68rem', fontWeight: 800, flexShrink: 0, marginLeft: '8px'
+                        fontWeight: conv.unreadCount > 0 ? 700 : 600,
+                        color: '#1e293b', fontSize: '0.88rem',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                       }}>
-                        {conv.unreadCount}
+                        {conv.partnerName}
                       </span>
-                    )}
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0, marginLeft: '8px' }}>
+                        {timeAgo(conv.lastMessageAt)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
+                      <span style={{
+                        fontSize: '0.78rem',
+                        color: conv.unreadCount > 0 ? '#1e293b' : '#64748b',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        flex: 1
+                      }}>
+                        {conv.isLastFromMe && <span style={{ color: '#94a3b8' }}>You: </span>}
+                        {conv.lastMessage || <em>Start a conversation</em>}
+                      </span>
+                      {conv.unreadCount > 0 && (
+                        <span style={{
+                          background: '#ec4899', color: 'white', borderRadius: '20px',
+                          padding: '1px 7px', fontSize: '0.68rem', fontWeight: 800, flexShrink: 0, marginLeft: '8px'
+                        }}>
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {conv.partnerBatch && (
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                      Batch of {conv.partnerBatch}
-                    </span>
-                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
       {/* ── RIGHT: Chat View ────────────────────────────────────── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{
+        flex: 1,
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)',
+        overflow: 'hidden',
+        minWidth: 0
+      }}>
 
         {activePartnerId && activePartner ? (
           <>
             {/* Chat Header */}
             <div style={{
-              padding: '14px 24px', borderBottom: '1px solid var(--border-color)',
+              padding: '14px 24px', borderBottom: '1px solid #e2e8f0',
               display: 'flex', alignItems: 'center', gap: '14px',
-              background: 'rgba(0,0,0,0.15)'
+              background: '#ffffff'
             }}>
               {/* Mobile back button */}
               <button
@@ -443,7 +462,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 className="messages-back-btn"
                 style={{
                   display: 'none', background: 'none', border: 'none',
-                  color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px'
+                  color: '#64748b', cursor: 'pointer', padding: '4px'
                 }}
               >
                 <ChevronLeft size={20} />
@@ -459,18 +478,18 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 <div style={{
                   position: 'absolute', bottom: '1px', right: '1px',
                   width: '10px', height: '10px', borderRadius: '50%',
-                  background: '#48bb78', border: '2px solid var(--bg-dark)'
+                  background: '#48bb78', border: '2px solid #ffffff'
                 }} />
               </div>
 
               <div style={{ flex: 1 }}>
                 <h3
-                  style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'white', cursor: 'pointer' }}
+                  style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}
                   onClick={() => onViewProfile(activePartner.id)}
                 >
                   {activePartner.full_name}
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#48bb78' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
                   {activePartner.profession_category || (activePartner.batch_year ? `Batch of ${activePartner.batch_year}` : 'Active now')}
                 </p>
               </div>
@@ -488,12 +507,12 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                     onClick={() => showToast(`${label} coming soon!`, 'info')}
                     style={{
                       width: '36px', height: '36px', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)',
+                      background: '#ffffff', border: '1px solid #e2e8f0',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s'
+                      color: '#64748b', cursor: 'pointer', transition: 'all 0.15s'
                     }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#f8fafc'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#ffffff'}
                   >
                     <Icon size={16} />
                   </button>
@@ -502,25 +521,25 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
             </div>
 
             {/* Messages Area */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '2px', background: '#f8fafc' }}>
               {loadingMessages ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Loader2 size={24} style={{ color: 'var(--text-muted)', animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={24} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
                 </div>
               ) : messages.length === 0 ? (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
                   <div style={{
                     width: '72px', height: '72px', borderRadius: '50%',
-                    background: 'rgba(255,122,26,0.1)', border: '2px solid rgba(255,122,26,0.3)',
+                    background: 'rgba(236,72,153,0.1)', border: '2px solid rgba(236,72,153,0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <MessageCircle size={30} style={{ color: 'var(--primary-color)' }} />
+                    <MessageCircle size={30} style={{ color: '#ec4899' }} />
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <h4 style={{ color: 'white', margin: '0 0 6px', fontSize: '1rem' }}>
+                    <h4 style={{ color: '#1e293b', margin: '0 0 6px', fontSize: '1rem', fontWeight: 800 }}>
                       No messages yet
                     </h4>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                    <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
                       Say hello to {activePartner.full_name}!
                     </p>
                   </div>
@@ -530,15 +549,15 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                   <div key={gi}>
                     {/* Date separator */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 0 12px' }}>
-                      <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                       <span style={{
-                        fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600,
-                        background: 'rgba(255,255,255,0.04)', padding: '3px 10px', borderRadius: '20px',
-                        border: '1px solid var(--border-color)'
+                        fontSize: '0.72rem', color: '#64748b', fontWeight: 600,
+                        background: '#ffffff', padding: '3px 10px', borderRadius: '20px',
+                        border: '1px solid #e2e8f0'
                       }}>
                         {group.date}
                       </span>
-                      <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                     </div>
 
                     {/* Messages in group */}
@@ -560,7 +579,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                               animation: msg.id.startsWith('opt-') ? 'fadeIn 0.2s ease' : undefined
                             }}
                           >
-                            {/* Avatar (only for other person's last message in group) */}
+                            {/* Avatar */}
                             {!isMe && (
                               <div style={{ width: '28px', flexShrink: 0 }}>
                                 {isLast && (
@@ -580,22 +599,23 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                                   ? `16px 16px ${isLast ? '4px' : '16px'} 16px`
                                   : `16px 16px 16px ${isLast ? '4px' : '16px'}`,
                                 background: isMe
-                                  ? 'linear-gradient(135deg, var(--primary-color), #ff6b35)'
-                                  : 'rgba(255,255,255,0.08)',
-                                color: 'white',
+                                  ? 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
+                                  : '#ffffff',
+                                border: isMe ? 'none' : '1px solid #e2e8f0',
+                                color: isMe ? 'white' : '#1e293b',
                                 fontSize: '0.88rem',
                                 lineHeight: 1.5,
-                                boxShadow: isMe ? '0 2px 8px rgba(255,122,26,0.3)' : 'none'
+                                boxShadow: isMe ? '0 2px 8px rgba(236,72,153,0.15)' : 'none'
                               }}>
                                 {msg.content}
                               </div>
                               {isLast && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
-                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
                                     {formatMessageTime(msg.created_at)}
                                   </span>
                                   {isMe && (
-                                    <CheckCheck size={11} style={{ color: msg.read ? '#48bb78' : 'var(--text-muted)' }} />
+                                    <CheckCheck size={11} style={{ color: msg.read ? '#ec4899' : '#94a3b8' }} />
                                   )}
                                 </div>
                               )}
@@ -612,16 +632,16 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
 
             {/* Message Input */}
             <div style={{
-              padding: '14px 20px', borderTop: '1px solid var(--border-color)',
-              background: 'rgba(0,0,0,0.15)'
+              padding: '14px 20px', borderTop: '1px solid #e2e8f0',
+              background: '#ffffff'
             }}>
               {/* Emoji Picker */}
               {showEmojiPicker && (
                 <div style={{
                   display: 'flex', flexWrap: 'wrap', gap: '6px',
                   padding: '10px 14px', marginBottom: '10px',
-                  background: 'rgba(255,255,255,0.04)', borderRadius: '12px',
-                  border: '1px solid var(--border-color)'
+                  background: '#ffffff', borderRadius: '12px',
+                  border: '1px solid #e2e8f0'
                 }}>
                   {EMOJI_LIST.map(emoji => (
                     <button
@@ -632,7 +652,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                         cursor: 'pointer', padding: '4px', borderRadius: '8px',
                         transition: 'background 0.15s'
                       }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#f1f5f9'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
                     >
                       {emoji}
@@ -646,8 +666,8 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   style={{
-                    background: showEmojiPicker ? 'rgba(255,122,26,0.15)' : 'none',
-                    border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
+                    background: showEmojiPicker ? 'rgba(236,72,153,0.08)' : 'none',
+                    border: 'none', color: '#64748b', cursor: 'pointer',
                     padding: '8px', borderRadius: '10px', transition: 'all 0.15s',
                     fontSize: '1.2rem'
                   }}
@@ -665,12 +685,12 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                   style={{
                     flex: 1, padding: '11px 16px',
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)',
-                    borderRadius: '24px', color: 'white', fontSize: '0.88rem',
-                    outline: 'none', transition: 'border-color 0.2s'
+                    background: '#f1f5f9', border: '1px solid #e2e8f0',
+                    borderRadius: '24px', color: '#1e293b', fontSize: '0.88rem',
+                    outline: 'none', transition: 'all 0.2s'
                   }}
-                  onFocus={e => (e.target as HTMLElement).style.borderColor = 'rgba(255,122,26,0.5)'}
-                  onBlur={e => (e.target as HTMLElement).style.borderColor = 'var(--border-color)'}
+                  onFocus={e => (e.target as HTMLElement).style.borderColor = '#8b5cf6'}
+                  onBlur={e => (e.target as HTMLElement).style.borderColor = '#e2e8f0'}
                 />
 
                 {/* Send button */}
@@ -680,51 +700,50 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                   style={{
                     width: '42px', height: '42px', borderRadius: '50%',
                     background: messageText.trim()
-                      ? 'linear-gradient(135deg, var(--primary-color), var(--accent-gold))'
-                      : 'rgba(255,255,255,0.06)',
+                      ? 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
+                      : '#f1f5f9',
                     border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: messageText.trim() ? 'pointer' : 'default',
                     transition: 'all 0.2s', flexShrink: 0,
-                    boxShadow: messageText.trim() ? '0 4px 12px rgba(255,122,26,0.4)' : 'none'
+                    boxShadow: messageText.trim() ? '0 4px 10px rgba(236, 72, 153, 0.2)' : 'none'
                   }}
                 >
                   {sending
                     ? <Loader2 size={16} style={{ color: 'white', animation: 'spin 1s linear infinite' }} />
-                    : <Send size={16} style={{ color: messageText.trim() ? 'white' : 'var(--text-muted)' }} />
+                    : <Send size={16} style={{ color: messageText.trim() ? 'white' : '#94a3b8' }} />
                   }
                 </button>
               </div>
             </div>
           </>
         ) : (
-          /* No conversation selected */
+          /* No conversation selected (Matches target screenshot exactly) */
           <div style={{
             flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '40px'
+            alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '40px'
           }}>
+            {/* Gradient square message bubble icon */}
             <div style={{
-              width: '100px', height: '100px', borderRadius: '50%',
-              background: 'rgba(255,122,26,0.1)', border: '2px solid rgba(255,122,26,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
+              width: '80px', height: '80px', borderRadius: '20px',
+              background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(236,72,153,0.15)'
             }}>
-              <MessageCircle size={44} style={{ color: 'var(--primary-color)' }} />
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <h2 style={{ color: 'white', fontSize: '1.3rem', fontWeight: 700, margin: '0 0 8px' }}>
+              <h2 style={{ color: '#1e293b', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px' }}>
                 Your Messages
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 24px', lineHeight: 1.5 }}>
-                Connect directly with fellow alumni, batchmates, and mentors.<br />
-                Start a new conversation below.
+              <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 28px', lineHeight: 1.5, maxWidth: '400px' }}>
+                Send private messages to alumni, mentors, and batchmates. Start meaningful conversations and grow your network.
               </p>
               <button
                 onClick={() => { setShowNewChat(true); loadDirectory(); }}
+                className="btn-connect-gradient"
                 style={{
-                  padding: '12px 28px', borderRadius: '12px', fontWeight: 700,
-                  background: 'linear-gradient(135deg, var(--primary-color), var(--accent-gold))',
-                  border: 'none', color: 'white', cursor: 'pointer', fontSize: '0.9rem',
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  boxShadow: '0 4px 20px rgba(255,122,26,0.4)'
+                  padding: '12px 28px', borderRadius: '9999px', fontWeight: 700,
+                  fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)'
                 }}
               >
                 <Plus size={16} />
@@ -732,20 +751,40 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
               </button>
             </div>
 
-            {/* Tips */}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '16px' }}>
+            {/* Tips links row */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '16px' }}>
               {[
-                { icon: '🤝', text: 'Connect with mentors' },
-                { icon: '🎓', text: 'Reach out to batchmates' },
-                { icon: '💼', text: 'Explore job referrals' },
+                { label: 'Connect with mentors', icon: 'Connect' },
+                { label: 'Reach out to batchmates', icon: 'Batch' },
+                { label: 'Explore job referrals', icon: 'Jobs' },
               ].map(tip => (
-                <div key={tip.text} style={{
-                  padding: '10px 16px', borderRadius: '10px',
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)',
-                  fontSize: '0.82rem', color: 'var(--text-secondary)',
-                  display: 'flex', alignItems: 'center', gap: '6px'
-                }}>
-                  <span>{tip.icon}</span> {tip.text}
+                <div 
+                  key={tip.label}
+                  onClick={() => { setShowNewChat(true); loadDirectory(); }}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '9999px',
+                    background: '#f1f5f9',
+                    fontSize: '0.82rem',
+                    color: '#475569',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#e2e8f0'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#f1f5f9'}
+                >
+                  {tip.icon === 'Connect' ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                  ) : tip.icon === 'Batch' ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  )}
+                  <span>{tip.label}</span>
                 </div>
               ))}
             </div>
@@ -756,23 +795,23 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
       {/* ── New Chat Modal ────────────────────────────────────── */}
       {showNewChat && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, backdropFilter: 'blur(4px)'
+          zIndex: 1000, backdropFilter: 'blur(8px)'
         }}>
           <div style={{
-            background: 'var(--bg-dark)', border: '1px solid var(--border-color)',
-            borderRadius: '20px', padding: '28px', width: '500px', maxWidth: '95vw',
+            background: '#ffffff', border: '1px solid #e2e8f0',
+            borderRadius: '20px', padding: '28px', width: '480px', maxWidth: '95vw',
             maxHeight: '80vh', display: 'flex', flexDirection: 'column',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.6)'
+            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
                 New Conversation
               </h3>
               <button
                 onClick={() => { setShowNewChat(false); setDirSearch(''); }}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
               >
                 <X size={18} />
               </button>
@@ -782,7 +821,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
             <div style={{ position: 'relative', marginBottom: '16px' }}>
               <Search size={15} style={{
                 position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                color: 'var(--text-muted)', pointerEvents: 'none'
+                color: '#64748b', pointerEvents: 'none'
               }} />
               <input
                 type="text"
@@ -792,8 +831,8 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 onChange={e => setDirSearch(e.target.value)}
                 style={{
                   width: '100%', padding: '11px 12px 11px 36px',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-                  borderRadius: '12px', color: 'white', fontSize: '0.88rem',
+                  background: '#f1f5f9', border: '1px solid #e2e8f0',
+                  borderRadius: '12px', color: '#1e293b', fontSize: '0.88rem',
                   boxSizing: 'border-box', outline: 'none'
                 }}
               />
@@ -802,12 +841,12 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
             {/* Directory list */}
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {loadingDir ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
                   <p style={{ margin: 0, fontSize: '0.85rem' }}>Loading alumni...</p>
                 </div>
               ) : filteredDir.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   <Users size={28} style={{ marginBottom: '8px' }} />
                   <p style={{ margin: 0, fontSize: '0.85rem' }}>No alumni found</p>
                 </div>
@@ -819,12 +858,12 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                     style={{
                       padding: '12px 16px', borderRadius: '12px',
                       display: 'flex', alignItems: 'center', gap: '12px',
-                      cursor: 'pointer', transition: 'background 0.15s',
+                      cursor: 'pointer', transition: 'all 0.15s',
                       border: '1px solid transparent'
                     }}
                     onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,122,26,0.08)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,122,26,0.2)';
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(236,72,153,0.04)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(236,72,153,0.08)';
                     }}
                     onMouseLeave={e => {
                       (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -837,12 +876,12 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                       style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: 'white', fontSize: '0.9rem' }}>{user.full_name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Batch {user.batch_year} · {user.profession} at {user.company}
+                      <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>{user.full_name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        Class of {user.batch_year} · {user.profession} at {user.company}
                       </div>
                     </div>
-                    <ArrowRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <ArrowRight size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
                   </div>
                 ))
               )}
