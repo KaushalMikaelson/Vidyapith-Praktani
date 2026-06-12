@@ -62,6 +62,7 @@ export default function App() {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showRegPass, setShowRegPass] = useState(false);
   const [selectedLoginRole, setSelectedLoginRole] = useState<'alumni' | 'student' | 'admin' | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Profile Modal
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -70,6 +71,11 @@ export default function App() {
   // Landing Page & Auth Modal States
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setAuthError(null);
+  }, [showAuthModal, authTab, selectedLoginRole]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -135,50 +141,68 @@ export default function App() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim() || !loginPass) return;
+    if (!loginEmail.trim() || !loginPass || isSubmitting) return;
+    setAuthError(null);
+    setIsSubmitting(true);
     
-    const res = await login(loginEmail.trim(), loginPass);
-    if (res.success) {
-      showToast("Signed in successfully! Welcome back.", "success");
-      setLoginEmail('');
-      setLoginPass('');
-      setShowAuthModal(false);
-    } else {
-      showToast(res.error || "Incorrect login credentials.", "danger");
+    try {
+      const res = await login(loginEmail.trim(), loginPass);
+      if (res.success) {
+        showToast("Signed in successfully! Welcome back.", "success");
+        setLoginEmail('');
+        setLoginPass('');
+        setShowAuthModal(false);
+      } else {
+        setAuthError(res.error || "Incorrect login credentials.");
+        showToast(res.error || "Incorrect login credentials.", "danger");
+      }
+    } catch (err: any) {
+      setAuthError(err.message || "Login failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regBatch || !regHouse || !regPass) {
+    if (!regName.trim() || !regEmail.trim() || !regBatch || !regHouse || !regPass || isSubmitting) {
       showToast("Please fill in all required fields.", "danger");
       return;
     }
+    setAuthError(null);
+    setIsSubmitting(true);
 
-    const res = await register({
-      full_name: regName.trim(),
-      email: regEmail.trim(),
-      batch_year: regBatch,
-      house: regHouse,
-      mobile: regMobile.trim(),
-      password: regPass,
-      certificate_name: regFile ? regFile.name : "Certificate_Scan.pdf"
-    });
+    try {
+      const res = await register({
+        full_name: regName.trim(),
+        email: regEmail.trim(),
+        batch_year: regBatch,
+        house: regHouse,
+        mobile: regMobile.trim(),
+        password: regPass,
+        certificate_name: regFile ? regFile.name : "Certificate_Scan.pdf"
+      });
 
-    if (res.success) {
-      showToast("Registration requested! The ex-student verification committee will review your leaving certificate within 24 hours.", "success");
-      setRegName('');
-      setRegEmail('');
-      setRegBatch('');
-      setRegHouse('');
-      setRegMobile('');
-      setRegPass('');
-      setRegFile(null);
-      setAuthTab('login');
-      setRegStep(1);
-      setShowAuthModal(false);
-    } else {
-      showToast(res.error || "Registration failed.", "danger");
+      if (res.success) {
+        showToast("Registration requested! The ex-student verification committee will review your leaving certificate within 24 hours.", "success");
+        setRegName('');
+        setRegEmail('');
+        setRegBatch('');
+        setRegHouse('');
+        setRegMobile('');
+        setRegPass('');
+        setRegFile(null);
+        setAuthTab('login');
+        setRegStep(1);
+        setShowAuthModal(false);
+      } else {
+        setAuthError(res.error || "Registration failed.");
+        showToast(res.error || "Registration failed.", "danger");
+      }
+    } catch (err: any) {
+      setAuthError(err.message || "Registration failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -773,6 +797,31 @@ export default function App() {
                     </button>
                   </div>
 
+                  {/* Error Alert Box */}
+                  {authError && (
+                    <div 
+                      style={{ 
+                        background: '#fef2f2', 
+                        border: '1px solid #fecaca', 
+                        borderRadius: '8px', 
+                        padding: '10px 14px', 
+                        color: '#dc2626', 
+                        fontSize: '0.85rem', 
+                        fontWeight: 500, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        marginBottom: '16px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+                      <span style={{ flexGrow: 1 }}>{authError}</span>
+                    </div>
+                  )}
+
                   {authTab === 'login' ? (
                     selectedLoginRole === null ? (
                       /* Role Selector before Sign In */
@@ -891,8 +940,23 @@ export default function App() {
                         </div>
 
                         {/* Submit Action */}
-                        <button type="submit" className="btn btn-primary btn-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px', width: '100%', padding: '13px' }}>
-                          <span>Sign In</span>
+                        <button 
+                          type="submit" 
+                          disabled={isSubmitting}
+                          className="btn btn-primary btn-block" 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px', 
+                            marginTop: '24px', 
+                            width: '100%', 
+                            padding: '13px',
+                            opacity: isSubmitting ? 0.6 : 1,
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          <span>{isSubmitting ? "Signing In..." : "Sign In"}</span>
                           <ArrowRight size={18} />
                         </button>
 
@@ -1164,10 +1228,19 @@ export default function App() {
                             </button>
                             <button 
                               type="submit" 
+                              disabled={isSubmitting}
                               className="btn btn-primary"
-                              style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                              style={{ 
+                                flexGrow: 1, 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '8px',
+                                opacity: isSubmitting ? 0.6 : 1,
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                              }}
                             >
-                              <span>Submit Registration</span>
+                              <span>{isSubmitting ? "Submitting..." : "Submit Registration"}</span>
                               <CheckCircle size={18} />
                             </button>
                           </div>

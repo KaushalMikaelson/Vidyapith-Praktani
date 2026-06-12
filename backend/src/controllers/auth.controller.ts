@@ -86,7 +86,14 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
 
     res.status(201).json({ success: true, message: responseMsg });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("Registration Critical Error: ", err);
+    if (err.code === 'P2002') {
+      const target = err.meta?.target || [];
+      const field = target.includes('email') ? 'email address' : target.includes('phone') ? 'mobile number' : 'email or mobile number';
+      res.status(400).json({ error: `An account with this ${field} already exists.` });
+    } else {
+      res.status(500).json({ error: "Registration failed due to a database integrity error. Please check your inputs." });
+    }
   }
 };
 
