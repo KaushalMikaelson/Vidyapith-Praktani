@@ -47,6 +47,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     text: string;
     timestamp: string;
     viewed: boolean;
+    createdAt?: number;
   }
 
   interface StoryGroup {
@@ -106,13 +107,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [activeGroupId, setActiveGroupId] = useState<string>('grp-all');
 
   // Load user stories from localStorage
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('rkmv_user_stories');
       if (stored) {
         try {
-          setCurrentUserStories(JSON.parse(stored));
+          const parsed = JSON.parse(stored) as StoryItem[];
+          const now = Date.now();
+          const oneDayMs = 24 * 60 * 60 * 1000;
+          const activeStories = parsed.filter(story => {
+            const createdTime = story.createdAt || parseInt(story.id.replace('story-user-', '')) || now;
+            return now - createdTime < oneDayMs;
+          });
+          setCurrentUserStories(activeStories);
+          if (activeStories.length !== parsed.length) {
+            localStorage.setItem('rkmv_user_stories', JSON.stringify(activeStories));
+          }
         } catch (e) {}
       }
     }
@@ -1014,7 +1024,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         mediaUrl,
         text: storyText,
         timestamp: 'Just now',
-        viewed: false
+        viewed: false,
+        createdAt: Date.now()
       };
       const updated = [...currentUserStories, newStory];
       setCurrentUserStories(updated);

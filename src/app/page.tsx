@@ -19,11 +19,11 @@ import { CreateScreen } from '../screens/CreateScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 
-// Icons
 import { 
   Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
   CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles,
-  Search, BookOpen, Award, Briefcase, GraduationCap, Compass, Heart, Menu, ShieldCheck, ChevronRight
+  Search, BookOpen, Award, Briefcase, GraduationCap, Compass, Heart, Menu, ShieldCheck, ChevronRight,
+  MapPin, UserPlus, MessageCircle, Globe
 } from 'lucide-react';
 
 interface ToastMsg {
@@ -1332,7 +1332,7 @@ export default function App() {
               {/* Highlights Column */}
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={14} style={{ color: '#22c55e' }} /> Highlights
+                  <CheckCircle size={14} style={{ color: '#22c55e' }} /> Highlights
                 </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {['Education', 'Achievements', 'Reunion', 'Career', 'Events', 'Travel', 'Mentorship'].map(tag => (
