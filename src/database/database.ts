@@ -201,7 +201,28 @@ export const RKMV_DB = {
     console.log("Seeding Vidyapith Connect Database in TypeScript React...");
 
     // 1. Initial Users
-    const users: User[] = [];
+    const users: User[] = [
+      {
+        id: "usr-admin-1",
+        full_name: "Kaushal",
+        email: "kaushalstar1@gmail.com",
+        mobile: "+91 9431320000",
+        password_hash: "Klaus@6621",
+        batch_year: 2026,
+        house: "Monastery",
+        role: "admin",
+        verify_status: "approved",
+        profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+        bio: "Platform Administrator.",
+        profession: "Administrator",
+        company: "Ramakrishna Mission Vidyapith, Deoghar",
+        city: "Deoghar",
+        country: "India",
+        linkedin_url: "",
+        privacy: { show_email: true, show_mobile: true },
+        created_at: new Date().toISOString()
+      }
+    ];
 
     // 2. Initial Posts (Forums)
     const posts: Post[] = [];

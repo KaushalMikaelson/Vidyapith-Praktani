@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -19,7 +20,40 @@ async function main() {
   await prisma.alumniProfile.deleteMany({});
   await prisma.user.deleteMany({});
 
-  console.log("Database cleared. Seeding news and heritage only (0 users and 0 posts)...");
+  console.log("Database cleared. Seeding admin user, news and heritage...");
+
+  const salt = await bcrypt.genSalt(10);
+  const adminHash = await bcrypt.hash("Klaus@6621", salt);
+
+  // Seed the admin user
+  const adminUser = await prisma.user.create({
+    data: {
+      email: "kaushalstar1@gmail.com",
+      phone: "+91 9431320000",
+      password_hash: adminHash,
+      role: "admin",
+      verify_status: "approved",
+      profile: {
+        create: {
+          full_name: "Kaushal",
+          profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+          batch_year: 2026,
+          house: "Monastery",
+          bio: "Platform Administrator.",
+          profession_category: "Administrator",
+          company: "Ramakrishna Mission Vidyapith, Deoghar",
+          city: "Deoghar",
+          country: "India",
+          linkedin_url: "",
+          show_email: true,
+          show_phone: true,
+          certificate_url: "Leaving_Certificate_Scan.pdf",
+          department: "Administration",
+          industry: "Education"
+        }
+      }
+    }
+  });
 
   // Seed news & heritage
   await prisma.news.createMany({
