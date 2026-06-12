@@ -58,88 +58,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     stories: StoryItem[];
   }
 
-  const [stories, setStories] = useState<StoryGroup[]>([
-    {
-      userId: 'usr-alumni-2',
-      userName: 'Dr. Mehta',
-      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&q=80',
-      userBatch: '1988',
-      hasUnviewed: true,
-      stories: [
-        {
-          id: 'story-1-1',
-          mediaUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=1400&fit=crop&q=80',
-          text: 'Visiting the new research wing today! 🔬',
-          timestamp: '2h ago',
-          viewed: false
-        }
-      ]
-    },
-    {
-      userId: 'usr-alumni-3',
-      userName: 'Sophia',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&q=80',
-      userBatch: '2005',
-      hasUnviewed: true,
-      stories: [
-        {
-          id: 'story-2-1',
-          mediaUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=1400&fit=crop&q=80',
-          text: 'Speech at the UN Assembly done. Proud alumni! 🇺🇸',
-          timestamp: '4h ago',
-          viewed: false
-        }
-      ]
-    },
-    {
-      userId: 'usr-alumni-4',
-      userName: 'Sameer',
-      userAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&q=80',
-      userBatch: '1985',
-      hasUnviewed: true,
-      stories: [
-        {
-          id: 'story-3-1',
-          mediaUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=1400&fit=crop&q=80',
-          text: 'Found a photo of the chemistry lab from 1983! 🧪',
-          timestamp: '12h ago',
-          viewed: false
-        }
-      ]
-    },
-    {
-      userId: 'usr-alumni-5',
-      userName: 'Dr. Rao',
-      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop&q=80',
-      userBatch: '1992',
-      hasUnviewed: true,
-      stories: [
-        {
-          id: 'story-4-1',
-          mediaUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=1400&fit=crop&q=80',
-          text: 'Congratulations to the graduating class! 🎓',
-          timestamp: '6h ago',
-          viewed: false
-        }
-      ]
-    },
-    {
-      userId: 'usr-alumni-6',
-      userName: 'Priya',
-      userAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&q=80',
-      userBatch: '2010',
-      hasUnviewed: true,
-      stories: [
-        {
-          id: 'story-5-1',
-          mediaUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=1400&fit=crop&q=80',
-          text: 'Enjoying the evening alumni get-together! 🌅',
-          timestamp: '8h ago',
-          viewed: false
-        }
-      ]
-    }
-  ]);
+  const [stories, setStories] = useState<StoryGroup[]>([]);
 
   const [currentUserStories, setCurrentUserStories] = useState<StoryItem[]>([]);
   const [activeStoryGroupIndex, setActiveStoryGroupIndex] = useState<number | null>(null); // -1 = current user
@@ -403,17 +322,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   ]);
 
   // Reunions expense list
-  const [reunionExpenses, setReunionExpenses] = useState<any[]>([
-    { id: 'exp-1', title: 'Grand Lunch Prasad Catering', amount: 35000, payer: 'Aurobindo Ghosh (Google)' },
-    { id: 'exp-2', title: 'Temple Hall Floral Decoration', amount: 8500, payer: 'Dr. Shubhendu Roy' },
-    { id: 'exp-3', title: 'Centennial Souvenir Printing', amount: 12000, payer: 'Rishi Kumar Sen' }
-  ]);
+  const [reunionExpenses, setReunionExpenses] = useState<any[]>([]);
   const [expTitleInput, setExpTitleInput] = useState('');
   const [expAmountInput, setExpAmountInput] = useState('');
-  const [reunionPhotos, setReunionPhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&fit=crop&q=80'
-  ]);
+  const [reunionPhotos, setReunionPhotos] = useState<string[]>([]);
   const [tempReunionPhotoInput, setTempReunionPhotoInput] = useState('');
 
   // School Archives decadal timeline selector
@@ -421,16 +333,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [archiveCategory, setArchiveCategory] = useState('All');
 
   // Messaging private chats
-  const [chatMessages, setChatMessages] = useState<Record<string, any[]>>({
-    'chat-1': [
-      { id: 'msg-1', senderId: 'usr-alumni-2', text: 'Hey Aurobindo! Are you coming to Deoghar this Puja?', time: '10:30 AM' },
-      { id: 'msg-2', senderId: 'usr-alumni-1', text: 'Yes Shubhendu! Already booked my tickets. Looking forward to meeting Brahmananda-ji.', time: '10:32 AM' }
-    ],
-    'chat-batch': [
-      { id: 'bmsg-1', senderId: 'usr-alumni-2', text: 'Brothers, has anyone contributed to the computer lab fund yet?', time: 'Yesterday' },
-      { id: 'bmsg-2', senderId: 'usr-alumni-3', text: 'Yes, just completed a â‚¹25k transfer. Receipt received.', time: 'Yesterday' }
-    ]
-  });
+  const [chatMessages, setChatMessages] = useState<Record<string, any[]>>({});
   const [messageInputText, setMessageInputText] = useState('');
   const [activeChatId, setActiveChatId] = useState('chat-1');
   const [messagingModalOpen, setMessagingModalOpen] = useState(false);
@@ -532,6 +435,39 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }
   };
 
+  const loadSpotlights = async () => {
+    try {
+      const newsList = await apiFetch('/news');
+      const spotlightItems = newsList.filter((n: any) => n.category === 'Alumni Spotlight');
+      const mapped = spotlightItems.map((n: any) => {
+        let name = n.title;
+        let role = "Alumnus";
+        if (n.title.startsWith("Alumni Spotlight:")) {
+          const parts = n.title.replace("Alumni Spotlight:", "").trim().split(",");
+          name = parts[0].trim();
+          if (parts.length > 1) {
+            role = parts.slice(1).join(",").trim();
+          }
+        }
+        let batch = 2005;
+        const batchMatch = n.body.match(/Batch of (\d{4})/i);
+        if (batchMatch) {
+          batch = parseInt(batchMatch[1]);
+        }
+        return {
+          name,
+          batch,
+          role,
+          image: n.media_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
+          story: n.body
+        };
+      });
+      setSpotlightPeople(mapped);
+    } catch (err) {
+      console.error("Failed to load spotlights:", err);
+    }
+  };
+
   useEffect(() => {
     if (screenMode === 'profile' && forceProfileId) {
       loadProfile(forceProfileId);
@@ -542,6 +478,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       apiFetch('/directory')
         .then(data => setDiscoverAlumni(data))
         .catch(err => console.error(err));
+      loadSpotlights();
     }
   }, [activeGroupId, screenMode, forceProfileId, refreshKey]);
 
@@ -1009,21 +946,20 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }).catch((err: any) => showToast(err.message, 'danger'));
   };
 
-  const spotlightPeople = [
-    { name: 'Dr. Marcus Adeyemi', batch: '1998', role: 'Chief Innovation Officer, NovaTech Global', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&h=520&fit=crop&q=80', story: 'The values I learned within these century-old halls shaped every breakthrough I have led.' },
-    { name: 'Sophia Patel', batch: '2005', role: 'UN Goodwill Ambassador for Education', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=180&h=180&fit=crop&q=80', story: 'Appointed UN Goodwill Ambassador for Education.' },
-    { name: 'Diego Morales', batch: '2011', role: 'Founder, Fintech Startup', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=180&h=180&fit=crop&q=80', story: 'Founded a unicorn fintech startup in Latin America.' },
-    { name: 'Dr. Elena Wong', batch: '1992', role: 'Cancer Researcher', image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=180&h=180&fit=crop&q=80', story: 'Pioneered breakthrough cancer immunotherapy research.' },
-    { name: 'Boris Kovac', batch: '2014', role: 'Documentary Filmmaker', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=180&h=180&fit=crop&q=80', story: 'National award-winning documentary filmmaker.' },
-    { name: 'Dr. Amara Tesfaye', batch: '2001', role: 'Healthcare Leader', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=180&h=180&fit=crop&q=80', story: 'Leading rural healthcare access across the region.' }
-  ];
+  const [spotlightPeople, setSpotlightPeople] = useState<any[]>([]);
 
-  const mockMemories = [
-    { name: 'Meera Iyer', batch: '2005', image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=520&h=700&fit=crop&q=80', text: 'Late nights at the old library before finals - we practically lived here!', likes: 128, comments: 24 },
-    { name: 'Ananya Roy', batch: '2010', image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=520&h=520&fit=crop&q=80', text: 'Annual reunion picnic 2024 - some friendships never fade.', likes: 212, comments: 41 },
-    { name: 'Nisha Patel', batch: '2015', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=760&fit=crop&q=80', text: 'Graduation day - throwing those caps will never get old!', likes: 405, comments: 72 },
-    { name: 'Sameer Khan', batch: '1985', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=520&h=760&fit=crop&q=80', text: 'Our old chemistry lab - found this gem in the archives!', likes: 97, comments: 19 }
-  ];
+  const derivedMemories = posts
+    .filter((p: any) => p.post_type === 'photo' || p.content?.toLowerCase().includes('memory') || p.content?.toLowerCase().includes('nostalg'))
+    .map((p: any) => ({
+      id: p.id,
+      name: p.author?.full_name || 'Alumnus',
+      batch: p.author?.batch_year || '—',
+      image: p.media_urls?.[0] || 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=520&h=700&fit=crop&q=80',
+      text: p.content || '',
+      likes: (p.likes || []).length,
+      comments: (p.comments || []).length,
+      rawPost: p
+    }));
 
   // Story click handlers
   const handleStoryGroupClick = (idx: number) => {
@@ -1772,27 +1708,37 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <div><h1>Alumni Spotlight</h1><p>Celebrating the achievements of our community</p></div>
             <span><Star size={17} /> Featured</span>
           </div>
-          <section className="featured-spotlight">
-            <div style={{ backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${spotlightPeople[0].image})` }}>
-              <span>Alumnus of the Month</span>
-              <h2>{spotlightPeople[0].name}</h2>
-              <p>Class of {spotlightPeople[0].batch} Â· {spotlightPeople[0].role}</p>
+          {spotlightPeople.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', margin: '20px 0' }}>
+              <Star size={36} style={{ marginBottom: '12px', color: 'var(--accent-gold)' }} />
+              <p style={{ fontWeight: 600, color: 'white', marginBottom: '8px' }}>No spotlights active yet</p>
+              <p style={{ fontSize: '0.85rem' }}>Create an Alumni Spotlight under the news section or nominate an alumnus to showcase their achievements!</p>
             </div>
-            <blockquote>"{spotlightPeople[0].story} This school taught me that legacy is built one bold idea at a time."</blockquote>
-            <footer><p><span>Awards</span><strong>12 Global Honors</strong></p><p><span>Patents</span><strong>34 Filed</strong></p><button><BookOpen size={20} /> Read Full Story</button></footer>
-          </section>
-          <div className="spotlight-grid-head"><h2>More Spotlights</h2><button>View all <span aria-hidden="true">â€º</span></button></div>
-          <section className="spotlight-card-grid">
-            {spotlightPeople.slice(1).map(person => (
-              <article key={person.name}>
-                <img src={person.image} alt={person.name} />
-                <h3>{person.name}</h3>
-                <span>Batch of {person.batch}</span>
-                <p>{person.story}</p>
-                <button onClick={() => showToast(`Viewing ${person.name}'s profile.`, 'info')}>View Profile <span aria-hidden="true">â€º</span></button>
-              </article>
-            ))}
-          </section>
+          ) : (
+            <>
+              <section className="featured-spotlight">
+                <div style={{ backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${spotlightPeople[0].image})` }}>
+                  <span>Alumnus of the Month</span>
+                  <h2>{spotlightPeople[0].name}</h2>
+                  <p>Class of {spotlightPeople[0].batch} Â· {spotlightPeople[0].role}</p>
+                </div>
+                <blockquote>"{spotlightPeople[0].story} This school taught me that legacy is built one bold idea at a time."</blockquote>
+                <footer><p><span>Awards</span><strong>12 Global Honors</strong></p><p><span>Patents</span><strong>34 Filed</strong></p><button><BookOpen size={20} /> Read Full Story</button></footer>
+              </section>
+              <div className="spotlight-grid-head"><h2>More Spotlights</h2><button>View all <span aria-hidden="true">â€º</span></button></div>
+              <section className="spotlight-card-grid">
+                {spotlightPeople.slice(1).map(person => (
+                  <article key={person.name}>
+                    <img src={person.image} alt={person.name} />
+                    <h3>{person.name}</h3>
+                    <span>Batch of {person.batch}</span>
+                    <p>{person.story}</p>
+                    <button onClick={() => showToast(`Viewing ${person.name}'s profile.`, 'info')}>View Profile <span aria-hidden="true">â€º</span></button>
+                  </article>
+                ))}
+              </section>
+            </>
+          )}
           <section className="nominate-band">
             <Award size={38} />
             <div><h2>Know an inspiring alumnus?</h2><p>Nominate a fellow graduate to be featured in our next spotlight.</p></div>
@@ -1844,8 +1790,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           <section className="memory-lane-section">
             <div className="memory-head"><div><h1>Memory Lane</h1><p>Cherished moments shared by our alumni community</p></div><div><button>All</button><button>Photos</button><button>Stories</button></div></div>
             <div className="memory-masonry">
-              {mockMemories.map((memory, index) => (
-                <article key={memory.name} className={index === 0 || index === 2 ? 'tall' : ''} onClick={() => setActiveMemoryLightbox({ media_urls: [memory.image], content: memory.text, author: { full_name: memory.name, batch_year: memory.batch, profile_photo: currentUser.profile_photo }, comments: [] })}>
+              {derivedMemories.map((memory, index) => (
+                <article key={memory.id || index} className={index === 0 || index === 2 ? 'tall' : ''} onClick={() => setActiveMemoryLightbox({ media_urls: [memory.image], content: memory.text, author: { full_name: memory.name, batch_year: typeof memory.batch === 'number' ? memory.batch : parseInt(memory.batch) || 0, profile_photo: memory.rawPost?.author?.profile_photo || currentUser.profile_photo }, comments: memory.rawPost?.comments || [] })}>
                   <img src={memory.image} alt={memory.text} />
                   <div><strong>{memory.name}</strong><span>Class of {memory.batch}</span><p>{memory.text}</p><small><Heart size={18} /> {memory.likes} <MessageCircle size={18} /> {memory.comments}</small></div>
                 </article>

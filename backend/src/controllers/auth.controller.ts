@@ -31,23 +31,31 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
+    // Bootstrap first user as an approved admin
+    const userCount = await prisma.user.count();
+    const isFirstUser = userCount === 0;
+    const resolvedRole = isFirstUser ? 'admin' : 'alumni';
+    const resolvedVerifyStatus = isFirstUser ? 'approved' : 'pending';
+
     // Create user and profile in a transaction
     const newUser = await prisma.user.create({
       data: {
         email: email.trim().toLowerCase(),
         phone: mobile,
         password_hash,
-        role: 'alumni',
-        verify_status: 'pending',
+        role: resolvedRole,
+        verify_status: resolvedVerifyStatus,
         profile: {
           create: {
             full_name: full_name || email.split('@')[0],
             profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
             batch_year: parseInt(batch_year),
             house,
-            bio: "Joined the Vidyapith Connect network. Proud alumnus of RKMV Deoghar.",
-            profession_category: profession || "Not specified",
-            company: company || "Not specified",
+            bio: isFirstUser 
+              ? "Platform Administrator. Dedicated to the Vidyapith Connect network."
+              : "Joined the Vidyapith Connect network. Proud alumnus of RKMV Deoghar.",
+            profession_category: profession || (isFirstUser ? "Administrator" : "Not specified"),
+            company: company || (isFirstUser ? "Ramakrishna Mission Vidyapith" : "Not specified"),
             city: city || "Not specified",
             country: "India",
             linkedin_url: "",
@@ -57,20 +65,26 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
       }
     });
 
-    // Notify admins of new registration
-    const admins = await prisma.user.findMany({ where: { role: 'admin' } });
-    for (const admin of admins) {
-      await prisma.notification.create({
-        data: {
-          user_id: admin.id,
-          title: "New Registration Request",
-          body: `${full_name} (Batch of ${batch_year}) requested verification.`,
-          type: "alert"
-        }
-      });
+    if (!isFirstUser) {
+      // Notify admins of new registration
+      const admins = await prisma.user.findMany({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await prisma.notification.create({
+          data: {
+            user_id: admin.id,
+            title: "New Registration Request",
+            body: `${full_name} (Batch of ${batch_year}) requested verification.`,
+            type: "alert"
+          }
+        });
+      }
     }
 
-    res.status(201).json({ success: true, message: "Registration submitted for verification review." });
+    const responseMsg = isFirstUser 
+      ? "First account registered and approved as Administrator."
+      : "Registration submitted for verification review.";
+
+    res.status(201).json({ success: true, message: responseMsg });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

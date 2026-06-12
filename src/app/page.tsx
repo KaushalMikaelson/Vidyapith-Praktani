@@ -850,7 +850,7 @@ export default function App() {
                             <Mail className="auth-input-icon" size={18} />
                             <input 
                               type="email" 
-                              placeholder={selectedLoginRole === 'admin' ? "swami@rkmv.org" : selectedLoginRole === 'alumni' ? "aurobindo@google.com" : "tatha.m@student.org"} 
+                              placeholder={selectedLoginRole === 'admin' ? "admin@example.com" : selectedLoginRole === 'alumni' ? "alumni@example.com" : "student@example.com"} 
                               required 
                               value={loginEmail}
                               onChange={(e) => setLoginEmail(e.target.value)}
