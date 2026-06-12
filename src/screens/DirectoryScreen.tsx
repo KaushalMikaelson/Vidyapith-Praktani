@@ -30,6 +30,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [alumniList, setAlumniList] = useState<User[]>([]);
   const [connectionSentIds, setConnectionSentIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [globalStats, setGlobalStats] = useState({ alumni: 0, students: 0, faculty: 0, range: 'N/A' });
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,6 +50,34 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
       const results = await apiFetch(`/directory?${queryParams.toString()}`);
       setAlumniList(results);
+
+      // Compute overall stats if no search query or filters are active
+      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry) {
+        let alumni = 0;
+        let students = 0;
+        let faculty = 0;
+        const years: number[] = [];
+
+        results.forEach((u: User) => {
+          if (u.role === 'alumni') alumni++;
+          else if (u.role === 'student') students++;
+          else if (u.role === 'faculty') faculty++;
+          
+          if (u.batch_year) {
+            years.push(u.batch_year);
+          }
+        });
+
+        const minYear = years.length ? Math.min(...years) : 0;
+        const maxYear = years.length ? Math.max(...years) : 0;
+        
+        setGlobalStats({
+          alumni,
+          students,
+          faculty,
+          range: minYear ? (minYear === maxYear ? `${minYear}` : `${minYear}-${maxYear}`) : 'N/A'
+        });
+      }
     } catch (err: any) {
       showToast(err.message, 'danger');
     } finally {
@@ -115,6 +144,37 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
       showToast(`Filtered by Class of ${currentUser.batch_year}!`, 'info');
     }
   };
+
+  const houseReps = useMemo(() => {
+    const RKMV_HOUSES = [
+      "Vivekananda House",
+      "Brahmananda House",
+      "Ramakrishnananda House",
+      "Shardananda House",
+      "Premananda House",
+      "Yogananda House"
+    ];
+    
+    return RKMV_HOUSES.map(houseName => {
+      const member = alumniList.find(u => u.house === houseName || u.house === houseName.replace(' House', ''));
+      if (member) {
+        return {
+          id: member.id,
+          name: member.full_name,
+          house: houseName,
+          avatar: member.profile_photo,
+          vacant: false
+        };
+      }
+      return {
+        id: houseName,
+        name: "Vacant",
+        house: houseName,
+        avatar: "",
+        vacant: true
+      };
+    });
+  }, [alumniList]);
 
   const getAvatarGradient = (dept?: string) => {
     const depts = dept || "";
@@ -533,17 +593,50 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               <h3>House Representatives</h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {[
-                { name: "Arjun Nair", house: "Tagore House", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80" },
-                { name: "Meera Pillai", house: "Gandhi House", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&q=80" },
-                { name: "Vikram Bose", house: "Bose House", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&q=80" },
-                { name: "Kavya Iyer", house: "Nehru House", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80" }
-              ].map(rep => (
-                <div key={rep.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img src={rep.avatar} alt={rep.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+              {houseReps.map(rep => (
+                <div key={rep.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {rep.vacant ? (
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: '#f1f5f9',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      flexShrink: 0
+                    }}>
+                      {rep.house.charAt(0)}
+                    </div>
+                  ) : (
+                    <img 
+                      src={rep.avatar} 
+                      alt={rep.name} 
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e2e8f0', cursor: 'pointer', flexShrink: 0 }} 
+                      onClick={() => onViewProfile(rep.id)}
+                    />
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{rep.name}</span>
-                    <span style={{ fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{rep.house.replace(' House', '')}</span>
+                    <span 
+                      style={{ 
+                        fontSize: '0.78rem', 
+                        fontWeight: 700, 
+                        color: rep.vacant ? '#94a3b8' : '#1e293b', 
+                        whiteSpace: 'nowrap', 
+                        textOverflow: 'ellipsis', 
+                        overflow: 'hidden',
+                        cursor: rep.vacant ? 'default' : 'pointer'
+                      }}
+                      onClick={() => !rep.vacant && onViewProfile(rep.id)}
+                    >
+                      {rep.name}
+                    </span>
+                    <span style={{ fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                      {rep.house.replace(' House', '')}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -560,10 +653,10 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
-                { label: "Total Alumni", val: "1,248" },
-                { label: "Active Students", val: "342" },
-                { label: "Faculty Members", val: "87" },
-                { label: "Batch Years", val: "1985-2024" }
+                { label: "Total Alumni", val: globalStats.alumni.toLocaleString('en-IN') },
+                { label: "Active Students", val: globalStats.students.toLocaleString('en-IN') },
+                { label: "Faculty Members", val: globalStats.faculty.toLocaleString('en-IN') },
+                { label: "Batch Years", val: globalStats.range }
               ].map(stat => (
                 <div key={stat.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                   <span style={{ color: '#475569', fontWeight: 500 }}>{stat.label}</span>
