@@ -321,11 +321,16 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
   // ── Reusable UI ────────────────────────────────────────────────────────────
 
   const UploadMethodToggle = ({
-    method, setMethod
-  }: { method: UploadMethod; setMethod: (m: UploadMethod) => void }) => (
+    method, setMethod, onDeviceClick
+  }: { method: UploadMethod; setMethod: (m: UploadMethod) => void; onDeviceClick?: () => void }) => (
     <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
       {(['device', 'url'] as UploadMethod[]).map(m => (
-        <button key={m} type="button" onClick={() => setMethod(m)} style={{
+        <button key={m} type="button" onClick={() => {
+          setMethod(m);
+          if (m === 'device' && onDeviceClick) {
+            onDeviceClick();
+          }
+        }} style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem',
           fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
@@ -509,7 +514,12 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {selectedType === 'image' && (
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Add Images</label>
-              <UploadMethodToggle method={imageUploadMethod} setMethod={setImageUploadMethod} />
+              <UploadMethodToggle
+                method={imageUploadMethod}
+                setMethod={setImageUploadMethod}
+                onDeviceClick={() => imageInputRef.current?.click()}
+              />
+              <input ref={imageInputRef} type="file" accept="image/*" multiple onChange={handleImageFileChange} style={{ display: 'none' }} />
 
               {imageUploadMethod === 'device' ? (
                 <div
@@ -526,7 +536,6 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   <Upload size={28} style={{ color: 'var(--primary-color)', marginBottom: '8px' }} />
                   <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop</p>
                   <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>JPG, PNG, GIF, WebP · Max 10 images · Each uploaded to Cloudinary CDN</p>
-                  <input ref={imageInputRef} type="file" accept="image/*" multiple onChange={handleImageFileChange} style={{ display: 'none' }} />
                 </div>
               ) : (
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
@@ -705,7 +714,12 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {selectedType === 'video' && (
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Video</label>
-              <UploadMethodToggle method={videoUploadMethod} setMethod={m => { setVideoUploadMethod(m); clearVideo(); setVideoUrl(''); }} />
+              <UploadMethodToggle
+                method={videoUploadMethod}
+                setMethod={m => { setVideoUploadMethod(m); clearVideo(); setVideoUrl(''); }}
+                onDeviceClick={() => videoInputRef.current?.click()}
+              />
+              <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoFileChange} style={{ display: 'none' }} />
 
               {videoUploadMethod === 'device' ? (
                 !videoPreviewSrc ? (
@@ -723,7 +737,6 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                     <Play size={32} style={{ color: 'var(--primary-color)', marginBottom: '10px' }} />
                     <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop a video</p>
                     <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>MP4, MOV, WebM · Max 100 MB · Uploaded to Cloudinary CDN</p>
-                    <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoFileChange} style={{ display: 'none' }} />
                   </div>
                 ) : (
                   <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--heritage-line, #e7e7e7)', background: '#f8f8f8' }}>
