@@ -30,3 +30,8 @@ class MemoryCache {
 
 export const postCache = new MemoryCache();
 export const directoryCache = new MemoryCache();
+export const jobsCache = new MemoryCache();
+export const eventsCache = new MemoryCache();
+export const donationsCache = new MemoryCache();
+export const newsCache = new MemoryCache();
+export const mentorsCache = new MemoryCache();

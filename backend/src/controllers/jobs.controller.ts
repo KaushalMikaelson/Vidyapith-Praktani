@@ -1,14 +1,23 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { jobsCache } from '../utils/cache.js';
 
 export const listJobs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const cacheKey = "jobs:all";
+    const cachedJobs = jobsCache.get<any[]>(cacheKey);
+    if (cachedJobs) {
+      res.status(200).json(cachedJobs);
+      return;
+    }
+
     const list = await prisma.job.findMany({
       orderBy: { created_at: 'desc' }
     });
 
     if (list.length === 0) {
+      jobsCache.set(cacheKey, []);
       res.status(200).json([]);
       return;
     }
@@ -37,6 +46,7 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
       };
     });
 
+    jobsCache.set(cacheKey, joinedList);
     res.status(200).json(joinedList);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -68,6 +78,7 @@ export const createJob = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
+    jobsCache.invalidate("jobs:");
     res.status(201).json({ success: true, job: newJob });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -107,6 +118,8 @@ export const applyJob = async (req: AuthenticatedRequest, res: Response): Promis
           type: "success"
         }
       });
+
+      jobsCache.invalidate("jobs:");
     }
 
     res.status(200).json({ success: true, message: "Application filed successfully." });

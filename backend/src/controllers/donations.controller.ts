@@ -1,9 +1,17 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { donationsCache } from '../utils/cache.js';
 
 export const getLeaderboard = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const cacheKey = "donations:leaderboard";
+    const cachedData = donationsCache.get<any[]>(cacheKey);
+    if (cachedData) {
+      res.status(200).json(cachedData);
+      return;
+    }
+
     const list = await prisma.donation.findMany({
       where: { payment_status: 'approved', show_on_leaderboard: true },
       orderBy: { amount_paise: 'desc' }
@@ -41,6 +49,7 @@ export const getLeaderboard = async (req: AuthenticatedRequest, res: Response): 
       };
     });
 
+    donationsCache.set(cacheKey, joinedLeaderboard);
     res.status(200).json(joinedLeaderboard);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -74,6 +83,7 @@ export const createCheckoutSession = async (req: AuthenticatedRequest, res: Resp
       }
     });
 
+    donationsCache.invalidate("donations:");
     res.status(201).json({ success: true, donation: newDonation });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

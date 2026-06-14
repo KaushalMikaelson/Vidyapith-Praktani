@@ -1,10 +1,18 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { eventsCache } from '../utils/cache.js';
 
 // List all events
 export const listEvents = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const cacheKey = "events:all";
+    const cachedEvents = eventsCache.get<any[]>(cacheKey);
+    if (cachedEvents) {
+      res.status(200).json(cachedEvents);
+      return;
+    }
+
     const events = await prisma.event.findMany({
       orderBy: { event_date: 'asc' }
     });
@@ -22,6 +30,7 @@ export const listEvents = async (req: AuthenticatedRequest, res: Response): Prom
       };
     });
 
+    eventsCache.set(cacheKey, joinedEvents);
     res.status(200).json(joinedEvents);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -52,6 +61,7 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response): Pro
       }
     });
 
+    eventsCache.invalidate("events:");
     res.status(201).json({ success: true, event: newEvent });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -105,6 +115,7 @@ export const rsvpEvent = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
+    eventsCache.invalidate("events:");
     res.status(200).json({ success: true, rsvp });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

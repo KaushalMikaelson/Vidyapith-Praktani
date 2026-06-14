@@ -1,11 +1,20 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { mentorsCache } from '../utils/cache.js';
 
 // List approved alumni mentors
 export const listMentors = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { expertiseField } = req.query;
+    const field = (expertiseField as string || "").toLowerCase();
+    const cacheKey = `mentors:field:${field || 'all'}`;
+
+    const cachedMentors = mentorsCache.get<any[]>(cacheKey);
+    if (cachedMentors) {
+      res.status(200).json(cachedMentors);
+      return;
+    }
 
     const whereCondition: any = {
       verify_status: 'approved',
@@ -40,18 +49,19 @@ export const listMentors = async (req: AuthenticatedRequest, res: Response): Pro
     });
 
     if (expertiseField) {
-      const field = (expertiseField as string).toLowerCase();
-      if (field === 'software engineering') {
+      const fieldName = (expertiseField as string).toLowerCase();
+      if (fieldName === 'software engineering') {
         formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('architect') || m.profession.toLowerCase().includes('software') || m.profession.toLowerCase().includes('tech'));
-      } else if (field === 'healthcare & medicine') {
+      } else if (fieldName === 'healthcare & medicine') {
         formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('cardiologist') || m.profession.toLowerCase().includes('doctor') || m.profession.toLowerCase().includes('surgeon'));
-      } else if (field === 'civil services') {
+      } else if (fieldName === 'civil services') {
         formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('officer') || m.profession.toLowerCase().includes('service') || m.profession.toLowerCase().includes('ifs') || m.profession.toLowerCase().includes('ias'));
-      } else if (field === 'entrepreneurship') {
+      } else if (fieldName === 'entrepreneurship') {
         formattedMentors = formattedMentors.filter(m => m.profession.toLowerCase().includes('founder') || m.profession.toLowerCase().includes('ceo') || m.profession.toLowerCase().includes('consultant'));
       }
     }
 
+    mentorsCache.set(cacheKey, formattedMentors);
     res.status(200).json(formattedMentors);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -36,8 +36,17 @@ export default function App() {
   const { currentUser, login, register } = useAuth();
   
   const [activeScreen, setActiveScreen] = useState('feed');
+  const [visitedScreens, setVisitedScreens] = useState<string[]>(['feed']);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setVisitedScreens(['feed']);
+    } else {
+      setVisitedScreens(prev => prev.includes(activeScreen) ? prev : [...prev, activeScreen]);
+    }
+  }, [activeScreen, currentUser]);
 
   const triggerFeedRefresh = () => setFeedRefreshKey(k => k + 1);
 
@@ -232,8 +241,8 @@ export default function App() {
     }
   };
 
-  const renderActiveScreen = () => {
-    switch (activeScreen) {
+  const renderScreenInstance = (screenId: string) => {
+    switch (screenId) {
       case 'feed':
       case 'discover':
       case 'batch':
@@ -248,7 +257,7 @@ export default function App() {
           <FeedScreen 
             showToast={showToast} 
             onViewProfile={setSelectedProfileId} 
-            screenMode={activeScreen}
+            screenMode={screenId}
             refreshKey={feedRefreshKey}
             onNavigate={setActiveScreen}
           />
@@ -299,7 +308,14 @@ export default function App() {
           setSelectedProfileId={setSelectedProfileId}
           showToast={showToast}
         >
-          {renderActiveScreen()}
+          {visitedScreens.map((screenId) => (
+            <div
+              key={screenId}
+              style={{ display: activeScreen === screenId ? 'contents' : 'none' }}
+            >
+              {renderScreenInstance(screenId)}
+            </div>
+          ))}
         </Layout>
       ) : (
         <div className="landing-root">
