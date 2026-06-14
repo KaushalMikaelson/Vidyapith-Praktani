@@ -14,6 +14,9 @@ interface DirectoryScreenProps {
   onViewProfile: (userId: string) => void;
 }
 
+// Client-side cache for directory search results to prevent flash of loading state
+const directoryClientCache = new Map<string, any>();
+
 export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onViewProfile }) => {
   const { currentUser } = useAuth();
   
@@ -37,18 +40,28 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const postsPerPage = 12;
 
   const loadDirectory = async () => {
+    const queryParams = new URLSearchParams();
+    if (searchQuery.trim()) queryParams.append('search', searchQuery.trim());
+    if (filterBatch) queryParams.append('batchYear', filterBatch);
+    if (filterCity.trim()) queryParams.append('city', filterCity.trim());
+    if (filterRole && filterRole !== 'all') queryParams.append('role', filterRole);
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    if (filterDepartment) queryParams.append('department', filterDepartment);
+    if (filterIndustry) queryParams.append('industry', filterIndustry);
+
+    const cacheKey = queryParams.toString();
+
+    // Check client-side cache to bypass loading state and api request
+    if (directoryClientCache.has(cacheKey)) {
+      const cachedResults = directoryClientCache.get(cacheKey);
+      setAlumniList(cachedResults);
+      return;
+    }
+
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams();
-      if (searchQuery.trim()) queryParams.append('search', searchQuery.trim());
-      if (filterBatch) queryParams.append('batchYear', filterBatch);
-      if (filterCity.trim()) queryParams.append('city', filterCity.trim());
-      if (filterRole && filterRole !== 'all') queryParams.append('role', filterRole);
-      if (sortBy) queryParams.append('sortBy', sortBy);
-      if (filterDepartment) queryParams.append('department', filterDepartment);
-      if (filterIndustry) queryParams.append('industry', filterIndustry);
-
-      const results = await apiFetch(`/directory?${queryParams.toString()}`);
+      const results = await apiFetch(`/directory?${cacheKey}`);
+      directoryClientCache.set(cacheKey, results);
       setAlumniList(results);
 
       // Compute overall stats if no search query or filters are active
@@ -117,6 +130,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
         body: JSON.stringify({ targetId: id })
       });
       setConnectionSentIds(prev => [...prev, id]);
+      directoryClientCache.clear(); // Clear client-side cache when a connection is sent to ensure fresh states on reload
       showToast(`Connection request sent to ${name}!`, 'success');
     } catch (err: any) {
       showToast(err.message, 'danger');

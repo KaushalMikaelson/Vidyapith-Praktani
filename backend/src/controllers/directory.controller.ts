@@ -1,11 +1,20 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { directoryCache } from '../utils/cache.js';
 
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { search, batchYear, house, city, role, profession, sortBy, department, industry } = req.query;
+    const cacheKey = `directory:${JSON.stringify(req.query)}`;
+
+    // Try to get from cache first
+    const cachedData = directoryCache.get<any[]>(cacheKey);
+    if (cachedData) {
+      res.status(200).json(cachedData);
+      return;
+    }
 
     // Build Prisma query condition
     const whereCondition: any = {
@@ -165,6 +174,9 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         industry: u.profile?.industry || ""
       };
     });
+
+    // Save to cache
+    directoryCache.set(cacheKey, formattedUsers);
 
     res.status(200).json(formattedUsers);
   } catch (err: any) {

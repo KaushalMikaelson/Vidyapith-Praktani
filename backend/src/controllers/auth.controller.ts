@@ -3,6 +3,7 @@ import { prisma } from '../config/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { directoryCache } from '../utils/cache.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vidyapith-connect-secret-key';
 
@@ -190,6 +191,7 @@ export const resolveVerificationQueue = async (req: AuthenticatedRequest, res: R
       }
     });
 
+    directoryCache.invalidate('directory:');
     res.status(200).json({ success: true, message: `Applicant successfully ${status}` });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

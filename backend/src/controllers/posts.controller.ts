@@ -1,12 +1,21 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
+import { postCache } from '../utils/cache.js';
 
 // Retrieve all posts for a group with author profiles joined
 export const listPosts = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { groupId } = req.query;
     const filterGroup = (groupId as string) || 'grp-all';
+    const cacheKey = `posts:${filterGroup}`;
+
+    // Try to get from cache first
+    const cachedData = postCache.get<any[]>(cacheKey);
+    if (cachedData) {
+      res.status(200).json(cachedData);
+      return;
+    }
 
     const posts = await prisma.post.findMany({
       where: filterGroup === 'grp-all' ? {} : { group_id: filterGroup },
@@ -21,21 +30,22 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
       return;
     }
 
-    // Resolve author profiles
     const authorIds = Array.from(new Set(posts.map(p => p.author_id)));
-    const authors = await prisma.user.findMany({
-      where: { id: { in: authorIds } },
-      include: { profile: true }
-    });
+    const postIds = posts.map(p => p.id);
+
+    // Parallelize authors and comments queries
+    const [authors, comments] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: authorIds } },
+        include: { profile: true }
+      }),
+      prisma.comment.findMany({
+        where: { post_id: { in: postIds } },
+        orderBy: { created_at: 'asc' }
+      })
+    ]);
 
     const authorsMap = new Map(authors.map(u => [u.id, u]));
-
-    // Resolve comments for all returned posts
-    const postIds = posts.map(p => p.id);
-    const comments = await prisma.comment.findMany({
-      where: { post_id: { in: postIds } },
-      orderBy: { created_at: 'asc' }
-    });
 
     const commenterIds = Array.from(new Set(comments.map(c => c.author_id)));
     const commenters = await prisma.user.findMany({
@@ -78,6 +88,9 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
       };
     });
 
+    // Save to cache
+    postCache.set(cacheKey, joinedPosts);
+
     res.status(200).json(joinedPosts);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -107,6 +120,7 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
+    postCache.invalidate('posts:');
     res.status(201).json({ success: true, post: newPost });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -142,6 +156,7 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       data: { likes }
     });
 
+    postCache.invalidate('posts:');
     res.status(200).json({ success: true, likes: updatedPost.likes });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -211,6 +226,7 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
+    postCache.invalidate('posts:');
     res.status(201).json({ success: true, comment: newComment });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

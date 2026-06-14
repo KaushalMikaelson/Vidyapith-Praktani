@@ -2551,7 +2551,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         if (!content) return;
                         
                         try {
-                          const newComment = await apiFetch(`/posts/${selectedPostForModal.id}/comment`, {
+                          const newComment = await apiFetch(`/posts/${selectedPostForModal.id}/comments`, {
                             method: 'POST',
                             body: JSON.stringify({ content })
                           });
