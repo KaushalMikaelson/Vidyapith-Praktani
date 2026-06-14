@@ -6868,3 +6868,47 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* Interactive Clickable Notifications Styles */
+.notification-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+  position: relative;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  background: #fafafc;
+}
+
+.notification-card.unread {
+  background: #f8fafc;
+  border-left: 4px solid #8b5cf6;
+}
+
+.notification-card.unread:hover {
+  background: #f1f5f9;
+}
+
+.sidebar-notification-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.sidebar-notification-item:hover {
+  background-color: #f1f5f9;
+  transform: translateX(4px);
+}

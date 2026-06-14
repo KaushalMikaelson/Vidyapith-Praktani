@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 interface NotificationsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
+  onNavigate?: (screen: string) => void;
 }
 
 interface Notification {
@@ -20,6 +21,37 @@ interface Notification {
   read: boolean;
   created_at: string;
 }
+
+const getRouteForNotification = (title: string, body: string): string | null => {
+  const t = title.toLowerCase();
+  const b = body.toLowerCase();
+  
+  if (t.includes('message') || t.includes('dm') || t.includes('chat')) {
+    return 'messages';
+  }
+  if (t.includes('mentorship') || t.includes('mentee') || t.includes('mentor')) {
+    return 'mentorship';
+  }
+  if (t.includes('job') || t.includes('career') || t.includes('application')) {
+    return 'jobs';
+  }
+  if (t.includes('event') || t.includes('rsvp') || t.includes('reunion')) {
+    return 'events';
+  }
+  if (t.includes('donation') || t.includes('tax receipt') || t.includes('contribute')) {
+    return 'donations';
+  }
+  if (t.includes('connection') || t.includes('connect')) {
+    return 'directory';
+  }
+  if (t.includes('registration') || t.includes('verification request') || t.includes('applicant')) {
+    return 'admin';
+  }
+  if (t.includes('verification approved') || t.includes('approved')) {
+    return 'profile';
+  }
+  return null;
+};
 
 type FilterType = 'all' | 'unread' | 'success' | 'alert' | 'info';
 
@@ -40,7 +72,7 @@ const timeAgo = (dateStr: string): string => {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 };
 
-export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showToast }) => {
+export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showToast, onNavigate }) => {
   const { currentUser } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -290,19 +322,16 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
             return (
               <div
                 key={notif.id}
-                onClick={() => !notif.read && markOneRead(notif.id)}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '16px',
-                  padding: '20px 24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  cursor: notif.read ? 'default' : 'pointer',
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)',
-                  position: 'relative'
+                onClick={async () => {
+                  if (!notif.read) {
+                    await markOneRead(notif.id);
+                  }
+                  const route = getRouteForNotification(notif.title, notif.body);
+                  if (route && onNavigate) {
+                    onNavigate(route);
+                  }
                 }}
+                className={`notification-card ${notif.read ? 'read' : 'unread'}`}
               >
                 {/* Circular Gradient Icon Badge */}
                 <div style={{

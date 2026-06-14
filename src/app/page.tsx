@@ -250,6 +250,7 @@ export default function App() {
             onViewProfile={setSelectedProfileId} 
             screenMode={activeScreen}
             refreshKey={feedRefreshKey}
+            onNavigate={setActiveScreen}
           />
         );
       case 'profile':
@@ -259,10 +260,11 @@ export default function App() {
             onViewProfile={setSelectedProfileId} 
             screenMode="profile" 
             forceProfileId={currentUser?.id} 
+            onNavigate={setActiveScreen}
           />
         );
       case 'notifications':
-        return <NotificationsScreen showToast={showToast} />;
+        return <NotificationsScreen showToast={showToast} onNavigate={setActiveScreen} />;
       case 'messages':
         return <MessagesScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
       case 'search':

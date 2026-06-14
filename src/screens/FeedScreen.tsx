@@ -21,10 +21,11 @@ interface FeedScreenProps {
   screenMode?: string;
   forceProfileId?: string;
   refreshKey?: number;
+  onNavigate?: (screen: string) => void;
 }
 
 export const FeedScreen: React.FC<FeedScreenProps> = ({ 
-  showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0 
+  showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0, onNavigate 
 }) => {
   const { currentUser } = useAuth();
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
@@ -1126,7 +1127,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <button className="header-action-btn" title="Search" onClick={() => showToast('Search panel is available in the sidebar.', 'info')}>
               <Search size={22} />
             </button>
-            <button className="header-action-btn" title="Notifications" onClick={() => showToast('View notifications in the sidebar.', 'info')}>
+            <button className="header-action-btn" title="Notifications" onClick={() => onNavigate && onNavigate('notifications')}>
               <Bell size={22} />
               {unreadNotifCount > 0 && <span className="notif-badge-dot" />}
             </button>
@@ -1758,10 +1759,27 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         </main>
         <aside className="notifications-panel">
           <h2><Bell size={22} /> Notifications <span>7 new</span></h2>
-          {['Sophia Patel sent you a connection request.', 'Diego Morales and 12 others liked your post.', 'Dr. Amara Tesfaye commented: Great to reconnect after all these years!', 'Reminder: The Centennial Gala Reunion starts in 2 days.', 'Batch of 1998 group has 8 new posts today.'].map((item, index) => (
-            <p key={item}><strong>{item.split(' ')[0]} {item.split(' ')[1]}</strong>{item.replace(`${item.split(' ')[0]} ${item.split(' ')[1]}`, '')}<small>{index + 1}h ago</small></p>
-          ))}
-          <button>View all notifications</button>
+          {['Sophia Patel sent you a connection request.', 'Diego Morales and 12 others liked your post.', 'Dr. Amara Tesfaye commented: Great to reconnect after all these years!', 'Reminder: The Centennial Gala Reunion starts in 2 days.', 'Batch of 1998 group has 8 new posts today.'].map((item, index) => {
+            const getSidebarRoute = (text: string) => {
+              if (text.includes('connection')) return 'directory';
+              if (text.includes('Reunion') || text.includes('Event')) return 'events';
+              if (text.includes('liked') || text.includes('commented') || text.includes('posts')) return 'feed';
+              return null;
+            };
+            const route = getSidebarRoute(item);
+            return (
+              <p 
+                key={item} 
+                onClick={() => route && onNavigate && onNavigate(route)}
+                className="sidebar-notification-item"
+              >
+                <strong>{item.split(' ')[0]} {item.split(' ')[1]}</strong>
+                {item.replace(`${item.split(' ')[0]} ${item.split(' ')[1]}`, '')}
+                <small>{index + 1}h ago</small>
+              </p>
+            );
+          })}
+          <button onClick={() => onNavigate && onNavigate('notifications')}>View all notifications</button>
         </aside>
       </div>
     );
