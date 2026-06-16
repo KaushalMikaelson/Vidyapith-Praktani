@@ -106,6 +106,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterChip, setFilterChip] = useState<string>('All');
   const [activeGroupId, setActiveGroupId] = useState<string>('grp-all');
+  const [feedTab, setFeedTab] = useState<string>('All');
+  const [connections, setConnections] = useState<any[]>([]);
+  const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; authorName: string } | null>(null);
 
   // Load user stories from localStorage
   useEffect(() => {
@@ -128,6 +131,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       }
     }
   }, [refreshKey]);
+
+  // Load connections for Following tab
+  useEffect(() => {
+    apiFetch('/directory/connections')
+      .then(data => setConnections(data || []))
+      .catch(err => console.error("Error loading connections for feed:", err));
+  }, []);
 
   // Auto-advance logic for stories
   useEffect(() => {
@@ -801,12 +811,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     const commentText = commentInputs[postId];
     if (!commentText || !commentText.trim()) return;
 
+    const content = replyingTo && replyingTo.postId === postId
+      ? JSON.stringify({ parentCommentId: replyingTo.commentId, text: commentText.trim() })
+      : commentText.trim();
+
     try {
       await apiFetch(`/posts/${postId}/comments`, {
         method: 'POST',
-        body: JSON.stringify({ content: commentText.trim() })
+        body: JSON.stringify({ content })
       });
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      setReplyingTo(null);
       loadFeed();
     } catch (err: any) {
       showToast(err.message, 'danger');
@@ -881,6 +896,18 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       if (!bookmarks.includes(post.id)) return false;
     }
 
+    // Feed tab filtering
+    if (feedTab === 'Following') {
+      const isConnection = connections.some(c => c.id === post.author_id) || post.author_id === currentUser.id;
+      if (!isConnection) return false;
+    } else if (feedTab === 'Batch') {
+      const authorBatch = (post as any).author?.batch_year || (post as any).author_batch_year;
+      if (authorBatch !== currentUser?.batch_year) return false;
+    } else if (feedTab === 'Department') {
+      const authorDept = (post as any).author?.department;
+      if (!authorDept || !currentUser?.department || authorDept.toLowerCase() !== currentUser.department.toLowerCase()) return false;
+    }
+
     // Search query match
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -946,13 +973,55 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   // Aliases for the simplified feed render
   const handleBookmark = (postId: string) => toggleBookmark(postId);
+
+  const parseCommentsAndReplies = (commentsList: any[]) => {
+    const topLevel: any[] = [];
+    const repliesMap: { [commentId: string]: any[] } = {};
+
+    (commentsList || []).forEach(c => {
+      let isReply = false;
+      let parentId = '';
+      let textContent = c.content;
+
+      if (c.content && c.content.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(c.content);
+          if (parsed && parsed.parentCommentId) {
+            isReply = true;
+            parentId = parsed.parentCommentId;
+            textContent = parsed.text;
+          }
+        } catch (e) {
+          // Not JSON
+        }
+      }
+
+      const commentObj = { ...c, content: textContent };
+
+      if (isReply && parentId) {
+        if (!repliesMap[parentId]) {
+          repliesMap[parentId] = [];
+        }
+        repliesMap[parentId].push(commentObj);
+      } else {
+        topLevel.push(commentObj);
+      }
+    });
+
+    return { topLevel, repliesMap };
+  };
+
   const handleCommentSubmit = (postId: string, text: string) => {
     if (!text.trim()) return;
+    const content = replyingTo && replyingTo.postId === postId
+      ? JSON.stringify({ parentCommentId: replyingTo.commentId, text: text.trim() })
+      : text.trim();
     apiFetch(`/posts/${postId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content: text.trim() })
+      body: JSON.stringify({ content })
     }).then(() => {
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      setReplyingTo(null);
       loadFeed();
     }).catch((err: any) => showToast(err.message, 'danger'));
   };
@@ -1111,9 +1180,15 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   };
 
   if (screenMode === 'feed') {
-    const sortedPosts = [...filteredPosts].sort((a, b) =>
-      new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime()
-    );
+    const sortedPosts = feedTab === 'Trending'
+      ? [...filteredPosts].sort((a, b) => {
+          const scoreA = (a.likes || []).length + ((a as any).comments || []).length;
+          const scoreB = (b.likes || []).length + ((b as any).comments || []).length;
+          return scoreB - scoreA;
+        })
+      : [...filteredPosts].sort((a, b) =>
+          new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime()
+        );
 
     return (
       <div className="ig-feed-layout">
@@ -1182,6 +1257,85 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               </div>
             ))}
           </div>
+
+          {/* Feed Filtering Tabs */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            borderBottom: '1px solid #e2e8f0',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            background: '#ffffff',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+          }}>
+            {['All', 'Following', 'Batch', 'Department', 'Trending'].map(tab => {
+              const isActive = feedTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setFeedTab(tab)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: isActive ? '#ec4899' : '#64748b',
+                    borderBottom: isActive ? '3px solid #ec4899' : '3px solid transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    outline: 'none'
+                  }}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Profile Completeness Banner */}
+          {(!currentUser.bio || currentUser.bio === 'Not specified' || !currentUser.linkedin_url || !currentUser.company || currentUser.company === 'Not specified') && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+              border: '1px solid rgba(236, 72, 153, 0.15)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              color: '#1e293b'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', flexShrink: 0
+                }}>
+                  ✨
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 4px', fontSize: '0.9rem', fontWeight: 800 }}>Complete your Alumni Profile</h4>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>
+                    Add a bio, company details, and your LinkedIn profile to help batchmates discover and connect with you.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigate && onNavigate('profile')}
+                className="btn-connect-gradient"
+                style={{
+                  padding: '8px 16px', borderRadius: '30px', fontSize: '0.78rem',
+                  fontWeight: 700, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap'
+                }}
+              >
+                Complete Profile
+              </button>
+            </div>
+          )}
 
           {loading && (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--heritage-muted)', fontSize: '0.9rem' }}>
@@ -1358,15 +1512,65 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 {/* Comments */}
                 {expandedComments[post.id] && (
                   <div className="feed-card-comments">
-                    {((post as any).comments || []).slice(0, 5).map((comment: any) => (
-                      <div key={comment.id} className="comment-item">
-                        <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" />
-                        <div className="comment-text-wrap">
-                          <strong>{comment.author?.full_name || 'Alumnus'}</strong>
-                          <p>{comment.content}</p>
+                    {(() => {
+                      const { topLevel, repliesMap } = parseCommentsAndReplies((post as any).comments);
+                      return topLevel.map((comment: any) => (
+                        <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                          <div className="comment-item">
+                            <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" />
+                            <div className="comment-text-wrap" style={{ flex: 1 }}>
+                              <strong>{comment.author?.full_name || 'Alumnus'}</strong>
+                              <p style={{ margin: '2px 0 4px' }}>{comment.content}</p>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(comment.created_at)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setReplyingTo({ postId: post.id, commentId: comment.id, authorName: comment.author?.full_name || 'Alumnus' })}
+                                  style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Render nested replies */}
+                          {repliesMap[comment.id]?.map((reply: any) => (
+                            <div key={reply.id} className="comment-item" style={{ marginLeft: '44px', marginTop: '4px', borderLeft: '2px solid #e2e8f0', paddingLeft: '12px' }}>
+                              <img src={reply.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&q=80'} alt="" style={{ width: '32px', height: '32px' }} />
+                              <div className="comment-text-wrap">
+                                <strong>{reply.author?.full_name || 'Alumnus'}</strong>
+                                <p style={{ margin: '2px 0 4px' }}>{reply.content}</p>
+                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(reply.created_at)}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
+                      ));
+                    })()}
+                    {replyingTo && replyingTo.postId === post.id && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#f1f5f9',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        fontSize: '0.78rem'
+                      }}>
+                        <span style={{ color: '#475569' }}>
+                          Replying to <strong style={{ color: '#ec4899' }}>@{replyingTo.authorName}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(null)}
+                          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                        >
+                          ✕
+                        </button>
                       </div>
-                    ))}
+                    )}
                     <div className="comment-input-wrap">
                       <img src={currentUser.profile_photo} alt="" />
                       <input
@@ -3417,7 +3621,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <p>No posts matching the selected search criteria.</p>
               </div>
             ) : (
-              filteredPosts.map(post => {
+              (feedTab === 'Trending'
+                ? [...filteredPosts].sort((a, b) => {
+                    const scoreA = (a.likes || []).length + ((a as any).comments || []).length;
+                    const scoreB = (b.likes || []).length + ((b as any).comments || []).length;
+                    return scoreB - scoreA;
+                  })
+                : filteredPosts
+              ).map(post => {
                 const author = (post as any).author;
                 if (!author) return null;
 
@@ -4138,33 +4349,100 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                           </button>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {commentsToShow.map((comment: any) => {
-                            const commAuthor = comment.author;
-                            if (!commAuthor) return null;
-                            return (
-                              <div key={comment.id} className="instagram-comment-item">
-                                <div className="comment-item-content">
-                                  <span 
-                                    className="comment-item-author"
-                                    onClick={() => onViewProfile(commAuthor.id)}
-                                  >
-                                    {commAuthor.full_name}
-                                  </span>
-                                  <span className="comment-item-text">
-                                    {comment.content}
-                                  </span>
-                                  {isCommentsExpanded && (
-                                    <span className="comment-item-time">
-                                      {formatTimeAgo(comment.created_at)}
-                                    </span>
-                                  )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {(() => {
+                            const { topLevel, repliesMap } = parseCommentsAndReplies(comments);
+                            const topLevelToShow = isCommentsExpanded ? topLevel : topLevel.slice(-2);
+                            return topLevelToShow.map((comment: any) => {
+                              const commAuthor = comment.author;
+                              if (!commAuthor) return null;
+                              return (
+                                <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  <div className="instagram-comment-item" style={{ margin: 0 }}>
+                                    <div className="comment-item-content" style={{ flex: 1 }}>
+                                      <div>
+                                        <span 
+                                          className="comment-item-author"
+                                          onClick={() => onViewProfile(commAuthor.id)}
+                                        >
+                                          {commAuthor.full_name}
+                                        </span>
+                                        <span className="comment-item-text">
+                                          {comment.content}
+                                        </span>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '3px' }}>
+                                        <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                                          {formatTimeAgo(comment.created_at)}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setReplyingTo({ postId: post.id, commentId: comment.id, authorName: commAuthor.full_name })}
+                                          style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                                        >
+                                          Reply
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Replies */}
+                                  {repliesMap[comment.id]?.map((reply: any) => {
+                                    const repAuthor = reply.author;
+                                    if (!repAuthor) return null;
+                                    return (
+                                      <div key={reply.id} className="instagram-comment-item" style={{ marginLeft: '24px', borderLeft: '2px solid rgba(255,255,255,0.06)', paddingLeft: '8px', margin: 0 }}>
+                                        <div className="comment-item-content">
+                                          <div>
+                                            <span 
+                                              className="comment-item-author"
+                                              onClick={() => onViewProfile(repAuthor.id)}
+                                            >
+                                              {repAuthor.full_name}
+                                            </span>
+                                            <span className="comment-item-text">
+                                              {reply.content}
+                                            </span>
+                                          </div>
+                                          <span style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', display: 'inline-block' }}>
+                                            {formatTimeAgo(reply.created_at)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
+
+                      {replyingTo && replyingTo.postId === post.id && (
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: 'rgba(255,255,255,0.04)',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          marginBottom: '8px',
+                          fontSize: '0.78rem',
+                          width: '100%',
+                          border: '1px solid rgba(255,255,255,0.08)'
+                        }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            Replying to <strong style={{ color: '#ec4899' }}>@{replyingTo.authorName}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setReplyingTo(null)}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
 
                       {/* Comment Input Composer */}
                       <div className="instagram-comment-composer">

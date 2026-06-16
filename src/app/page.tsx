@@ -73,6 +73,19 @@ export default function App() {
   const [selectedLoginRole, setSelectedLoginRole] = useState<'alumni' | 'student' | 'admin' | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Email OTP registration verification states
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  // Forgot password flow states
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotToken, setForgotToken] = useState('');
+  const [forgotNewPass, setForgotNewPass] = useState('');
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+
   // Profile Modal
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
@@ -215,6 +228,94 @@ export default function App() {
     }
   };
 
+  const handleRequestOtp = async () => {
+    if (!regEmail.trim()) {
+      showToast("Please enter an email address first.", "danger");
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      const res = await apiFetch('/auth/request-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: regEmail.trim() })
+      });
+      setEmailOtpSent(true);
+      showToast(`Verification OTP sent to ${regEmail} (Check console for mock OTP).`, "info");
+      if (res.otp) {
+        console.log("Mock Registration OTP:", res.otp);
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to send OTP.", "danger");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!emailOtp.trim()) {
+      showToast("Please enter the 6-digit OTP code.", "danger");
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      await apiFetch('/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: regEmail.trim(), otp: emailOtp.trim() })
+      });
+      setEmailOtpVerified(true);
+      showToast("Email address verified successfully!", "success");
+    } catch (err: any) {
+      showToast(err.message || "Invalid OTP code.", "danger");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: forgotEmail.trim() })
+      });
+      setForgotToken(res.token || '');
+      setForgotStep(2);
+      showToast("Verification code generated (Check console).", "info");
+      console.log("Mock Reset Token:", res.token);
+    } catch (err: any) {
+      showToast(err.message || "No account found with this email.", "danger");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotToken || !forgotNewPass.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await apiFetch('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token: forgotToken.trim(), newPassword: forgotNewPass.trim() })
+      });
+      showToast("Password reset successfully. Please Sign In.", "success");
+      setShowForgotModal(false);
+      setForgotStep(1);
+      setForgotEmail('');
+      setForgotToken('');
+      setForgotNewPass('');
+      setAuthTab('login');
+      setSelectedLoginRole(null);
+    } catch (err: any) {
+      showToast(err.message || "Password reset failed.", "danger");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
   const getHouseColor = (house: string) => {
     const colors: { [key: string]: string } = {
       "Vivekananda House": "#f37021",
@@ -275,7 +376,7 @@ export default function App() {
       case 'notifications':
         return <NotificationsScreen showToast={showToast} onNavigate={setActiveScreen} />;
       case 'messages':
-        return <MessagesScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <MessagesScreen showToast={showToast} onViewProfile={setSelectedProfileId} onNavigate={setActiveScreen} />;
       case 'search':
       case 'directory':
         return <DirectoryScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
@@ -932,7 +1033,16 @@ export default function App() {
 
                         {/* Password */}
                         <div className="auth-input-block">
-                          <label className="auth-input-label">Password</label>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label className="auth-input-label">Password</label>
+                            <button
+                              type="button"
+                              onClick={() => { setShowForgotModal(true); setForgotStep(1); }}
+                              style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                            >
+                              Forgot Password?
+                            </button>
+                          </div>
                           <div className="auth-input-field-wrap">
                             <Lock className="auth-input-icon" size={18} />
                             <input 
@@ -1210,57 +1320,107 @@ export default function App() {
                       {/* Step 3 Contents: Leaving Certificate / Marksheet Verification */}
                       {regStep === 3 && (
                         <div className="auth-step-container">
-                          <div className="auth-input-block">
-                            <label className="auth-input-label">Upload Leaving Certificate / Marksheet</label>
-                            <div 
-                              className={`auth-upload-drag-box ${regFile ? 'has-file' : ''}`}
-                              onClick={() => document.getElementById('certInput')?.click()}
-                            >
-                              <UploadCloud size={32} style={{ color: regFile ? 'var(--text-success)' : 'var(--text-muted)', marginBottom: '8px', display: 'inline-block' }} />
-                              <span style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: regFile ? 'var(--text-success)' : 'white' }}>
-                                {regFile ? `📄 ${regFile.name}` : "Click to select certificate scan (PDF/JPG)"}
-                              </span>
-                              <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                This document is strictly used for school identity validation.
-                              </span>
-                              <input 
-                                type="file" 
-                                id="certInput" 
-                                accept="image/*,application/pdf" 
-                                style={{ display: 'none' }} 
-                                onChange={(e) => e.target.files && setRegFile(e.target.files[0])}
-                              />
-                            </div>
+                          {/* OTP verification segment */}
+                          <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                            <label className="auth-input-label" style={{ marginBottom: '8px', display: 'block' }}>Step 3.1: Verify Email OTP</label>
+                            
+                            {!emailOtpSent ? (
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-block"
+                                disabled={verifyingOtp}
+                                onClick={handleRequestOtp}
+                                style={{ width: '100%', padding: '10px' }}
+                              >
+                                {verifyingOtp ? "Sending OTP..." : "Send Verification OTP to Email"}
+                              </button>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter 6-digit OTP"
+                                    disabled={emailOtpVerified || verifyingOtp}
+                                    value={emailOtp}
+                                    onChange={(e) => setEmailOtp(e.target.value)}
+                                    style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px', textAlign: 'center', fontSize: '1rem', letterSpacing: '2px' }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    disabled={emailOtpVerified || verifyingOtp || !emailOtp}
+                                    onClick={handleVerifyOtp}
+                                    style={{ padding: '0 20px' }}
+                                  >
+                                    {emailOtpVerified ? "Verified ✓" : verifyingOtp ? "Verifying..." : "Verify OTP"}
+                                  </button>
+                                </div>
+                                {emailOtpVerified ? (
+                                  <span style={{ fontSize: '0.78rem', color: '#48bb78', fontWeight: 600 }}>✓ Email successfully verified! Proceed to certificate upload.</span>
+                                ) : (
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Check browser console for the simulated 6-digit OTP code.</span>
+                                    <button type="button" onClick={handleRequestOtp} style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}>Resend OTP</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
-                          {/* Navigation */}
-                          <div className="auth-btn-row">
-                            <button 
-                              type="button" 
-                              className="btn btn-secondary"
-                              onClick={() => setRegStep(2)}
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                              <ArrowLeft size={18} />
-                              <span>Back</span>
-                            </button>
-                            <button 
-                              type="submit" 
-                              disabled={isSubmitting}
-                              className="btn btn-primary"
-                              style={{ 
-                                flexGrow: 1, 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                gap: '8px',
-                                opacity: isSubmitting ? 0.6 : 1,
-                                cursor: isSubmitting ? 'not-allowed' : 'pointer'
-                              }}
-                            >
-                              <span>{isSubmitting ? "Submitting..." : "Submit Registration"}</span>
-                              <CheckCircle size={18} />
-                            </button>
+                          {/* Certificate upload segment (disabled until OTP is verified) */}
+                          <div style={{ opacity: emailOtpVerified ? 1 : 0.4, pointerEvents: emailOtpVerified ? 'auto' : 'none' }}>
+                            <div className="auth-input-block" style={{ marginBottom: '16px' }}>
+                              <label className="auth-input-label">Step 3.2: Upload Leaving Certificate / Marksheet</label>
+                              <div 
+                                className={`auth-upload-drag-box ${regFile ? 'has-file' : ''}`}
+                                onClick={() => document.getElementById('certInput')?.click()}
+                              >
+                                <UploadCloud size={32} style={{ color: regFile ? 'var(--text-success)' : 'var(--text-muted)', marginBottom: '8px', display: 'inline-block' }} />
+                                <span style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: regFile ? 'var(--text-success)' : 'white' }}>
+                                  {regFile ? `📄 ${regFile.name}` : "Click to select certificate scan (PDF/JPG)"}
+                                </span>
+                                <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                  This document is strictly used for school identity validation.
+                                </span>
+                                <input 
+                                  type="file" 
+                                  id="certInput" 
+                                  accept="image/*,application/pdf" 
+                                  style={{ display: 'none' }} 
+                                  onChange={(e) => e.target.files && setRegFile(e.target.files[0])}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Submit button */}
+                            <div className="auth-btn-row">
+                              <button 
+                                type="button" 
+                                className="btn btn-secondary"
+                                onClick={() => setRegStep(2)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                              >
+                                <ArrowLeft size={18} />
+                                <span>Back</span>
+                              </button>
+                              <button 
+                                type="submit" 
+                                disabled={isSubmitting || !emailOtpVerified}
+                                className="btn btn-primary"
+                                style={{ 
+                                  flexGrow: 1, 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center', 
+                                  gap: '8px',
+                                  opacity: (isSubmitting || !emailOtpVerified) ? 0.6 : 1,
+                                  cursor: (isSubmitting || !emailOtpVerified) ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                <span>{isSubmitting ? "Submitting..." : "Submit Registration"}</span>
+                                <CheckCircle size={18} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1438,6 +1598,226 @@ export default function App() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {showForgotModal && (
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(8px)', zIndex: 1000 }}>
+          <div className="modal-card" style={{ maxWidth: '440px', width: '90%', background: '#ffffff', borderRadius: '24px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', color: '#1e293b', position: 'relative' }}>
+            <button 
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', outline: 'none' }} 
+              onClick={() => setShowForgotModal(false)}
+            >
+              <X size={20} />
+            </button>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 10px', color: '#0f172a' }}>Forgot Password</h3>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 20px', lineHeight: 1.5 }}>
+              Reset your password via verified secure token.
+            </p>
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleRequestPasswordReset}>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Email Address</label>
+                  <input 
+                    type="email" 
+                    placeholder="your.email@example.com" 
+                    required 
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '8px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary btn-block" style={{ width: '100%', padding: '12px' }}>
+                  Send Verification Code
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPasswordSubmit}>
+                <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Verification Token</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter reset token from console" 
+                    required 
+                    value={forgotToken}
+                    onChange={(e) => setForgotToken(e.target.value)}
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '8px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>New Password</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    required 
+                    value={forgotNewPass}
+                    onChange={(e) => setForgotNewPass(e.target.value)}
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '8px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary btn-block" style={{ width: '100%', padding: '12px' }}>
+                  Reset Password
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {currentUser && (currentUser.profession === 'Not specified' || currentUser.city === 'Not specified' || !currentUser.batch_year || currentUser.full_name?.startsWith('alumni')) && (
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)', zIndex: 9999 }}>
+          <div className="modal-card" style={{ maxWidth: '500px', width: '90%', background: '#ffffff', borderRadius: '24px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', color: '#1e293b' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginBottom: '12px' }}>
+                <Sparkles size={28} />
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>Complete Your Profile</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                To unlock the Vidyapith Connect alumni platform, please verify and complete your directory details.
+              </p>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const target = e.currentTarget;
+              const name = (target.elements.namedItem('wName') as HTMLInputElement).value;
+              const batch = (target.elements.namedItem('wBatch') as HTMLInputElement).value;
+              const dept = (target.elements.namedItem('wDept') as HTMLSelectElement).value;
+              const city = (target.elements.namedItem('wCity') as HTMLInputElement).value;
+              const prof = (target.elements.namedItem('wProf') as HTMLInputElement).value || 'Not specified';
+              const bio = (target.elements.namedItem('wBio') as HTMLTextAreaElement).value || '';
+              const photo = (target.elements.namedItem('wPhoto') as HTMLInputElement).value || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80';
+
+              if (!name.trim() || !batch || !dept || !city.trim()) {
+                showToast("Please fill all required fields.", "danger");
+                return;
+              }
+
+              setIsSubmitting(true);
+              try {
+                await apiFetch('/directory/profile/update', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    full_name: name.trim(),
+                    batch_year: parseInt(batch),
+                    department: dept,
+                    city: city.trim(),
+                    profession_category: prof.trim(),
+                    bio: bio.trim(),
+                    profile_photo: photo.trim()
+                  })
+                });
+                showToast("Profile completed successfully! Welcome to the portal.", "success");
+                window.location.reload();
+              } catch (err: any) {
+                showToast(err.message || "Failed to save profile.", "danger");
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Full Name *</label>
+                <input 
+                  type="text" 
+                  name="wName" 
+                  defaultValue={currentUser.full_name?.startsWith('alumni') ? '' : currentUser.full_name} 
+                  required 
+                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Graduation Batch *</label>
+                  <select 
+                    name="wBatch" 
+                    defaultValue={currentUser.batch_year || ''} 
+                    required 
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                  >
+                    <option value="" disabled>Select Year</option>
+                    {Array.from({ length: 2026 - 1950 + 1 }, (_, i) => 2026 - i).map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Department *</label>
+                  <select 
+                    name="wDept" 
+                    defaultValue={currentUser.department || ''} 
+                    required 
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                  >
+                    <option value="" disabled>Select Stream</option>
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Administration">Administration</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Current City *</label>
+                  <input 
+                    type="text" 
+                    name="wCity" 
+                    defaultValue={currentUser.city === 'Not specified' ? '' : currentUser.city} 
+                    placeholder="E.g., Bangalore" 
+                    required 
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Profession</label>
+                  <input 
+                    type="text" 
+                    name="wProf" 
+                    defaultValue={currentUser.profession === 'Not specified' ? '' : currentUser.profession} 
+                    placeholder="E.g., Software Engineer" 
+                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Profile Photo URL</label>
+                <input 
+                  type="text" 
+                  name="wPhoto" 
+                  defaultValue={currentUser.profile_photo} 
+                  placeholder="https://images.unsplash.com/..." 
+                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Short Bio</label>
+                <textarea 
+                  name="wBio" 
+                  defaultValue={currentUser.bio} 
+                  rows={2} 
+                  placeholder="Tell your batchmates about yourself..." 
+                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="btn btn-primary btn-block" 
+                style={{ width: '100%', padding: '12px' }}
+              >
+                {isSubmitting ? "Saving Profile..." : "Unlock Platform"}
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -83,7 +83,8 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
           profile_photo: author.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
           batch_year: author.profile?.batch_year || 2008,
           house: author.profile?.house || "Vivekananda House",
-          profession: author.profile?.profession_category || "Alumnus"
+          profession: author.profile?.profession_category || "Alumnus",
+          department: author.profile?.department || "Science"
         } : null
       };
     });

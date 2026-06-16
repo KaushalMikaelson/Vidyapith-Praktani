@@ -119,6 +119,45 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
           </button>
         </div>
 
+        {/* Active Pairings Widget */}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+          <h3 className="widget-title" style={{ marginBottom: '14px', fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>My Active Pairings</span>
+            <span style={{ background: '#ec4899', color: 'white', borderRadius: '10px', padding: '1px 6px', fontSize: '0.7rem' }}>
+              {activeMentorships.filter(p => p.status === 'active').length}
+            </span>
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {activeMentorships.filter(p => p.status === 'active').length === 0 ? (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No active mentorship pairings.</span>
+            ) : (
+              activeMentorships.filter(p => p.status === 'active').map((pair: any) => {
+                const partner = pair.mentor_id === currentUser.id ? pair.mentee : pair.mentor;
+                const isMentorOfUser = pair.mentor_id === currentUser.id;
+                if (!partner) return null;
+                return (
+                  <div key={pair.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <img 
+                      src={partner.profile_photo} 
+                      alt="" 
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }}
+                      onClick={() => onViewProfile(partner.id)}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => onViewProfile(partner.id)}>
+                        {partner.full_name}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isMentorOfUser ? 'Menteé' : 'Mentor'} • {partner.profession}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', lineHeight: 1.4 }}>
             Active pairings are reviewed by the school headmaster monthly to assure proper standards.

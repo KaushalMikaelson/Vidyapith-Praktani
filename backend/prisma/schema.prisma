@@ -176,3 +176,17 @@ model Message {
   @@index([sender_id])
   @@index([receiver_id])
 }
+
+model Connection {
+  id          String   @id @default(uuid())
+  sender_id   String
+  receiver_id String
+  status      String   // "pending", "accepted"
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([sender_id, receiver_id])
+  @@index([sender_id])
+  @@index([receiver_id])
+}
+

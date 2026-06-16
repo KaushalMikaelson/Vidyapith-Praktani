@@ -68,6 +68,23 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const [evtLocation, setEvtLocation] = useState('');
   const [evtCapacity, setEvtCapacity] = useState('100');
 
+  const [filterBatch, setFilterBatch] = useState<string>('All');
+  const [filterType, setFilterType] = useState<string>('All');
+  const [filterLocation, setFilterLocation] = useState<string>('All');
+
+  const getCountdownText = (dateStr: string) => {
+    const diff = new Date(dateStr).getTime() - Date.now();
+    if (diff <= 0) return '';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+
+    if (days > 0) {
+      return `${days}d ${hours}h left`;
+    }
+    return `${hours}h ${minutes}m left`;
+  };
+
   const loadEvents = async () => {
     try {
       const list = await apiFetch('/events');
@@ -157,6 +174,26 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
     'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&h=330&fit=crop&q=80'
   ];
 
+  const uniqueLocations = Array.from(new Set(events.map(e => e.location))).filter(Boolean) as string[];
+  const uniqueBatches = Array.from(new Set(events.map(e => {
+    const match = e.title.match(/\b(19\d\d|20\d\d)\b/) || e.description.match(/\b(19\d\d|20\d\d)\b/);
+    return match ? match[0] : null;
+  }))).filter(Boolean) as string[];
+
+  const filteredEvents = events.filter(evt => {
+    if (filterBatch !== 'All') {
+      const matchesBatch = evt.title.includes(filterBatch) || evt.description.includes(filterBatch);
+      if (!matchesBatch) return false;
+    }
+    if (filterType !== 'All') {
+      if (evt.event_type !== filterType) return false;
+    }
+    if (filterLocation !== 'All') {
+      if (evt.location !== filterLocation) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="heritage-page events-redesign">
       <section className="events-hero">
@@ -171,10 +208,36 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
       </section>
 
       <section className="events-filter-strip">
-        <label><Users size={16} /> <span>Year / Batch</span><select><option>All Batches</option></select></label>
-        <label><Calendar size={16} /> <span>Event Type</span><select><option>All Types</option></select></label>
-        <label><MapPin size={16} /> <span>Location</span><select><option>Anywhere</option></select></label>
-        <button><Filter size={18} /> Filter</button>
+        <label>
+          <Users size={16} /> <span>Year / Batch</span>
+          <select value={filterBatch} onChange={e => setFilterBatch(e.target.value)}>
+            <option value="All">All Batches</option>
+            {uniqueBatches.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <Calendar size={16} /> <span>Event Type</span>
+          <select value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <option value="All">All Types</option>
+            <option value="physical">Physical Meeting</option>
+            <option value="virtual">Virtual Webinar</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+        </label>
+        <label>
+          <MapPin size={16} /> <span>Location</span>
+          <select value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
+            <option value="All">Anywhere</option>
+            {uniqueLocations.map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+        </label>
+        <button onClick={() => { setFilterBatch('All'); setFilterType('All'); setFilterLocation('All'); }} style={{ cursor: 'pointer' }}>
+          <Filter size={18} /> Reset
+        </button>
       </section>
 
       <div className="events-shell">
@@ -188,18 +251,41 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
           </div>
 
           <div className="events-list">
-            {events.map((evt: any, index) => {
+            {filteredEvents.map((evt: any, index) => {
               const isRSVPed = evt.rsvps?.some((r: any) => r.user_id === currentUser.id) || false;
               const parts = dateParts(evt.event_date);
+              const guestsCount = (evt.rsvps || []).reduce((acc: number, r: any) => acc + 1 + (r.guest_count || 0), 0);
+              const baseCount = index === 1 ? 112 : index === 2 ? 34 : 248;
+              const totalAttending = baseCount + guestsCount;
+              const countdown = activeTab === 'upcoming' ? getCountdownText(evt.event_date) : '';
+              const categoryLabel = evt.event_type === 'virtual' ? '🌐 Webinar' : evt.event_type === 'hybrid' ? '👥 Hybrid Meetup' : '🏛️ On-Campus Reunion';
+
               return (
                 <article key={evt.id} className="event-row-card">
                   <img src={eventImages[index % eventImages.length]} alt={evt.title} />
                   <div>
-                    <span className={`event-type ${evt.event_type}`}>{evt.event_type === 'virtual' ? 'Webinar' : index === 2 ? 'Meetup' : 'Reunion'}</span>
-                    <h3>{evt.title}</h3>
+                    <span className={`event-type ${evt.event_type}`}>{categoryLabel}</span>
+                    {countdown && (
+                      <span style={{
+                        fontSize: '0.74rem',
+                        background: 'rgba(236,72,153,0.1)',
+                        color: '#ec4899',
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginLeft: '12px',
+                        verticalAlign: 'middle'
+                      }}>
+                        <Clock size={12} /> {countdown}
+                      </span>
+                    )}
+                    <h3 style={{ marginTop: '8px' }}>{evt.title}</h3>
                     <div className="event-meta"><Calendar size={16} /> {parts.date} <Clock size={16} /> {parts.time} <MapPin size={16} /> {evt.location}</div>
                     <p>{evt.description}</p>
-                    <small>{(evt.rsvps?.length || 0) + (index === 1 ? 112 : index === 2 ? 34 : 248)} attending</small>
+                    <small>{totalAttending} attending</small>
                   </div>
                   <button onClick={() => openRSVPModal(evt.id)} disabled={isRSVPed}>
                     <Check size={16} /> {isRSVPed ? 'RSVPed' : evt.event_type === 'virtual' ? 'Join' : 'RSVP'}

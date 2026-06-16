@@ -243,3 +243,83 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
     res.status(500).json({ error: err.message });
   }
 };
+
+// In-memory maps for verification OTPs and password reset tokens
+export const verificationOtps = new Map<string, { otp: string, expires: number }>();
+export const resetTokens = new Map<string, { email: string, expires: number }>();
+
+export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ error: "Email is required." });
+      return;
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    verificationOtps.set(email.toLowerCase().trim(), {
+      otp,
+      expires: Date.now() + 15 * 60 * 1000
+    });
+    console.log(`[SIMULATED EMAIL] OTP for ${email}: ${otp}`);
+    res.status(200).json({ success: true, message: "OTP sent successfully.", otp });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const verifyEmailOTP = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+    const record = verificationOtps.get(email.toLowerCase().trim());
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      res.status(400).json({ error: "Invalid or expired OTP." });
+      return;
+    }
+    verificationOtps.delete(email.toLowerCase().trim());
+    res.status(200).json({ success: true, message: "Email verified successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const forgotPassword = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (!user) {
+      res.status(404).json({ error: "No account found with this email." });
+      return;
+    }
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    resetTokens.set(token, {
+      email: email.toLowerCase().trim(),
+      expires: Date.now() + 15 * 60 * 1000
+    });
+    console.log(`[SIMULATED EMAIL] Password reset token for ${email}: ${token}`);
+    res.status(200).json({ success: true, message: "Reset token generated.", token });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const resetPassword = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { token, newPassword } = req.body;
+    const record = resetTokens.get(token);
+    if (!record || record.expires < Date.now()) {
+      res.status(400).json({ error: "Invalid or expired reset token." });
+      return;
+    }
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+    await prisma.user.update({
+      where: { email: record.email },
+      data: { password_hash }
+    });
+    resetTokens.delete(token);
+    res.status(200).json({ success: true, message: "Password reset successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

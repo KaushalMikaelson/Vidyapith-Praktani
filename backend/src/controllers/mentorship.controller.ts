@@ -87,7 +87,30 @@ export const listPairings = async (req: AuthenticatedRequest, res: Response): Pr
       orderBy: { created_at: 'desc' }
     });
 
-    res.status(200).json(pairings);
+    const userIds = Array.from(new Set([
+      ...pairings.map(p => p.mentor_id),
+      ...pairings.map(p => p.mentee_id)
+    ]));
+
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      include: { profile: true }
+    });
+
+    const usersMap = new Map(users.map(u => [u.id, {
+      id: u.id,
+      full_name: u.profile?.full_name || "Vidyapith Alumnus",
+      profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+      profession: u.profile?.profession_category || "Alumnus"
+    }]));
+
+    const joinedPairings = pairings.map(p => ({
+      ...p,
+      mentor: usersMap.get(p.mentor_id) || null,
+      mentee: usersMap.get(p.mentee_id) || null
+    }));
+
+    res.status(200).json(joinedPairings);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

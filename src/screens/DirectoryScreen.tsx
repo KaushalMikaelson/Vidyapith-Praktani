@@ -35,6 +35,38 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [loading, setLoading] = useState(false);
   const [globalStats, setGlobalStats] = useState({ alumni: 0, students: 0, faculty: 0, range: 'N/A' });
   
+  // Advanced Connection Pipeline States
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [connectionStatuses, setConnectionStatuses] = useState<Record<string, 'accepted' | 'pending_sent' | 'pending_received'>>({});
+
+  const loadConnectionDetails = async () => {
+    try {
+      const statuses = await apiFetch('/directory/connections/status');
+      setConnectionStatuses(statuses);
+      const pending = await apiFetch('/directory/connections/pending');
+      setPendingRequests(pending);
+    } catch (err) {
+      console.error("Failed to load connection details:", err);
+    }
+  };
+
+  const handleRespondConnection = async (targetId: string, action: 'accept' | 'decline') => {
+    try {
+      await apiFetch('/directory/connections/respond', {
+        method: 'POST',
+        body: JSON.stringify({ targetId, action })
+      });
+      showToast(`Connection request ${action === 'accept' ? 'accepted' : 'declined'}!`, 'success');
+      loadConnectionDetails();
+    } catch (err: any) {
+      showToast(err.message, 'danger');
+    }
+  };
+
+  useEffect(() => {
+    loadConnectionDetails();
+  }, []);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 12;
@@ -125,13 +157,17 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
   const handleConnectRequest = async (id: string, name: string) => {
     try {
-      await apiFetch('/directory/connect', {
+      const res = await apiFetch('/directory/connect', {
         method: 'POST',
         body: JSON.stringify({ targetId: id })
       });
-      setConnectionSentIds(prev => [...prev, id]);
       directoryClientCache.clear(); // Clear client-side cache when a connection is sent to ensure fresh states on reload
-      showToast(`Connection request sent to ${name}!`, 'success');
+      loadConnectionDetails();
+      if (res.status === 'accepted') {
+        showToast(`Connected with ${name}!`, 'success');
+      } else {
+        showToast(`Connection request sent to ${name}!`, 'success');
+      }
     } catch (err: any) {
       showToast(err.message, 'danger');
     }
@@ -350,6 +386,91 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </select>
           </div>
 
+          {/* Pending Connection Requests Widget */}
+          {pendingRequests.length > 0 && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.8)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: '20px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🤝</span>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                  Pending Connection Requests ({pendingRequests.length})
+                </h3>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pendingRequests.map((req) => (
+                  <div key={req.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    border: '1px solid #f1f5f9'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img
+                        src={req.profile_photo}
+                        alt={req.full_name}
+                        onClick={() => onViewProfile(req.id)}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid #e2e8f0' }}
+                      />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span 
+                          onClick={() => onViewProfile(req.id)}
+                          style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}
+                        >
+                          {req.full_name}
+                        </span>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          Class of {req.batch_year} • {req.house}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleRespondConnection(req.id, 'accept')}
+                        className="btn-connect-gradient"
+                        style={{ padding: '6px 16px', fontSize: '0.8rem', minHeight: '32px', borderRadius: '8px', minWidth: '80px' }}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRespondConnection(req.id, 'decline')}
+                        style={{
+                          background: '#fff',
+                          border: '1px solid #cbd5e1',
+                          color: '#64748b',
+                          padding: '6px 16px',
+                          fontSize: '0.8rem',
+                          minHeight: '32px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#1e293b'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#64748b'; }}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Role Filters & Found Label */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -406,9 +527,9 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               </div>
             ) : (
               paginatedAlumni.map((alumnus) => {
-                // Check if connection is requested (following state)
-                const isRequestSent = connectionSentIds.includes(alumnus.id) || 
-                                      ["Sophia Verma", "Priya Singh", "Nikhil Joshi"].includes(alumnus.full_name);
+                const connStatus = connectionStatuses[alumnus.id];
+                const isSelf = currentUser?.id === alumnus.id;
+                const isRequestSent = connStatus === 'pending_sent' || connStatus === 'accepted';
                 
                 return (
                   <article 
@@ -489,20 +610,69 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     
                     {/* Connect Button */}
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                      <button
-                        disabled={isRequestSent}
-                        onClick={() => handleConnectRequest(alumnus.id, alumnus.full_name)}
-                        className={isRequestSent ? "btn-following-gray" : "btn-connect-gradient"}
-                        style={{ 
-                          padding: '8px 32px',
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          width: 'auto',
-                          minWidth: '130px'
-                        }}
-                      >
-                        {isRequestSent ? 'Following' : 'Connect'}
-                      </button>
+                      {isSelf ? (
+                        <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>This is You</span>
+                      ) : connStatus === 'accepted' ? (
+                        <button
+                          disabled
+                          className="btn-following-gray"
+                          style={{ 
+                            padding: '8px 32px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            width: 'auto',
+                            minWidth: '130px',
+                            borderColor: 'rgba(72,187,120,0.4)',
+                            color: '#48bb78',
+                            background: 'rgba(72,187,120,0.05)'
+                          }}
+                        >
+                          ✓ Connected
+                        </button>
+                      ) : connStatus === 'pending_sent' ? (
+                        <button
+                          disabled
+                          className="btn-following-gray"
+                          style={{ 
+                            padding: '8px 32px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            width: 'auto',
+                            minWidth: '130px'
+                          }}
+                        >
+                          Pending Approval
+                        </button>
+                      ) : connStatus === 'pending_received' ? (
+                        <button
+                          onClick={() => handleRespondConnection(alumnus.id, 'accept')}
+                          className="btn-connect-gradient"
+                          style={{ 
+                            padding: '8px 32px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            width: 'auto',
+                            minWidth: '130px',
+                            boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
+                          }}
+                        >
+                          Accept Request
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleConnectRequest(alumnus.id, alumnus.full_name)}
+                          className="btn-connect-gradient"
+                          style={{ 
+                            padding: '8px 32px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            width: 'auto',
+                            minWidth: '130px'
+                          }}
+                        >
+                          Connect
+                        </button>
+                      )}
                     </div>
                   </article>
                 );

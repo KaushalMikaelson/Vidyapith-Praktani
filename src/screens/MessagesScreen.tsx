@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 interface MessagesScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
   onViewProfile: (userId: string) => void;
+  onNavigate?: (screen: string) => void;
 }
 
 interface Conversation {
@@ -103,7 +104,7 @@ const groupByDate = (messages: Message[]) => {
 
 const EMOJI_LIST = ['😊', '❤️', '👍', '🙏', '😂', '🎉', '🔥', '✨', '💯', '🏵️', '👏', '🤝'];
 
-export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onViewProfile }) => {
+export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onViewProfile, onNavigate }) => {
   const { currentUser } = useAuth();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -416,7 +417,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                         flex: 1
                       }}>
                         {conv.isLastFromMe && <span style={{ color: '#94a3b8' }}>You: </span>}
-                        {conv.lastMessage || <em>Start a conversation</em>}
+                        {conv.lastMessage && conv.lastMessage !== '??' ? conv.lastMessage : <em>Start a conversation</em>}
                       </span>
                       {conv.unreadCount > 0 && (
                         <span style={{
@@ -592,34 +593,37 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                               </div>
                             )}
 
-                            <div style={{ maxWidth: '68%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                              <div style={{
-                                padding: '10px 15px',
-                                borderRadius: isMe
-                                  ? `16px 16px ${isLast ? '4px' : '16px'} 16px`
-                                  : `16px 16px 16px ${isLast ? '4px' : '16px'}`,
-                                background: isMe
-                                  ? 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
-                                  : '#ffffff',
-                                border: isMe ? 'none' : '1px solid #e2e8f0',
-                                color: isMe ? 'white' : '#1e293b',
-                                fontSize: '0.88rem',
-                                lineHeight: 1.5,
-                                boxShadow: isMe ? '0 2px 8px rgba(236,72,153,0.15)' : 'none'
-                              }}>
-                                {msg.content}
-                              </div>
-                              {isLast && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
-                                  <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
-                                    {formatMessageTime(msg.created_at)}
-                                  </span>
-                                  {isMe && (
-                                    <CheckCheck size={11} style={{ color: msg.read ? '#ec4899' : '#94a3b8' }} />
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                             <div 
+                              className="msg-bubble-wrap"
+                              style={{ maxWidth: '68%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
+                             >
+                               <div style={{
+                                 padding: '10px 15px',
+                                 borderRadius: isMe
+                                   ? `16px 16px ${isLast ? '4px' : '16px'} 16px`
+                                   : `16px 16px 16px ${isLast ? '4px' : '16px'}`,
+                                 background: isMe
+                                   ? 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
+                                   : '#ffffff',
+                                 border: isMe ? 'none' : '1px solid #e2e8f0',
+                                 color: isMe ? 'white' : '#1e293b',
+                                 fontSize: '0.88rem',
+                                 lineHeight: 1.5,
+                                 boxShadow: isMe ? '0 2px 8px rgba(236,72,153,0.15)' : 'none'
+                               }}>
+                                 {msg.content}
+                               </div>
+                               <div className="msg-meta-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', transition: 'opacity 0.2s' }}>
+                                 <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                                   {formatMessageTime(msg.created_at)}
+                                 </span>
+                                 {isMe && (
+                                   msg.read 
+                                     ? <CheckCheck size={11} style={{ color: '#ec4899' }} /> 
+                                     : <Check size={11} style={{ color: '#94a3b8' }} />
+                                 )}
+                               </div>
+                             </div>
                           </div>
                         );
                       })}
@@ -754,13 +758,20 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
             {/* Tips links row */}
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '16px' }}>
               {[
-                { label: 'Connect with mentors', icon: 'Connect' },
-                { label: 'Reach out to batchmates', icon: 'Batch' },
-                { label: 'Explore job referrals', icon: 'Jobs' },
+                { label: 'Connect with mentors', icon: 'Connect', route: 'mentorship' },
+                { label: 'Reach out to batchmates', icon: 'Batch', route: 'directory' },
+                { label: 'Explore job referrals', icon: 'Jobs', route: 'jobs' },
               ].map(tip => (
                 <div 
                   key={tip.label}
-                  onClick={() => { setShowNewChat(true); loadDirectory(); }}
+                  onClick={() => {
+                    if (onNavigate) {
+                      onNavigate(tip.route);
+                    } else {
+                      setShowNewChat(true);
+                      loadDirectory();
+                    }
+                  }}
                   style={{
                     padding: '10px 18px',
                     borderRadius: '9999px',
@@ -893,6 +904,8 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-bubble-wrap .msg-meta-row { opacity: 0; }
+        .msg-bubble-wrap:hover .msg-meta-row { opacity: 1; }
         @media (max-width: 768px) {
           .messages-sidebar { position: absolute; width: 100% !important; z-index: 10; transform: none !important; }
           .messages-back-btn { display: flex !important; }

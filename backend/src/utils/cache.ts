@@ -35,3 +35,5 @@ export const eventsCache = new MemoryCache();
 export const donationsCache = new MemoryCache();
 export const newsCache = new MemoryCache();
 export const mentorsCache = new MemoryCache();
+export const connectionsCache = new MemoryCache();
+
