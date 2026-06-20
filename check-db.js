@@ -4,10 +4,11 @@ const { PrismaClient } = require('./backend/node_modules/@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const users = await prisma.user.findMany({
-    include: { profile: true }
+  const notifications = await prisma.notification.findMany({
+    where: { user_id: 'bd529e16-14c6-46b8-8291-10beedc4949c' },
+    orderBy: { created_at: 'desc' }
   });
-  console.log("USERS IN DB:", users.map(u => ({ id: u.id, email: u.email, role: u.role, verify: u.verify_status, name: u.profile?.full_name })));
+  console.log("NOTIFICATIONS:", notifications);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

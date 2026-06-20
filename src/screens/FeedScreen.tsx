@@ -30,6 +30,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const { currentUser } = useAuth();
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
+  const getUsername = (user: any) => {
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return (user.full_name || 'user').toLowerCase().replace(/\s+/g, '_');
+  };
+
   useEffect(() => {
     const loadNotificationCount = async () => {
       try {
@@ -267,6 +274,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [selectedHighlightForGallery, setSelectedHighlightForGallery] = useState<string | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
   const [connectedUserIds, setConnectedUserIds] = useState<string[]>([]);
+  const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
+  const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
+  const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
 
   // Profile Settings form states
   const [settingsBio, setSettingsBio] = useState(currentUser?.bio || '');
@@ -451,6 +461,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       setProfilePosts(allPosts.filter((p: any) => p.author_id === targetId));
       const allAlumni = await apiFetch('/directory');
       setDiscoverAlumni(allAlumni);
+      const rels = await apiFetch(`/directory/relations/${targetId}`);
+      setProfileRelations(rels);
     } catch (err: any) {
       showToast("Failed to load profile details", "danger");
     }
@@ -2252,16 +2264,28 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <span className="profile-stat-number">{profilePosts.length}</span>
               <span className="profile-stat-label">Posts</span>
             </div>
-            <div className="profile-stat-box">
-              <span className="profile-stat-number">{142 + (isFollowed ? 1 : 0)}</span>
+            <div 
+              className="profile-stat-box" 
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveRelationsTab('followers')}
+            >
+              <span className="profile-stat-number">{profileRelations ? profileRelations.followers.length : (142 + (isFollowed ? 1 : 0))}</span>
               <span className="profile-stat-label">Followers</span>
             </div>
-            <div className="profile-stat-box">
-              <span className="profile-stat-number">312</span>
+            <div 
+              className="profile-stat-box" 
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveRelationsTab('following')}
+            >
+              <span className="profile-stat-number">{profileRelations ? profileRelations.following.length : 312}</span>
               <span className="profile-stat-label">Following</span>
             </div>
-            <div className="profile-stat-box">
-              <span className="profile-stat-number">{45 + (isConnected ? 1 : 0)}</span>
+            <div 
+              className="profile-stat-box" 
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveRelationsTab('connections')}
+            >
+              <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : (45 + (isConnected ? 1 : 0))}</span>
               <span className="profile-stat-label">Connections</span>
             </div>
             <div className="profile-stat-box">
@@ -2812,6 +2836,238 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               </div>
             );
           })()
+        )}
+
+        {/* RELATIONS MODAL OVERLAY */}
+        {activeRelationsTab && profileRelations && (
+          <div 
+            className="modal-overlay" 
+            onClick={() => {
+              setActiveRelationsTab(null);
+              setRelationsSearchQuery('');
+            }}
+            style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(8px)' }}
+          >
+            <div 
+              className="modal-card" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                maxWidth: '440px', 
+                width: '90%', 
+                background: '#ffffff', 
+                borderRadius: '16px', 
+                padding: '0', 
+                border: '1px solid #e2e8f0', 
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', 
+                color: '#1e293b', 
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: '70vh',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 16px', borderBottom: '1px solid #efefef', position: 'relative' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#000000', textTransform: 'capitalize', textAlign: 'center' }}>
+                  {activeRelationsTab === 'connections' ? 'Connections' : activeRelationsTab}
+                </h3>
+                <button 
+                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', outline: 'none' }} 
+                  onClick={() => {
+                    setActiveRelationsTab(null);
+                    setRelationsSearchQuery('');
+                  }}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Search Bar Container */}
+              <div style={{ padding: '12px 16px 8px 16px', position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', color: '#9ca3af' }} />
+                  <input 
+                    type="text"
+                    value={relationsSearchQuery}
+                    onChange={(e) => setRelationsSearchQuery(e.target.value)}
+                    placeholder="Search"
+                    style={{
+                      width: '100%',
+                      background: '#f3f4f6',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 12px 8px 36px',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  {relationsSearchQuery && (
+                    <button 
+                      onClick={() => setRelationsSearchQuery('')}
+                      style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Relations list */}
+              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', padding: '8px 16px 16px 16px' }}>
+                {(() => {
+                  const list = profileRelations[activeRelationsTab] || [];
+                  const filtered = list.filter((u: any) => {
+                    const uname = getUsername(u);
+                    const fname = u.full_name || '';
+                    const q = relationsSearchQuery.toLowerCase();
+                    return uname.toLowerCase().includes(q) || fname.toLowerCase().includes(q);
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem', padding: '32px 0', margin: 0 }}>
+                        No results found.
+                      </p>
+                    );
+                  }
+
+                  return filtered.map((u: any) => {
+                    const username = getUsername(u);
+                    const isSelf = currentUser.id === u.id;
+                    const doIFollowThem = connections.some((c: any) => c.id === u.id) || connectionSentIds.includes(u.id) || isSelf;
+
+                    return (
+                      <div 
+                        key={u.id} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between',
+                          padding: '8px 0'
+                        }}
+                      >
+                        {/* Avatar */}
+                        <img 
+                          src={u.profile_photo} 
+                          alt={u.full_name} 
+                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }}
+                          onClick={() => {
+                            setActiveRelationsTab(null);
+                            setRelationsSearchQuery('');
+                            onViewProfile(u.id);
+                          }}
+                        />
+
+                        {/* Name & Details */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', marginLeft: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                            <span 
+                              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}
+                              onClick={() => {
+                                setActiveRelationsTab(null);
+                                setRelationsSearchQuery('');
+                                onViewProfile(u.id);
+                              }}
+                            >
+                              {username}
+                            </span>
+                            {!doIFollowThem && (
+                              <span 
+                                onClick={async () => {
+                                  await handleConnectRequest(u.id, u.full_name);
+                                  if (profileUser) loadProfile(profileUser.id);
+                                }}
+                                style={{ fontSize: '0.88rem', color: '#0095f6', fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                · Follow
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                            {u.full_name}
+                          </span>
+                        </div>
+
+                        {/* Action Button */}
+                        <div>
+                          {isSelf ? (
+                            <span style={{ fontSize: '0.82rem', color: '#9ca3af', fontWeight: 600 }}>You</span>
+                          ) : activeRelationsTab === 'followers' ? (
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Remove ${u.full_name} as a follower?`)) {
+                                  await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
+                                  showToast(`Removed ${u.full_name} from followers`, 'success');
+                                  if (profileUser) loadProfile(profileUser.id);
+                                }
+                              }}
+                              style={{
+                                background: '#f3f4f6',
+                                border: 'none',
+                                padding: '6px 12px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: '#000000',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          ) : activeRelationsTab === 'following' ? (
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Unfollow ${u.full_name}?`)) {
+                                  await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
+                                  showToast(`Unfollowed ${u.full_name}`, 'info');
+                                  if (profileUser) loadProfile(profileUser.id);
+                                }
+                              }}
+                              style={{
+                                background: '#f3f4f6',
+                                border: 'none',
+                                padding: '6px 12px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: '#000000',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {connectionSentIds.includes(u.id) ? 'Requested' : 'Following'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setActiveRelationsTab(null);
+                                setRelationsSearchQuery('');
+                                onViewProfile(u.id);
+                              }}
+                              style={{
+                                background: '#f3f4f6',
+                                border: 'none',
+                                padding: '6px 12px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: '#000000',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              View
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* HIGHLIGHT STORY LIGHTBOX MODAL */}

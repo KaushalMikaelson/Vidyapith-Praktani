@@ -165,7 +165,9 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
           show_email: user.profile?.show_email ?? true,
           show_mobile: user.profile?.show_phone ?? false
         },
-        created_at: user.created_at
+        created_at: user.created_at,
+        department: user.profile?.department || "",
+        industry: user.profile?.industry || ""
       }
     });
   } catch (err: any) {
@@ -236,7 +238,9 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
           show_email: user.profile?.show_email ?? true,
           show_mobile: user.profile?.show_phone ?? false
         },
-        created_at: user.created_at
+        created_at: user.created_at,
+        department: user.profile?.department || "",
+        industry: user.profile?.industry || ""
       }
     });
   } catch (err: any) {

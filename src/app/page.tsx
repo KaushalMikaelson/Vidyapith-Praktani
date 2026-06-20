@@ -33,7 +33,7 @@ interface ToastMsg {
 }
 
 export default function App() {
-  const { currentUser, login, register } = useAuth();
+  const { currentUser, login, register, refreshSession } = useAuth();
   
   const [activeScreen, setActiveScreen] = useState('feed');
   const [visitedScreens, setVisitedScreens] = useState<string[]>(['feed']);
@@ -88,7 +88,29 @@ export default function App() {
 
   // Profile Modal
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
+  const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
+  const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
+  const [connections, setConnections] = useState<any[]>([]);
+  const [connectionSentIds, setConnectionSentIds] = useState<string[]>([]);
+
+  const getUsername = (user: any) => {
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return (user.full_name || 'user').toLowerCase().replace(/\s+/g, '_');
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      apiFetch('/directory/connections')
+        .then(data => setConnections(data || []))
+        .catch(err => console.error("Error loading connections:", err));
+    } else {
+      setConnections([]);
+    }
+  }, [currentUser]);
 
   // Landing Page & Auth Modal States
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -148,6 +170,12 @@ export default function App() {
     }, 4000);
   };
 
+  const loadRelations = (profileId: string) => {
+    apiFetch(`/directory/relations/${profileId}`)
+      .then(data => setProfileRelations(data))
+      .catch(err => console.error(err));
+  };
+
   useEffect(() => {
     if (selectedProfileId) {
       apiFetch(`/directory/profile/${selectedProfileId}`)
@@ -156,8 +184,12 @@ export default function App() {
           showToast(err.message, 'danger');
           setSelectedProfileId(null);
         });
+      loadRelations(selectedProfileId);
     } else {
       setSelectedProfile(null);
+      setProfileRelations(null);
+      setActiveRelationsTab(null);
+      setRelationsSearchQuery('');
     }
   }, [selectedProfileId]);
 
@@ -1522,16 +1554,34 @@ export default function App() {
                 <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>128</span>
                 <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Posts</span>
               </div>
-              <div className="profile-stat-box" style={{ padding: '12px' }}>
-                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>24.8K</span>
+              <div 
+                className="profile-stat-box" 
+                style={{ padding: '12px', cursor: 'pointer' }}
+                onClick={() => setActiveRelationsTab('followers')}
+              >
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>
+                  {profileRelations ? profileRelations.followers.length : '24.8K'}
+                </span>
                 <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Followers</span>
               </div>
-              <div className="profile-stat-box" style={{ padding: '12px' }}>
-                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>312</span>
+              <div 
+                className="profile-stat-box" 
+                style={{ padding: '12px', cursor: 'pointer' }}
+                onClick={() => setActiveRelationsTab('following')}
+              >
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>
+                  {profileRelations ? profileRelations.following.length : '312'}
+                </span>
                 <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Following</span>
               </div>
-              <div className="profile-stat-box" style={{ padding: '12px' }}>
-                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>1.2K</span>
+              <div 
+                className="profile-stat-box" 
+                style={{ padding: '12px', cursor: 'pointer' }}
+                onClick={() => setActiveRelationsTab('connections')}
+              >
+                <span className="profile-stat-number" style={{ fontSize: '1.3rem' }}>
+                  {profileRelations ? profileRelations.connections.length : '1.2K'}
+                </span>
                 <span className="profile-stat-label" style={{ fontSize: '0.75rem' }}>Connections</span>
               </div>
               <div className="profile-stat-box" style={{ padding: '12px' }}>
@@ -1597,6 +1647,261 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* RELATIONS MODAL OVERLAY */}
+            {activeRelationsTab && profileRelations && (
+              <div 
+                className="modal-overlay" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveRelationsTab(null);
+                  setRelationsSearchQuery('');
+                }}
+                style={{ 
+                  position: 'fixed', 
+                  top: 0, 
+                  left: 0, 
+                  right: 0, 
+                  bottom: 0, 
+                  background: 'rgba(15,23,42,0.3)', 
+                  backdropFilter: 'blur(8px)', 
+                  zIndex: 2000, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+              >
+                <div 
+                  className="modal-card" 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ 
+                    maxWidth: '440px', 
+                    width: '90%', 
+                    background: '#ffffff', 
+                    borderRadius: '16px', 
+                    padding: '0', 
+                    border: '1px solid #e2e8f0', 
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', 
+                    color: '#1e293b', 
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxHeight: '70vh',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Modal Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 16px', borderBottom: '1px solid #efefef', position: 'relative' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#000000', textTransform: 'capitalize', textAlign: 'center' }}>
+                      {activeRelationsTab === 'connections' ? 'Connections' : activeRelationsTab}
+                    </h3>
+                    <button 
+                      style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', outline: 'none' }} 
+                      onClick={() => {
+                        setActiveRelationsTab(null);
+                        setRelationsSearchQuery('');
+                      }}
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
+
+                  {/* Search Bar Container */}
+                  <div style={{ padding: '12px 16px 8px 16px', position: 'relative' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <Search size={16} style={{ position: 'absolute', left: '12px', color: '#9ca3af' }} />
+                      <input 
+                        type="text"
+                        value={relationsSearchQuery}
+                        onChange={(e) => setRelationsSearchQuery(e.target.value)}
+                        placeholder="Search"
+                        style={{
+                          width: '100%',
+                          background: '#f3f4f6',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 12px 8px 36px',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                      {relationsSearchQuery && (
+                        <button 
+                          onClick={() => setRelationsSearchQuery('')}
+                          style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Relations list */}
+                  <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', padding: '8px 16px 16px 16px' }}>
+                    {(() => {
+                      const list = profileRelations[activeRelationsTab] || [];
+                      const filtered = list.filter((u: any) => {
+                        const uname = getUsername(u);
+                        const fname = u.full_name || '';
+                        const q = relationsSearchQuery.toLowerCase();
+                        return uname.toLowerCase().includes(q) || fname.toLowerCase().includes(q);
+                      });
+
+                      if (filtered.length === 0) {
+                        return (
+                          <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem', padding: '32px 0', margin: 0 }}>
+                            No results found.
+                          </p>
+                        );
+                      }
+
+                      return filtered.map((u: any) => {
+                        const username = getUsername(u);
+                        const isSelf = currentUser?.id === u.id;
+                        const doIFollowThem = connections.some((c: any) => c.id === u.id) || connectionSentIds.includes(u.id) || isSelf;
+
+                        return (
+                          <div 
+                            key={u.id} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              padding: '8px 0'
+                            }}
+                          >
+                            {/* Avatar */}
+                            <img 
+                              src={u.profile_photo} 
+                              alt={u.full_name} 
+                              style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }}
+                              onClick={() => {
+                                setActiveRelationsTab(null);
+                                setRelationsSearchQuery('');
+                                setSelectedProfileId(u.id);
+                              }}
+                            />
+
+                            {/* Name & Details */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', marginLeft: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                                <span 
+                                  style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827', cursor: 'pointer' }}
+                                  onClick={() => {
+                                    setActiveRelationsTab(null);
+                                    setRelationsSearchQuery('');
+                                    setSelectedProfileId(u.id);
+                                  }}
+                                >
+                                  {username}
+                                </span>
+                                {!doIFollowThem && (
+                                  <span 
+                                    onClick={async () => {
+                                      try {
+                                        await apiFetch('/directory/connect', {
+                                          method: 'POST',
+                                          body: JSON.stringify({ targetId: u.id })
+                                        });
+                                        setConnectionSentIds(prev => [...prev, u.id]);
+                                        showToast(`Connection request sent to ${u.full_name}!`, 'success');
+                                        if (selectedProfileId) loadRelations(selectedProfileId);
+                                      } catch (err: any) {
+                                        showToast(err.message, 'danger');
+                                      }
+                                    }}
+                                    style={{ fontSize: '0.88rem', color: '#0095f6', fontWeight: 600, cursor: 'pointer' }}
+                                  >
+                                    · Follow
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                {u.full_name}
+                              </span>
+                            </div>
+
+                            {/* Action Button */}
+                            <div>
+                              {isSelf ? (
+                                <span style={{ fontSize: '0.82rem', color: '#9ca3af', fontWeight: 600 }}>You</span>
+                              ) : activeRelationsTab === 'followers' ? (
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Remove ${u.full_name} as a follower?`)) {
+                                      await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
+                                      showToast(`Removed ${u.full_name} from followers`, 'success');
+                                      if (selectedProfileId) loadRelations(selectedProfileId);
+                                    }
+                                  }}
+                                  style={{
+                                    background: '#f3f4f6',
+                                    border: 'none',
+                                    padding: '6px 12px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: '#000000',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              ) : activeRelationsTab === 'following' ? (
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Unfollow ${u.full_name}?`)) {
+                                      await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
+                                      showToast(`Unfollowed ${u.full_name}`, 'info');
+                                      setConnections(prev => prev.filter(c => c.id !== u.id));
+                                      if (selectedProfileId) loadRelations(selectedProfileId);
+                                    }
+                                  }}
+                                  style={{
+                                    background: '#f3f4f6',
+                                    border: 'none',
+                                    padding: '6px 12px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: '#000000',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {connectionSentIds.includes(u.id) ? 'Requested' : 'Following'}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setActiveRelationsTab(null);
+                                    setRelationsSearchQuery('');
+                                    setSelectedProfileId(u.id);
+                                  }}
+                                  style={{
+                                    background: '#f3f4f6',
+                                    border: 'none',
+                                    padding: '6px 12px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: '#000000',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  View
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
@@ -1666,161 +1971,7 @@ export default function App() {
         </div>
       )}
 
-      {currentUser && (currentUser.profession === 'Not specified' || currentUser.city === 'Not specified' || !currentUser.batch_year || currentUser.full_name?.startsWith('alumni')) && (
-        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)', zIndex: 9999 }}>
-          <div className="modal-card" style={{ maxWidth: '500px', width: '90%', background: '#ffffff', borderRadius: '24px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', color: '#1e293b' }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginBottom: '12px' }}>
-                <Sparkles size={28} />
-              </div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>Complete Your Profile</h3>
-              <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                To unlock the Vidyapith Connect alumni platform, please verify and complete your directory details.
-              </p>
-            </div>
 
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const target = e.currentTarget;
-              const name = (target.elements.namedItem('wName') as HTMLInputElement).value;
-              const batch = (target.elements.namedItem('wBatch') as HTMLInputElement).value;
-              const dept = (target.elements.namedItem('wDept') as HTMLSelectElement).value;
-              const city = (target.elements.namedItem('wCity') as HTMLInputElement).value;
-              const prof = (target.elements.namedItem('wProf') as HTMLInputElement).value || 'Not specified';
-              const bio = (target.elements.namedItem('wBio') as HTMLTextAreaElement).value || '';
-              const photo = (target.elements.namedItem('wPhoto') as HTMLInputElement).value || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80';
-
-              if (!name.trim() || !batch || !dept || !city.trim()) {
-                showToast("Please fill all required fields.", "danger");
-                return;
-              }
-
-              setIsSubmitting(true);
-              try {
-                await apiFetch('/directory/profile/update', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    full_name: name.trim(),
-                    batch_year: parseInt(batch),
-                    department: dept,
-                    city: city.trim(),
-                    profession_category: prof.trim(),
-                    bio: bio.trim(),
-                    profile_photo: photo.trim()
-                  })
-                });
-                showToast("Profile completed successfully! Welcome to the portal.", "success");
-                window.location.reload();
-              } catch (err: any) {
-                showToast(err.message || "Failed to save profile.", "danger");
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}>
-              <div className="form-group" style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Full Name *</label>
-                <input 
-                  type="text" 
-                  name="wName" 
-                  defaultValue={currentUser.full_name?.startsWith('alumni') ? '' : currentUser.full_name} 
-                  required 
-                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Graduation Batch *</label>
-                  <select 
-                    name="wBatch" 
-                    defaultValue={currentUser.batch_year || ''} 
-                    required 
-                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                  >
-                    <option value="" disabled>Select Year</option>
-                    {Array.from({ length: 2026 - 1950 + 1 }, (_, i) => 2026 - i).map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Department *</label>
-                  <select 
-                    name="wDept" 
-                    defaultValue={currentUser.department || ''} 
-                    required 
-                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                  >
-                    <option value="" disabled>Select Stream</option>
-                    <option value="Science">Science</option>
-                    <option value="Commerce">Commerce</option>
-                    <option value="Arts">Arts</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Administration">Administration</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Current City *</label>
-                  <input 
-                    type="text" 
-                    name="wCity" 
-                    defaultValue={currentUser.city === 'Not specified' ? '' : currentUser.city} 
-                    placeholder="E.g., Bangalore" 
-                    required 
-                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Profession</label>
-                  <input 
-                    type="text" 
-                    name="wProf" 
-                    defaultValue={currentUser.profession === 'Not specified' ? '' : currentUser.profession} 
-                    placeholder="E.g., Software Engineer" 
-                    style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Profile Photo URL</label>
-                <input 
-                  type="text" 
-                  name="wPhoto" 
-                  defaultValue={currentUser.profile_photo} 
-                  placeholder="https://images.unsplash.com/..." 
-                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Short Bio</label>
-                <textarea 
-                  name="wBio" 
-                  defaultValue={currentUser.bio} 
-                  rows={2} 
-                  placeholder="Tell your batchmates about yourself..." 
-                  style={{ width: '100%', padding: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isSubmitting} 
-                className="btn btn-primary btn-block" 
-                style={{ width: '100%', padding: '12px' }}
-              >
-                {isSubmitting ? "Saving Profile..." : "Unlock Platform"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }

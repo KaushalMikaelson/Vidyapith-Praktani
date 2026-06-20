@@ -8,7 +8,7 @@ import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 // Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment } from '../controllers/posts.controller.js';
 import { listEvents, createEvent, rsvpEvent } from '../controllers/events.controller.js';
-import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile } from '../controllers/directory.controller.js';
+import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile, getUserRelations } from '../controllers/directory.controller.js';
 import { listMentors, listPairings, requestMentorship } from '../controllers/mentorship.controller.js';
 import { listNotifications, markRead, readAllNotifications } from '../controllers/notifications.controller.js';
 import { listPendingUsers } from '../controllers/admin.controller.js';
@@ -62,6 +62,7 @@ apiRouter.get('/directory', requireAuth, listDirectory);
 apiRouter.get('/directory/profile/:id', requireAuth, getProfile);
 apiRouter.post('/directory/profile/update', requireAuth, updateProfile);
 apiRouter.post('/directory/connect', requireAuth, connectRequest);
+apiRouter.get('/directory/relations/:id', requireAuth, getUserRelations);
 
 apiRouter.get('/directory/connections/status', requireAuth, getConnectionStatuses);
 apiRouter.get('/directory/connections/pending', requireAuth, listPendingConnections);

@@ -665,3 +665,78 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
+// Get relations (followers, following, connections) for a user
+export const getUserRelations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = req.params.id as string;
+    if (!targetUserId) {
+      res.status(400).json({ error: "User ID is required." });
+      return;
+    }
+
+    const connections = await prisma.connection.findMany({
+      where: {
+        OR: [
+          { sender_id: targetUserId },
+          { receiver_id: targetUserId }
+        ]
+      }
+    });
+
+    const partnerIds = connections.map(c => c.sender_id === targetUserId ? c.receiver_id : c.sender_id);
+    const partners = await prisma.user.findMany({
+      where: { id: { in: partnerIds } },
+      include: { profile: true }
+    });
+
+    const partnerMap = new Map(partners.map(p => [p.id, p]));
+
+    const followers: any[] = [];
+    const following: any[] = [];
+    const acceptedConnections: any[] = [];
+
+    const formatUser = (u: any) => ({
+      id: u.id,
+      full_name: u.profile?.full_name || "Vidyapith Alumnus",
+      email: u.email,
+      batch_year: u.profile?.batch_year || 0,
+      house: u.profile?.house || "",
+      role: u.role,
+      profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+      profession: u.profile?.profession_category || "",
+      company: u.profile?.company || "",
+      city: u.profile?.city || "",
+      country: u.profile?.country || "India"
+    });
+
+    connections.forEach(c => {
+      const partnerId = c.sender_id === targetUserId ? c.receiver_id : c.sender_id;
+      const partner = partnerMap.get(partnerId);
+      if (!partner) return;
+
+      const formatted = formatUser(partner);
+
+      if (c.status === 'accepted') {
+        acceptedConnections.push(formatted);
+        followers.push(formatted);
+        following.push(formatted);
+      } else if (c.status === 'pending') {
+        if (c.sender_id === targetUserId) {
+          following.push(formatted);
+        } else {
+          followers.push(formatted);
+        }
+      }
+    });
+
+    res.status(200).json({
+      followers,
+      following,
+      connections: acceptedConnections
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
