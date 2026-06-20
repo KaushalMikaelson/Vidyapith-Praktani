@@ -76,7 +76,7 @@ export default function App() {
   // Email OTP registration verification states
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(true);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Forgot password flow states
@@ -1352,57 +1352,10 @@ export default function App() {
                       {/* Step 3 Contents: Leaving Certificate / Marksheet Verification */}
                       {regStep === 3 && (
                         <div className="auth-step-container">
-                          {/* OTP verification segment */}
-                          <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                            <label className="auth-input-label" style={{ marginBottom: '8px', display: 'block' }}>Step 3.1: Verify Email OTP</label>
-                            
-                            {!emailOtpSent ? (
-                              <button
-                                type="button"
-                                className="btn btn-primary btn-block"
-                                disabled={verifyingOtp}
-                                onClick={handleRequestOtp}
-                                style={{ width: '100%', padding: '10px' }}
-                              >
-                                {verifyingOtp ? "Sending OTP..." : "Send Verification OTP to Email"}
-                              </button>
-                            ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <input
-                                    type="text"
-                                    placeholder="Enter 6-digit OTP"
-                                    disabled={emailOtpVerified || verifyingOtp}
-                                    value={emailOtp}
-                                    onChange={(e) => setEmailOtp(e.target.value)}
-                                    style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px', textAlign: 'center', fontSize: '1rem', letterSpacing: '2px' }}
-                                  />
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    disabled={emailOtpVerified || verifyingOtp || !emailOtp}
-                                    onClick={handleVerifyOtp}
-                                    style={{ padding: '0 20px' }}
-                                  >
-                                    {emailOtpVerified ? "Verified ✓" : verifyingOtp ? "Verifying..." : "Verify OTP"}
-                                  </button>
-                                </div>
-                                {emailOtpVerified ? (
-                                  <span style={{ fontSize: '0.78rem', color: '#48bb78', fontWeight: 600 }}>✓ Email successfully verified! Proceed to certificate upload.</span>
-                                ) : (
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Check browser console for the simulated 6-digit OTP code.</span>
-                                    <button type="button" onClick={handleRequestOtp} style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}>Resend OTP</button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Certificate upload segment (disabled until OTP is verified) */}
-                          <div style={{ opacity: emailOtpVerified ? 1 : 0.4, pointerEvents: emailOtpVerified ? 'auto' : 'none' }}>
+                          {/* Certificate upload segment */}
+                          <div>
                             <div className="auth-input-block" style={{ marginBottom: '16px' }}>
-                              <label className="auth-input-label">Step 3.2: Upload Leaving Certificate / Marksheet</label>
+                              <label className="auth-input-label">Upload Leaving Certificate / Marksheet</label>
                               <div 
                                 className={`auth-upload-drag-box ${regFile ? 'has-file' : ''}`}
                                 onClick={() => document.getElementById('certInput')?.click()}
