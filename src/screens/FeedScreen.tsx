@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Post, Comment } from '../database/database';
 import { 
-  Send, Image, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, Bell, Grid,
+  Send, Image as ImageIcon, MessageCircle, Heart, Bookmark, MoreHorizontal, Pin, Bell, Grid,
   Smile, Share2, Film, Link, FileText, Clipboard, Play, ExternalLink, 
   Sparkles, Check, ChevronLeft, ChevronRight, Download, BookOpen, Eye, 
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck
+  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck, RotateCw
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
@@ -294,6 +294,18 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [editShowMobile, setEditShowMobile] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Cropper states
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState('');
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropX, setCropX] = useState(0);
+  const [cropY, setCropY] = useState(0);
+  const [cropRotation, setCropRotation] = useState(0);
+  const cropDraggingRef = useRef(false);
+  const cropDragStartRef = useRef({ x: 0, y: 0 });
+  // Stores a guaranteed-local blob/data URL for canvas rendering (avoids CORS taint)
+  const cropLocalSrcRef = useRef<string>('');
 
   // Profile Settings form states
   const [settingsBio, setSettingsBio] = useState(currentUser?.bio || '');
@@ -763,7 +775,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     const person = profileUser.profile || profileUser;
     setEditName(person.full_name || currentUser?.profile?.full_name || '');
     setEditBio(person.bio || currentUser?.profile?.bio || '');
-    setEditMobile(profileUser.phone || currentUser?.phone || '');
+    setEditMobile(person.mobile || currentUser?.mobile || '');
     setEditBatch(person.batch_year ? String(person.batch_year) : (currentUser?.profile?.batch_year ? String(currentUser.profile.batch_year) : ''));
     setEditHouse(person.house || currentUser?.profile?.house || 'Vivekananda House');
     setEditProfession(person.profession_category || currentUser?.profile?.profession_category || '');
@@ -773,19 +785,162 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setEditPhotoUrl(person.profile_photo || currentUser?.profile?.profile_photo || '');
     setEditShowEmail(person.show_email ?? currentUser?.profile?.show_email ?? true);
     setEditShowMobile(person.show_phone ?? currentUser?.profile?.show_phone ?? false);
+    setCropModalOpen(false);
     setEditProfileOpen(true);
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const dataUrl = event.target.result as string;
+        setCropImageSrc(dataUrl);
+        cropLocalSrcRef.current = dataUrl; // safe local source for canvas
+        setCropZoom(1);
+        setCropX(0);
+        setCropY(0);
+        setCropRotation(0);
+        setCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleAdjustExistingPhoto = async () => {
+    if (!editPhotoUrl) return;
+    // If already a data URL (local), use directly
+    if (editPhotoUrl.startsWith('data:')) {
+      setCropImageSrc(editPhotoUrl);
+      cropLocalSrcRef.current = editPhotoUrl;
+    } else {
+      // Remote URL — fetch as blob to avoid canvas CORS taint
+      try {
+        setUploadingPhoto(true);
+        const res = await fetch(editPhotoUrl);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        setCropImageSrc(objectUrl);
+        cropLocalSrcRef.current = objectUrl;
+      } catch {
+        // Fallback: use URL directly, canvas may fail but we show clear error
+        setCropImageSrc(editPhotoUrl);
+        cropLocalSrcRef.current = editPhotoUrl;
+      } finally {
+        setUploadingPhoto(false);
+      }
+    }
+    setCropZoom(1);
+    setCropX(0);
+    setCropY(0);
+    setCropRotation(0);
+    setCropModalOpen(true);
+  };
+
+  const handleCropMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    cropDraggingRef.current = true;
+    cropDragStartRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleCropMouseMove = (e: React.MouseEvent) => {
+    if (!cropDraggingRef.current) return;
+    const dx = e.clientX - cropDragStartRef.current.x;
+    const dy = e.clientY - cropDragStartRef.current.y;
+    cropDragStartRef.current = { x: e.clientX, y: e.clientY };
+    setCropX((prev) => prev + dx);
+    setCropY((prev) => prev + dy);
+  };
+
+  const handleCropMouseUp = () => {
+    cropDraggingRef.current = false;
+  };
+
+  const handleCropTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    cropDraggingRef.current = true;
+    cropDragStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleCropTouchMove = (e: React.TouchEvent) => {
+    if (!cropDraggingRef.current || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - cropDragStartRef.current.x;
+    const dy = e.touches[0].clientY - cropDragStartRef.current.y;
+    cropDragStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    setCropX((prev) => prev + dx);
+    setCropY((prev) => prev + dy);
+  };
+
+  const handleCropTouchEnd = () => {
+    cropDraggingRef.current = false;
+  };
+
+  // ── Helper: render canvas → File (no uploads inside nested callbacks) ──
+  const renderCropToFile = (src: string): Promise<File> =>
+    new Promise<File>((resolve, reject) => {
+      const img = new window.Image();  // use window.Image to avoid conflict with lucide-react's Image icon import
+      // Only set crossOrigin for true remote URLs; never for data: or blob:
+      if (!src.startsWith('data:') && !src.startsWith('blob:')) {
+        img.crossOrigin = 'anonymous';
+      }
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 400;
+          canvas.height = 400;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Failed to get canvas context')); return; }
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, 400, 400);
+
+          ctx.save();
+          const ratio = 400 / 280;
+          ctx.translate(200 + cropX * ratio, 200 + cropY * ratio);
+          ctx.rotate((cropRotation * Math.PI) / 180);
+          const baseScale = Math.min(280 / img.width, 280 / img.height);
+          ctx.scale(baseScale * cropZoom * ratio, baseScale * cropZoom * ratio);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          ctx.restore();
+
+          // Resolve with a File — no async upload inside this callback
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error('Failed to generate image blob')); return; }
+            resolve(new File([blob], 'profile_cropped.png', { type: 'image/png' }));
+          }, 'image/png');
+        } catch (err) { reject(err); }
+      };
+      img.onerror = () => reject(new Error('Failed to load image. Please try uploading a new photo.'));
+      img.src = src;
+    });
+
+  const handleCropApply = async () => {
+    const localSrc = cropLocalSrcRef.current || cropImageSrc;
+    if (!localSrc) return;
     try {
       setUploadingPhoto(true);
-      const result = await uploadMedia(file, 'profiles');
-      setEditPhotoUrl(result.url);
-      showToast("Profile photo uploaded successfully!", "success");
+      showToast('Processing photo...', 'info');
+
+      // Step 1: canvas → File  (pure sync canvas work, no module imports inside)
+      const croppedFile = await renderCropToFile(localSrc);
+
+      // Step 2: upload  (called at the top-level async scope, not nested in a callback)
+      const result = await uploadMedia(croppedFile, 'profiles');
+
+      // Cleanup blob URL if we created one
+      if (localSrc.startsWith('blob:')) URL.revokeObjectURL(localSrc);
+
+      const finalUrl = result.url;
+
+      setEditPhotoUrl(finalUrl);
+      cropLocalSrcRef.current = '';
+      setCropModalOpen(false);
+      showToast("Photo adjusted successfully!", "success");
     } catch (err: any) {
-      showToast(err.message || "Failed to upload photo", "danger");
+      showToast(err.message || "Failed to process photo", "danger");
     } finally {
       setUploadingPhoto(false);
     }
@@ -803,6 +958,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }
     try {
       setUpdatingProfile(true);
+
       await apiFetch('/directory/profile/update', {
         method: 'POST',
         body: JSON.stringify({
@@ -2141,7 +2297,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </div>
           </section>
         </main>
-        <button className="share-memory-fab" onClick={() => { setPostMediaType('photo'); showToast('Photo memory composer is ready on Home.', 'info'); }}><Image size={22} /> Share a Memory</button>
+        <button className="share-memory-fab" onClick={() => { setPostMediaType('photo'); showToast('Photo memory composer is ready on Home.', 'info'); }}><ImageIcon size={22} /> Share a Memory</button>
       </div>
     );
   }
@@ -3245,7 +3401,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       <img 
                         src={editPhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80'} 
                         alt="Preview" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover'
+                        }} 
                       />
                       {uploadingPhoto && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -3253,13 +3413,27 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         </div>
                       )}
                     </div>
-                    <div>
-                      <label className="btn-ig-grey" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155' }}>
-                        <Camera size={14} />
-                        {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
-                        <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} disabled={uploadingPhoto} />
-                      </label>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>JPG, PNG or WEBP. Max 5MB.</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <label className="btn-ig-grey" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', margin: 0 }}>
+                          <Camera size={14} />
+                          Upload Photo
+                          <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                        </label>
+                        {editPhotoUrl && (
+                          <button
+                            type="button"
+                            onClick={handleAdjustExistingPhoto}
+                            className="btn-ig-grey"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', cursor: 'pointer', background: '#f1f5f9' }}
+                            title="Crop and Rotate Photo"
+                          >
+                            <RotateCw size={14} />
+                            Adjust / Rotate
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>JPG, PNG or WEBP. Max 5MB.</div>
                     </div>
                   </div>
 
@@ -3427,6 +3601,130 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </div>
 
                 </form>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ADJUST PROFILE PHOTO MODAL */}
+        {cropModalOpen && (
+          <div 
+            className="modal-overlay" 
+            style={{ zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)' }}
+          >
+            <div 
+              className="modal-card" 
+              style={{ 
+                maxWidth: '420px', 
+                width: '90%', 
+                background: '#ffffff', 
+                borderRadius: '20px', 
+                padding: '24px', 
+                border: '1px solid #e2e8f0', 
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+                color: '#1e293b', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: '20px' 
+              }}
+            >
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#0f172a', textAlign: 'center', width: '100%', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                Adjust Profile Photo
+              </h3>
+
+              {/* Viewport Mask Workspace */}
+              <div 
+                style={{ 
+                  width: '280px', 
+                  height: '280px', 
+                  position: 'relative', 
+                  overflow: 'hidden', 
+                  borderRadius: '50%', 
+                  background: '#0f172a', 
+                  boxShadow: '0 0 0 2px var(--primary-color), inset 0 2px 8px rgba(0,0,0,0.5)',
+                  cursor: 'move'
+                }}
+                onMouseDown={handleCropMouseDown}
+                onMouseMove={handleCropMouseMove}
+                onMouseUp={handleCropMouseUp}
+                onMouseLeave={handleCropMouseUp}
+                onTouchStart={handleCropTouchStart}
+                onTouchMove={handleCropTouchMove}
+                onTouchEnd={handleCropTouchEnd}
+              >
+                <img 
+                  src={cropImageSrc} 
+                  alt="Cropping Preview" 
+                  style={{ 
+                    position: 'absolute', 
+                    left: '50%', 
+                    top: '50%', 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain',
+                    pointerEvents: 'none', // Prevents default drag ghosting
+                    transform: `translate(-50%, -50%) translate(${cropX}px, ${cropY}px) rotate(${cropRotation}deg) scale(${cropZoom})`,
+                    transformOrigin: 'center center',
+                    transition: cropDraggingRef.current ? 'none' : 'transform 0.1s ease'
+                  }} 
+                />
+              </div>
+
+              <div style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>
+                Drag photo to pan. Use slider to zoom.
+              </div>
+
+              {/* Zoom Slider */}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
+                  <span>ZOOM</span>
+                  <span>{cropZoom.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="3" 
+                  step="0.05" 
+                  value={cropZoom} 
+                  onChange={(e) => setCropZoom(parseFloat(e.target.value))} 
+                  style={{ width: '100%', accentColor: 'var(--primary-color)', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Controls Footer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '1px solid #f1f5f9', paddingTop: '16px', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setCropRotation((prev) => (prev + 90) % 360)}
+                  className="btn-ig-grey"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', cursor: 'pointer', background: '#f1f5f9' }}
+                >
+                  <RotateCw size={14} />
+                  Rotate
+                </button>
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setCropModalOpen(false)} 
+                    className="btn-ig-grey"
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f1f5f9', fontWeight: 600, color: '#334155' }}
+                    disabled={uploadingPhoto}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleCropApply} 
+                    className="btn-ig-black"
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#0f172a', fontWeight: 700, color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? <Loader2 size={14} className="animate-spin" /> : 'Apply'}
+                  </button>
+                </div>
               </div>
 
             </div>
