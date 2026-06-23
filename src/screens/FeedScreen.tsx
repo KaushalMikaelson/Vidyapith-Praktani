@@ -275,7 +275,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
   const [connectedUserIds, setConnectedUserIds] = useState<string[]>([]);
   const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
-  const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
+  const [activeRelationsTab, setActiveRelationsTab] = useState<'connections' | null>(null);
   const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
 
   // Edit Profile States
@@ -1161,7 +1161,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }
 
     // Feed tab filtering
-    if (feedTab === 'Following') {
+    if (feedTab === 'Connected') {
       const isConnection = connections.some(c => c.id === post.author_id) || post.author_id === currentUser.id;
       if (!isConnection) return false;
     } else if (feedTab === 'Batch') {
@@ -1533,7 +1533,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             borderRadius: '12px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
           }}>
-            {['All', 'Following', 'Batch', 'Department', 'Trending'].map(tab => {
+            {['All', 'Connected', 'Batch', 'Department', 'Trending'].map(tab => {
               const isActive = feedTab === tab;
               return (
                 <button
@@ -2487,14 +2487,29 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
-                {person.profession || currentUser.profession} at {person.company || currentUser.company || 'Not specified'}
-              </div>
+              {(() => {
+                const profession = person.profession || currentUser.profession;
+                const company = person.company || currentUser.company;
+                if (!profession && !company) return null;
+                return (
+                  <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
+                    {profession && company ? `${profession} at ${company}` : profession || company}
+                  </div>
+                );
+              })()}
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#64748b' }}>
-                <MapPin size={14} style={{ color: '#f43f5e' }} /> 
-                {person.city || currentUser.city || 'Not specified'}, {person.country || currentUser.country || 'India'}
-              </div>
+              {(() => {
+                const city = person.city || currentUser.city;
+                const country = person.country || currentUser.country;
+                if (!city && !country) return null;
+                const location = [city, country].filter(Boolean).join(', ');
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#64748b' }}>
+                    <MapPin size={14} style={{ color: '#f43f5e' }} />
+                    {location}
+                  </div>
+                );
+              })()}
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -2507,12 +2522,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </button>
                 ) : (
                   <>
-                    <button 
-                      onClick={toggleFollow} 
-                      className={isFollowed ? "btn-ig-grey" : "btn-ig-black"}
-                    >
-                      {isFollowed ? '✓ Following' : 'Follow'}
-                    </button>
                     <button 
                       onClick={handleConnectClick} 
                       className="btn-ig-grey"
@@ -2544,22 +2553,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             <div className="profile-stat-box">
               <span className="profile-stat-number">{profilePosts.length}</span>
               <span className="profile-stat-label">Posts</span>
-            </div>
-            <div 
-              className="profile-stat-box" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveRelationsTab('followers')}
-            >
-              <span className="profile-stat-number">{profileRelations ? profileRelations.followers.length : (142 + (isFollowed ? 1 : 0))}</span>
-              <span className="profile-stat-label">Followers</span>
-            </div>
-            <div 
-              className="profile-stat-box" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveRelationsTab('following')}
-            >
-              <span className="profile-stat-number">{profileRelations ? profileRelations.following.length : 312}</span>
-              <span className="profile-stat-label">Following</span>
             </div>
             <div 
               className="profile-stat-box" 
@@ -3152,7 +3145,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               {/* Modal Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 16px', borderBottom: '1px solid #efefef', position: 'relative' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#000000', textTransform: 'capitalize', textAlign: 'center' }}>
-                  {activeRelationsTab === 'connections' ? 'Connections' : activeRelationsTab}
+                  Connections
                 </h3>
                 <button 
                   style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', outline: 'none' }} 
@@ -3255,7 +3248,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             >
                               {username}
                             </span>
-                            {!doIFollowThem && (
+                            {!isConnectedToThem && (
                               <span 
                                 onClick={async () => {
                                   await handleConnectRequest(u.id, u.full_name);
@@ -3263,7 +3256,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                                 }}
                                 style={{ fontSize: '0.88rem', color: '#0095f6', fontWeight: 600, cursor: 'pointer' }}
                               >
-                                · Follow
+                                · Connect
                               </span>
                             )}
                           </div>
@@ -3276,50 +3269,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <div>
                           {isSelf ? (
                             <span style={{ fontSize: '0.82rem', color: '#9ca3af', fontWeight: 600 }}>You</span>
-                          ) : activeRelationsTab === 'followers' ? (
-                            <button
-                              onClick={async () => {
-                                if (confirm(`Remove ${u.full_name} as a follower?`)) {
-                                  await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
-                                  showToast(`Removed ${u.full_name} from followers`, 'success');
-                                  if (profileUser) loadProfile(profileUser.id);
-                                }
-                              }}
-                              style={{
-                                background: '#f3f4f6',
-                                border: 'none',
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: '#000000',
-                                borderRadius: '8px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Remove
-                            </button>
-                          ) : activeRelationsTab === 'following' ? (
-                            <button
-                              onClick={async () => {
-                                if (confirm(`Unfollow ${u.full_name}?`)) {
-                                  await apiFetch(`/directory/connections/${u.id}`, { method: 'DELETE' });
-                                  showToast(`Unfollowed ${u.full_name}`, 'info');
-                                  if (profileUser) loadProfile(profileUser.id);
-                                }
-                              }}
-                              style={{
-                                background: '#f3f4f6',
-                                border: 'none',
-                                padding: '6px 12px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: '#000000',
-                                borderRadius: '8px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {connectionSentIds.includes(u.id) ? 'Requested' : 'Following'}
-                            </button>
                           ) : (
                             <button
                               onClick={() => {
@@ -3897,7 +3846,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </div>
                   <div>
                     <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 800, color: 'white' }}>142</span>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Followers</span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Connections</span>
                   </div>
                   <div>
                     <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 800, color: 'white' }}>890</span>
