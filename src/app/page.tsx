@@ -1186,6 +1186,11 @@ export default function App() {
                                 </div>
                               )}
                             </div>
+                            {regName.trim().length > 0 && regName.trim().length < 3 && (
+                              <p style={{ fontSize: '0.74rem', color: '#f87171', marginTop: '6px', textAlign: 'left', fontWeight: 500 }}>
+                                ⚠️ Name must be at least 3 characters.
+                              </p>
+                            )}
                           </div>
 
                           {/* Email Address */}
@@ -1206,6 +1211,11 @@ export default function App() {
                                 </div>
                               )}
                             </div>
+                            {regEmail.trim().length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) && (
+                              <p style={{ fontSize: '0.74rem', color: '#f87171', marginTop: '6px', textAlign: 'left', fontWeight: 500 }}>
+                                ⚠️ Please enter a valid email address.
+                              </p>
+                            )}
                           </div>
 
                           {/* Create Password */}
@@ -1233,6 +1243,11 @@ export default function App() {
                                 {showRegPass ? <EyeOff size={18} /> : <Eye size={18} />}
                               </button>
                             </div>
+                            {regPass.length > 0 && regPass.length < 6 && (
+                              <p style={{ fontSize: '0.74rem', color: '#f87171', marginTop: '6px', textAlign: 'left', fontWeight: 500 }}>
+                                ⚠️ Password must be at least 6 characters.
+                              </p>
+                            )}
                           </div>
 
                           {/* Navigation */}
@@ -1457,14 +1472,26 @@ export default function App() {
               <div style={{ flex: 1, minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>{selectedProfile.full_name}</h3>
-                  <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>
-                    Class of {selectedProfile.batch_year}
-                  </span>
+                  <div className="profile-batch-emblem">
+                    <div className="batch-emblem-icon">
+                      <GraduationCap size={14} />
+                    </div>
+                    <div className="batch-emblem-content">
+                      <span className="batch-emblem-label">RKMV Batch</span>
+                      <span className="batch-emblem-year">Class of {selectedProfile.batch_year}</span>
+                    </div>
+                  </div>
                   {selectedProfile.role === 'admin' && (
-                    <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>🛡️ Admin</span>
+                    <div className="profile-admin-badge">
+                      <ShieldCheck size={14} />
+                      <span>Monastic Admin</span>
+                    </div>
                   )}
                   {selectedProfile.verify_status === 'approved' && (
-                    <span className="profile-header-badge" style={{ padding: '4px 10px', fontSize: '0.7rem' }}>✓ Verified</span>
+                    <div className="profile-verified-badge">
+                      <Check size={12} strokeWidth={3} />
+                      <span>Verified Alumni</span>
+                    </div>
                   )}
                 </div>
 

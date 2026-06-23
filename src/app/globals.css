@@ -1068,6 +1068,15 @@ textarea:focus {
   transition: all var(--transition-fast);
 }
 
+.btn:disabled,
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+
 .btn-primary {
   background: var(--primary-gradient);
   color: white;
@@ -6912,3 +6921,106 @@ textarea:focus {
   background-color: #f1f5f9;
   transform: translateX(4px);
 }
+
+/* Premium Profile Badges and Batch Emblem */
+.profile-batch-emblem {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 3px 10px 3px 5px;
+  gap: 8px;
+  box-shadow: 0 3px 8px rgba(243, 112, 33, 0.06);
+  font-family: var(--font-title);
+  vertical-align: middle;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.profile-batch-emblem:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 14px rgba(243, 112, 33, 0.12);
+  border-color: #f97316;
+}
+
+.batch-emblem-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #ea580c 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(243, 112, 33, 0.18);
+  flex-shrink: 0;
+}
+
+.batch-emblem-content {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.batch-emblem-label {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7c2d12;
+  font-weight: 800;
+}
+
+.batch-emblem-year {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #c2410c;
+}
+
+.profile-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(22, 101, 52, 0.04);
+  vertical-align: middle;
+  height: 32px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.profile-verified-badge:hover {
+  border-color: #4ade80;
+  transform: translateY(-1px);
+}
+
+.profile-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
+  border: 1px solid #fde047;
+  color: #854d0e;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(133, 77, 14, 0.04);
+  vertical-align: middle;
+  height: 32px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.profile-admin-badge:hover {
+  border-color: #eab308;
+  transform: translateY(-1px);
+}
+

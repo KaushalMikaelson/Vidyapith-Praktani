@@ -10,7 +10,7 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap
+  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
@@ -27,7 +27,7 @@ interface FeedScreenProps {
 export const FeedScreen: React.FC<FeedScreenProps> = ({ 
   showToast, onViewProfile, screenMode = 'feed', forceProfileId, refreshKey = 0, onNavigate 
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshSession } = useAuth();
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   const getUsername = (user: any) => {
@@ -277,6 +277,23 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
   const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
   const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
+
+  // Edit Profile States
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editMobile, setEditMobile] = useState('');
+  const [editBatch, setEditBatch] = useState('');
+  const [editHouse, setEditHouse] = useState('');
+  const [editProfession, setEditProfession] = useState('');
+  const [editCompany, setEditCompany] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editPhotoUrl, setEditPhotoUrl] = useState('');
+  const [editShowEmail, setEditShowEmail] = useState(true);
+  const [editShowMobile, setEditShowMobile] = useState(false);
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Profile Settings form states
   const [settingsBio, setSettingsBio] = useState(currentUser?.bio || '');
@@ -738,6 +755,85 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       }
     } catch (err: any) {
       showToast(err.message, 'danger');
+    }
+  };
+
+  const openEditProfileModal = () => {
+    if (!profileUser) return;
+    const person = profileUser.profile || profileUser;
+    setEditName(person.full_name || currentUser?.profile?.full_name || '');
+    setEditBio(person.bio || currentUser?.profile?.bio || '');
+    setEditMobile(profileUser.phone || currentUser?.phone || '');
+    setEditBatch(person.batch_year ? String(person.batch_year) : (currentUser?.profile?.batch_year ? String(currentUser.profile.batch_year) : ''));
+    setEditHouse(person.house || currentUser?.profile?.house || 'Vivekananda House');
+    setEditProfession(person.profession_category || currentUser?.profile?.profession_category || '');
+    setEditCompany(person.company || currentUser?.profile?.company || '');
+    setEditCity(person.city || currentUser?.profile?.city || '');
+    setEditCountry(person.country || currentUser?.profile?.country || 'India');
+    setEditPhotoUrl(person.profile_photo || currentUser?.profile?.profile_photo || '');
+    setEditShowEmail(person.show_email ?? currentUser?.profile?.show_email ?? true);
+    setEditShowMobile(person.show_phone ?? currentUser?.profile?.show_phone ?? false);
+    setEditProfileOpen(true);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingPhoto(true);
+      const result = await uploadMedia(file, 'profiles');
+      setEditPhotoUrl(result.url);
+      showToast("Profile photo uploaded successfully!", "success");
+    } catch (err: any) {
+      showToast(err.message || "Failed to upload photo", "danger");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleSaveEditProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      showToast("Full Name is required.", "danger");
+      return;
+    }
+    if (!editBatch.trim() || isNaN(Number(editBatch))) {
+      showToast("A valid Batch Year is required.", "danger");
+      return;
+    }
+    try {
+      setUpdatingProfile(true);
+      await apiFetch('/directory/profile/update', {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: editName,
+          bio: editBio,
+          mobile: editMobile,
+          batch_year: parseInt(editBatch),
+          house: editHouse,
+          profession_category: editProfession,
+          company: editCompany,
+          city: editCity,
+          country: editCountry,
+          profile_photo: editPhotoUrl,
+          show_email: editShowEmail,
+          show_mobile: editShowMobile
+        })
+      });
+      showToast("Profile updated successfully!", "success");
+      setEditProfileOpen(false);
+      
+      if (refreshSession) {
+        await refreshSession();
+      }
+      
+      if (profileUser) {
+        await loadProfile(profileUser.id);
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to update profile", "danger");
+    } finally {
+      setUpdatingProfile(false);
     }
   };
 
@@ -2202,15 +2298,37 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 </h2>
                 
                 {/* Badge pills */}
-                {userBadges.map((badge, idx) => (
-                  <span key={idx} className="profile-header-badge" title={badge.label}>
-                    <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
-                  </span>
-                ))}
+                {userBadges.map((badge, idx) => {
+                  if (badge.label === 'Verified Alumni') {
+                    return (
+                      <span key={idx} className="profile-verified-badge" title={badge.label}>
+                        <ShieldCheck size={14} /> Verified Alumni
+                      </span>
+                    );
+                  }
+                  if (badge.label === 'Admin') {
+                    return (
+                      <span key={idx} className="profile-admin-badge" title={badge.label}>
+                        <ShieldAlert size={14} /> Admin
+                      </span>
+                    );
+                  }
+                  return (
+                    <span key={idx} className="profile-header-badge" title={badge.label}>
+                      <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
+                    </span>
+                  );
+                })}
 
-                <span className="profile-header-badge">
-                  Class of {person.batch_year || currentUser.batch_year}
-                </span>
+                <div className="profile-batch-emblem">
+                  <div className="batch-emblem-icon">
+                    <GraduationCap size={14} />
+                  </div>
+                  <div className="batch-emblem-content">
+                    <span className="batch-emblem-label">RKMV Batch</span>
+                    <span className="batch-emblem-year">Class of {person.batch_year || currentUser.batch_year}</span>
+                  </div>
+                </div>
               </div>
 
               <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
@@ -2224,7 +2342,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-                {profileUser.id !== currentUser.id && (
+                {profileUser.id === currentUser.id ? (
+                  <button 
+                    onClick={openEditProfileModal} 
+                    className="btn-ig-black"
+                  >
+                    <Settings size={16} /> Edit Profile
+                  </button>
+                ) : (
                   <>
                     <button 
                       onClick={toggleFollow} 
@@ -2246,14 +2371,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         </>
                       )}
                     </button>
+                    <button 
+                      onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} 
+                      className="btn-ig-grey"
+                    >
+                      <MessageCircle size={16} /> Message
+                    </button>
                   </>
                 )}
-                <button 
-                  onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} 
-                  className="btn-ig-grey"
-                >
-                  <MessageCircle size={16} /> Message
-                </button>
               </div>
             </div>
           </div>
@@ -3066,6 +3191,244 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   });
                 })()}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT PROFILE MODAL OVERLAY */}
+        {editProfileOpen && (
+          <div 
+            className="modal-overlay" 
+            onClick={() => setEditProfileOpen(false)}
+            style={{ zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(12px)' }}
+          >
+            <div 
+              className="modal-card" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                maxWidth: '600px', 
+                width: '90%', 
+                background: '#ffffff', 
+                borderRadius: '20px', 
+                padding: '0', 
+                border: '1px solid #e2e8f0', 
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+                color: '#1e293b', 
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: '90vh',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', borderBottom: '1px solid #f1f5f9', position: 'relative' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#0f172a', textAlign: 'center' }}>
+                  Edit / Complete Profile
+                </h3>
+                <button 
+                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', outline: 'none' }} 
+                  onClick={() => setEditProfileOpen(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                <form onSubmit={handleSaveEditProfile}>
+                  
+                  {/* Photo Upload Section */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary-color)', flexShrink: 0 }}>
+                      <img 
+                        src={editPhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80'} 
+                        alt="Preview" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                      {uploadingPhoto && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Loader2 size={20} className="animate-spin" style={{ color: 'white' }} />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="btn-ig-grey" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155' }}>
+                        <Camera size={14} />
+                        {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} disabled={uploadingPhoto} />
+                      </label>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>JPG, PNG or WEBP. Max 5MB.</div>
+                    </div>
+                  </div>
+
+                  {/* Personal details grid */}
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Full Name *</label>
+                      <input 
+                        type="text" 
+                        value={editName} 
+                        onChange={(e) => setEditName(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        required 
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Mobile Number</label>
+                      <input 
+                        type="tel" 
+                        value={editMobile} 
+                        onChange={(e) => setEditMobile(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. +91 9876543210"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Biography */}
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Biography / Bio</label>
+                    <textarea 
+                      rows={3} 
+                      value={editBio} 
+                      onChange={(e) => setEditBio(e.target.value)} 
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', resize: 'vertical' }}
+                      placeholder="Share a short bio about yourself..."
+                    />
+                  </div>
+
+                  {/* Vidyapith Details */}
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Batch Year *</label>
+                      <input 
+                        type="number" 
+                        value={editBatch} 
+                        onChange={(e) => setEditBatch(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. 2012"
+                        required 
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Vidyapith House</label>
+                      <select 
+                        value={editHouse} 
+                        onChange={(e) => setEditHouse(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
+                      >
+                        <option value="Vivekananda House">Vivekananda House</option>
+                        <option value="Brahmananda House">Brahmananda House</option>
+                        <option value="Shivananda House">Shivananda House</option>
+                        <option value="Turiyananda House">Turiyananda House</option>
+                        <option value="Niranjananda House">Niranjananda House</option>
+                        <option value="Saradananda House">Saradananda House</option>
+                        <option value="Premananda House">Premananda House</option>
+                        <option value="Akhandananda House">Akhandananda House</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Professional Details */}
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Profession / Designation</label>
+                      <input 
+                        type="text" 
+                        value={editProfession} 
+                        onChange={(e) => setEditProfession(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Software Engineer, Doctor, Student"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Company / Institution</label>
+                      <input 
+                        type="text" 
+                        value={editCompany} 
+                        onChange={(e) => setEditCompany(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Google, AIIMS, Stanford"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location info */}
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>City Location</label>
+                      <input 
+                        type="text" 
+                        value={editCity} 
+                        onChange={(e) => setEditCity(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Kolkata, Bangalore, London"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Country</label>
+                      <input 
+                        type="text" 
+                        value={editCountry} 
+                        onChange={(e) => setEditCountry(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. India, United States"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Visibility & Privacy checkboxes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600, fontSize: '0.85rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={editShowEmail} 
+                        onChange={(e) => setEditShowEmail(e.target.checked)} 
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <span>Show Email to verified Alumni</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600, fontSize: '0.85rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={editShowMobile} 
+                        onChange={(e) => setEditShowMobile(e.target.checked)} 
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <span>Show Mobile Number to classmates</span>
+                    </label>
+                  </div>
+
+                  {/* Footer buttons */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setEditProfileOpen(false)} 
+                      className="btn-ig-grey"
+                      style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f1f5f9', fontWeight: 600, color: '#334155' }}
+                      disabled={updatingProfile}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="btn-ig-black"
+                      style={{ padding: '10px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#0f172a', fontWeight: 700, color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                      disabled={updatingProfile}
+                    >
+                      {updatingProfile ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> Saving...
+                        </>
+                      ) : 'Save Changes'}
+                    </button>
+                  </div>
+
+                </form>
+              </div>
+
             </div>
           </div>
         )}

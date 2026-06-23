@@ -620,9 +620,28 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
     const { 
       bio, profession_category, company, city, country, profile_photo, 
-      show_email, show_mobile, full_name, batch_year, house, department, industry 
+      show_email, show_mobile, full_name, batch_year, house, department, industry, mobile 
     } = req.body;
     
+    if (mobile !== undefined) {
+      // Check if another user has this phone number
+      const existingUserWithPhone = await prisma.user.findFirst({
+        where: {
+          phone: mobile,
+          id: { not: userId }
+        }
+      });
+      if (existingUserWithPhone) {
+        res.status(400).json({ error: "Mobile number is already in use by another account." });
+        return;
+      }
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { phone: mobile }
+      });
+    }
+
     const profileData: any = {};
     if (bio !== undefined) profileData.bio = bio;
     if (profession_category !== undefined) profileData.profession_category = profession_category;
