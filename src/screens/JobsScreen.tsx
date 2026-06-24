@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, JobListing } from '../database/database';
 import { Briefcase, Search, PlusCircle, AlertCircle, X, Check, Mail } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
@@ -14,7 +13,7 @@ interface JobsScreenProps {
 export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile }) => {
   const { currentUser } = useAuth();
   
-  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterReferral, setFilterReferral] = useState(false);
@@ -32,7 +31,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
 
   // Modal apply state
   const [applyModalVisible, setApplyModalVisible] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [applyMemo, setApplyMemo] = useState('');
 
   const loadJobsData = async () => {
@@ -107,7 +106,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
     }
   };
 
-  const openApplyModal = (job: JobListing) => {
+  const openApplyModal = (job: any) => {
     setSelectedJob(job);
     setApplyMemo('');
     setApplyModalVisible(true);
@@ -180,7 +179,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
                   </p>
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '6px 0' }}>
-                    {job.skills.map(skill => (
+                    {job.skills?.map((skill: string) => (
                       <span key={skill} style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: '4px' }}>
                         {skill}
                       </span>

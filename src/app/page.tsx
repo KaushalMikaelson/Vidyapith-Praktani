@@ -94,6 +94,8 @@ export default function App() {
   const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
   const [connections, setConnections] = useState<any[]>([]);
   const [connectionSentIds, setConnectionSentIds] = useState<string[]>([]);
+  // Connection status for the currently-open profile modal
+  const [modalConnectionStatus, setModalConnectionStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
 
   const getUsername = (user: any) => {
     if (user.email) {
@@ -178,6 +180,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedProfileId) {
+      setModalConnectionStatus('none');
       apiFetch(`/directory/profile/${selectedProfileId}`)
         .then(data => setSelectedProfile(data))
         .catch(err => {
@@ -185,11 +188,22 @@ export default function App() {
           setSelectedProfileId(null);
         });
       loadRelations(selectedProfileId);
+      // Fetch real connection status for this profile
+      apiFetch('/directory/connections/status')
+        .then((statusMap: Record<string, string>) => {
+          const s = statusMap[selectedProfileId];
+          if (s === 'accepted') setModalConnectionStatus('accepted');
+          else if (s === 'pending_sent') setModalConnectionStatus('pending_sent');
+          else if (s === 'pending_received') setModalConnectionStatus('pending_received');
+          else setModalConnectionStatus('none');
+        })
+        .catch(() => setModalConnectionStatus('none'));
     } else {
       setSelectedProfile(null);
       setProfileRelations(null);
       setActiveRelationsTab(null);
       setRelationsSearchQuery('');
+      setModalConnectionStatus('none');
     }
   }, [selectedProfileId]);
 
@@ -363,12 +377,17 @@ export default function App() {
 
   const handleProfileConnect = async (id: string, name: string) => {
     try {
-      await apiFetch('/directory/connect', {
+      const res = await apiFetch('/directory/connect', {
         method: 'POST',
         body: JSON.stringify({ targetId: id })
       });
-      showToast(`Connection request sent to ${name}!`, "success");
-      setSelectedProfileId(null);
+      if (res.status === 'accepted') {
+        setModalConnectionStatus('accepted');
+        showToast(`You are now connected with ${name}!`, "success");
+      } else {
+        setModalConnectionStatus('pending_sent');
+        showToast(`Connection request sent to ${name}!`, "success");
+      }
     } catch (err: any) {
       showToast(err.message, 'danger');
     }
@@ -1509,18 +1528,48 @@ export default function App() {
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
               {currentUser && currentUser.id !== selectedProfile.id && (
-                <button 
-                  className="btn-ig-black" 
-                  style={{ flex: 1 }}
-                  onClick={() => {
-                    handleProfileConnect(selectedProfile.id, selectedProfile.full_name);
-                  }}
-                >
-                  <UserPlus size={16} /> Connect Request
-                </button>
+                modalConnectionStatus === 'accepted' ? (
+                  <button
+                    className="btn-ig-grey"
+                    style={{ flex: 1, color: '#16a34a', borderColor: 'rgba(22,163,74,0.4)', background: 'rgba(22,163,74,0.06)', cursor: 'default' }}
+                    title="Already connected"
+                  >
+                    <Check size={16} /> Connected
+                  </button>
+                ) : modalConnectionStatus === 'pending_sent' ? (
+                  <button
+                    className="btn-ig-grey"
+                    style={{ flex: 1, color: '#94a3b8', cursor: 'default' }}
+                    title="Request already sent"
+                  >
+                    <UserPlus size={16} /> Request Pending...
+                  </button>
+                ) : modalConnectionStatus === 'pending_received' ? (
+                  <button
+                    className="btn-ig-black"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff' }}
+                    onClick={async () => {
+                      try {
+                        await apiFetch('/directory/connections/respond', { method: 'POST', body: JSON.stringify({ targetId: selectedProfile.id, action: 'accept' }) });
+                        setModalConnectionStatus('accepted');
+                        showToast(`Connected with ${selectedProfile.full_name}!`, 'success');
+                      } catch (err: any) { showToast(err.message, 'danger'); }
+                    }}
+                  >
+                    <Check size={16} /> Accept Request
+                  </button>
+                ) : (
+                  <button
+                    className="btn-ig-black"
+                    style={{ flex: 1 }}
+                    onClick={() => handleProfileConnect(selectedProfile.id, selectedProfile.full_name)}
+                  >
+                    <UserPlus size={16} /> Connect
+                  </button>
+                )
               )}
-              <button 
-                className="btn-ig-grey" 
+              <button
+                className="btn-ig-grey"
                 style={{ flex: 1 }}
                 onClick={() => showToast(`Opening chat with ${selectedProfile.full_name}`, 'info')}
               >

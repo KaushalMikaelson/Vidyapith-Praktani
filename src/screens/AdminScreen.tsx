@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, User, Notification } from '../database/database';
 import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert, Activity, Landmark } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
@@ -14,13 +13,11 @@ interface AdminScreenProps {
 export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfile }) => {
   const { refreshSession } = useAuth();
   
-  // Database States
-  // Database States
-  const [pendingList, setPendingList] = useState<User[]>([]);
+  const [pendingList, setPendingList] = useState<any[]>([]);
   const [verifiedCount, setVerifiedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [donationTotal, setDonationTotal] = useState(0);
-  const [certPreviewUser, setCertPreviewUser] = useState<User | null>(null);
+  const [certPreviewUser, setCertPreviewUser] = useState<any | null>(null);
 
   const loadAdminData = async () => {
     try {

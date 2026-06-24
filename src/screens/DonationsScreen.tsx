@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, Donation } from '../database/database';
 import { Heart, X, CreditCard, ShieldCheck, Download, Award, Flame } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
@@ -15,7 +14,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
   const { currentUser } = useAuth();
   
   // Stats and state
-  const [activeDonations, setActiveDonations] = useState<Donation[]>([]);
+  const [activeDonations, setActiveDonations] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ user: any; total_amount: number }[]>([]);
   const [progressWidth, setProgressWidth] = useState('0%');
 
@@ -33,7 +32,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
   // Verification stage
   const [checkoutStage, setCheckoutStage] = useState<'details' | 'otp' | 'receipt'>('details');
   const [otpCode, setOtpCode] = useState('');
-  const [generatedDonation, setGeneratedDonation] = useState<Donation | null>(null);
+  const [generatedDonation, setGeneratedDonation] = useState<any | null>(null);
 
   const loadDonationData = async () => {
     try {

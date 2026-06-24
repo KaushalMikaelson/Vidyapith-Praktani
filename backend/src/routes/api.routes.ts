@@ -4,6 +4,7 @@ import { getLeaderboard, createCheckoutSession } from '../controllers/donations.
 import { listJobs, createJob, applyJob } from '../controllers/jobs.controller.js';
 import { listNews, createNews, listHeritage } from '../controllers/news.controller.js';
 import { requireAuth, requireAdmin } from '../middlewares/auth.js';
+import { rateLimiter } from '../middlewares/rateLimiter.js';
 
 // Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment } from '../controllers/posts.controller.js';
@@ -18,18 +19,20 @@ import { listConversations, getConversation, sendMessage } from '../controllers/
 
 export const apiRouter = Router();
 
+const authLimiter = rateLimiter(10, 60 * 1000); // Max 10 requests per minute
+
 // ── Media Upload (Cloudinary) ─────────────────────────────────────────────
 apiRouter.post('/upload', requireAuth, uploadMiddleware.single('file'), uploadMedia);
 
 // ── Auth ──────────────────────────────────────────────────────────────────
-apiRouter.post('/auth/register', register);
-apiRouter.post('/auth/login', login);
+apiRouter.post('/auth/register', authLimiter, register);
+apiRouter.post('/auth/login', authLimiter, login);
 apiRouter.get('/auth/me', requireAuth, getMe);
 apiRouter.post('/auth/resolve-queue', requireAdmin, resolveVerificationQueue);
-apiRouter.post('/auth/request-otp', requestEmailOTP);
-apiRouter.post('/auth/verify-otp', verifyEmailOTP);
-apiRouter.post('/auth/forgot-password', forgotPassword);
-apiRouter.post('/auth/reset-password', resetPassword);
+apiRouter.post('/auth/request-otp', authLimiter, requestEmailOTP);
+apiRouter.post('/auth/verify-otp', authLimiter, verifyEmailOTP);
+apiRouter.post('/auth/forgot-password', authLimiter, forgotPassword);
+apiRouter.post('/auth/reset-password', authLimiter, resetPassword);
 
 
 // Donations Endpoints

@@ -45,8 +45,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       } catch {}
     };
     loadNotificationCount();
-    const interval = setInterval(loadNotificationCount, 5000);
-    return () => clearInterval(interval);
+    // NOTE: Layout.tsx already polls notifications every 5s for the sidebar badge.
+    // We only do a single fetch here to sync the count on mount.
   }, []);
   // Stories Tray & Viewer States
   interface StoryItem {
@@ -277,6 +277,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
   const [activeRelationsTab, setActiveRelationsTab] = useState<'connections' | null>(null);
   const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
+  // Real connection status with the currently-viewed profile (fetched from API)
+  const [profileConnectionStatus, setProfileConnectionStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
 
   // Edit Profile States
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -483,6 +485,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   // Fetch profile details
   const loadProfile = async (targetId: string) => {
+    setProfileConnectionStatus('none'); // Reset before loading new profile
     try {
       const uDetails = await apiFetch(`/directory/profile/${targetId}`);
       setProfileUser(uDetails);
@@ -492,6 +495,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       setDiscoverAlumni(allAlumni);
       const rels = await apiFetch(`/directory/relations/${targetId}`);
       setProfileRelations(rels);
+      // Fetch real connection status between the current user and this profile
+      try {
+        const statusMap = await apiFetch('/directory/connections/status');
+        const rawStatus = statusMap[targetId];
+        if (rawStatus === 'accepted') {
+          setProfileConnectionStatus('accepted');
+        } else if (rawStatus === 'pending_sent') {
+          setProfileConnectionStatus('pending_sent');
+        } else if (rawStatus === 'pending_received') {
+          setProfileConnectionStatus('pending_received');
+        } else {
+          setProfileConnectionStatus('none');
+        }
+      } catch {
+        setProfileConnectionStatus('none');
+      }
     } catch (err: any) {
       showToast("Failed to load profile details", "danger");
     }
@@ -546,12 +565,18 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   const handleConnectRequest = async (id: string, name: string) => {
     try {
-      await apiFetch('/directory/connect', {
+      const res = await apiFetch('/directory/connect', {
         method: 'POST',
         body: JSON.stringify({ targetId: id })
       });
       setConnectionSentIds(prev => [...prev, id]);
-      showToast(`Connection request sent to ${name}!`, 'success');
+      if (res.status === 'accepted') {
+        setProfileConnectionStatus('accepted');
+        showToast(`You are now connected with ${name}!`, 'success');
+      } else {
+        setProfileConnectionStatus('pending_sent');
+        showToast(`Connection request sent to ${name}!`, 'success');
+      }
     } catch (err: any) {
       showToast(err.message, 'danger');
     }
@@ -2307,7 +2332,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
     // Helper states for follow and connection actions
     const isFollowed = followedUserIds.includes(profileUser.id);
-    const isConnected = connectedUserIds.includes(profileUser.id) || connectionSentIds.includes(profileUser.id);
 
     const toggleFollow = () => {
       if (isFollowed) {
@@ -2319,12 +2343,25 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       }
     };
 
-    const handleConnectClick = () => {
-      if (isConnected) {
-        showToast(`Already requested/connected with ${person.full_name}`, 'info');
+    const handleConnectClick = async () => {
+      if (profileConnectionStatus === 'accepted') {
+        showToast(`You are already connected with ${person.full_name}`, 'info');
+      } else if (profileConnectionStatus === 'pending_sent') {
+        showToast(`Connection request already sent to ${person.full_name}`, 'info');
+      } else if (profileConnectionStatus === 'pending_received') {
+        // Accept the incoming request
+        try {
+          await apiFetch('/directory/connections/respond', {
+            method: 'POST',
+            body: JSON.stringify({ targetId: profileUser.id, action: 'accept' })
+          });
+          setProfileConnectionStatus('accepted');
+          showToast(`You are now connected with ${person.full_name}!`, 'success');
+        } catch (err: any) {
+          showToast(err.message, 'danger');
+        }
       } else {
         handleConnectRequest(profileUser.id, person.full_name);
-        setConnectedUserIds(prev => [...prev, profileUser.id]);
       }
     };
 
@@ -2522,20 +2559,41 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </button>
                 ) : (
                   <>
-                    <button 
-                      onClick={handleConnectClick} 
-                      className="btn-ig-grey"
-                    >
-                      {isConnected ? (
-                        <>
-                          <Check size={16} /> Connected
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus size={16} /> Connect
-                        </>
-                      )}
-                    </button>
+                    {profileConnectionStatus === 'accepted' ? (
+                      <button
+                        onClick={handleConnectClick}
+                        className="btn-ig-grey"
+                        style={{ color: '#16a34a', borderColor: 'rgba(22,163,74,0.4)', background: 'rgba(22,163,74,0.06)', cursor: 'default' }}
+                        title="Already connected"
+                      >
+                        <Check size={16} /> Connected
+                      </button>
+                    ) : profileConnectionStatus === 'pending_sent' ? (
+                      <button
+                        onClick={handleConnectClick}
+                        className="btn-ig-grey"
+                        style={{ color: '#94a3b8', cursor: 'default' }}
+                        title="Request already sent"
+                      >
+                        <UserPlus size={16} /> Pending...
+                      </button>
+                    ) : profileConnectionStatus === 'pending_received' ? (
+                      <button
+                        onClick={handleConnectClick}
+                        className="btn-ig-black"
+                        style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}
+                        title="Accept connection request"
+                      >
+                        <Check size={16} /> Accept Request
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleConnectClick}
+                        className="btn-ig-grey"
+                      >
+                        <UserPlus size={16} /> Connect
+                      </button>
+                    )}
                     <button 
                       onClick={() => showToast(`Opening chat with ${person.full_name}`, 'info')} 
                       className="btn-ig-grey"
@@ -2559,7 +2617,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               style={{ cursor: 'pointer' }}
               onClick={() => setActiveRelationsTab('connections')}
             >
-              <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : (45 + (isConnected ? 1 : 0))}</span>
+              <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : (profileConnectionStatus === 'accepted' ? 46 : 45)}</span>
               <span className="profile-stat-label">Connections</span>
             </div>
             <div className="profile-stat-box">
@@ -2568,6 +2626,44 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </div>
           </div>
         </div>
+
+        {/* B02: Profile Completion Indicator — only on own profile */}
+        {profileUser.id === currentUser.id && (() => {
+          const fields = [
+            { label: 'Bio', done: !!(person.bio && person.bio.length > 20) },
+            { label: 'Profession', done: !!(person.profession_category || person.profession) },
+            { label: 'Company', done: !!(person.company && person.company !== 'Not specified') },
+            { label: 'City', done: !!(person.city && person.city !== 'Not specified') },
+            { label: 'LinkedIn', done: !!(person.linkedin_url && person.linkedin_url.length > 5) },
+            { label: 'Profile Photo', done: !!(person.profile_photo && !person.profile_photo.includes('unsplash.com/photo-1535713875002')) },
+          ];
+          const done = fields.filter(f => f.done).length;
+          const pct = Math.round((done / fields.length) * 100);
+          const missing = fields.filter(f => !f.done).map(f => f.label);
+          if (pct === 100) return null;
+          return (
+            <div className="profile-card" style={{ marginBottom: '16px', padding: '18px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>📋</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Profile Strength</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ef4444' }}>{pct}%</span>
+                </div>
+                <button onClick={openEditProfileModal} style={{ fontSize: '0.78rem', color: '#FF7A1A', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  Complete Profile →
+                </button>
+              </div>
+              <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
+                <div style={{ height: '100%', width: `${pct}%`, borderRadius: '99px', background: pct >= 80 ? 'linear-gradient(90deg, #16a34a, #22c55e)' : pct >= 50 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)', transition: 'width 1s ease' }} />
+              </div>
+              {missing.length > 0 && (
+                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>
+                  Missing: <strong style={{ color: '#334155' }}>{missing.join(', ')}</strong>
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 2. MIDDLE ROW: About & Highlights Cards side-by-side */}
         <div className="profile-middle-grid">
@@ -2982,7 +3078,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         <span style={{ fontSize: '0.74rem', color: '#8e8e8e' }}>Class of {author.batch_year || '—'}</span>
                       </div>
                       <button onClick={handleConnectClick} className="btn-ig-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
-                        {isConnected ? "✓ Connected" : "Connect"}
+                        {profileConnectionStatus === 'accepted' ? '✓ Connected' : profileConnectionStatus === 'pending_sent' ? 'Pending' : 'Connect'}
                       </button>
                     </div>
 
@@ -3248,7 +3344,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             >
                               {username}
                             </span>
-                            {!isConnectedToThem && (
+                            {!doIFollowThem && (
                               <span 
                                 onClick={async () => {
                                   await handleConnectRequest(u.id, u.full_name);

@@ -25,6 +25,7 @@ export interface User {
   certificate_url?: string;
   department?: string;
   industry?: string;
+  profile?: any;
 }
 
 export interface Post {

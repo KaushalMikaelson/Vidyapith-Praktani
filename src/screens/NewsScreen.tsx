@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, NewsPost, HeritageItem } from '../database/database';
 import { QuoteWidget } from '../components/QuoteWidget';
 import { BookOpen, PlusCircle, Calendar, Film, X } from 'lucide-react';
 import { apiFetch } from '../utils/api';
@@ -14,8 +13,8 @@ interface NewsScreenProps {
 export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
   const { currentUser } = useAuth();
   
-  const [news, setNews] = useState<NewsPost[]>([]);
-  const [heritage, setHeritage] = useState<HeritageItem[]>([]);
+  const [news, setNews] = useState<any[]>([]);
+  const [heritage, setHeritage] = useState<any[]>([]);
   const [activeDecade, setActiveDecade] = useState<string>('All');
   
   // Compose modal state
@@ -26,7 +25,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
   const [newsPhotoUrl, setNewsPhotoUrl] = useState('');
 
   // Retro photo preview state
-  const [selectedPhoto, setSelectedPhoto] = useState<HeritageItem | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
 
   const loadNewsData = async () => {
     try {

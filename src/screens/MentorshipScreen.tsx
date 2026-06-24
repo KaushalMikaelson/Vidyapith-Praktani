@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { RKMV_DB, User, Mentorship } from '../database/database';
-import { GraduationCap, Sparkles, X, Plus } from 'lucide-react';
+import { GraduationCap, Sparkles, X } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 interface MentorshipScreenProps {
@@ -14,8 +13,8 @@ interface MentorshipScreenProps {
 export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, onViewProfile }) => {
   const { currentUser } = useAuth();
   const [selectedField, setSelectedField] = useState('');
-  const [mentors, setMentors] = useState<User[]>([]);
-  const [activeMentorships, setActiveMentorships] = useState<Mentorship[]>([]);
+  const [mentors, setMentors] = useState<any[]>([]);
+  const [activeMentorships, setActiveMentorships] = useState<any[]>([]); 
 
   // Request Modal States
   const [requestModalVisible, setRequestModalVisible] = useState(false);
@@ -73,11 +72,20 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
     }
   };
 
-  const getSkillsForMentor = (mentorId: string) => {
-    if (mentorId === 'usr-alumni-1') return ['Cloud Architecture', 'React Native', 'TypeScript', 'JEE Prep'];
-    if (mentorId === 'usr-alumni-2') return ['Clinical Medicine', 'Cardiology', 'Bio-Ethics', 'Social Work'];
-    if (mentorId === 'usr-alumni-3') return ['Diplomacy', 'UPSC Strategy', 'International Relations'];
-    return ['Character Building', 'Leadership', 'Ethics'];
+  const getSkillsForMentor = (mentor: any): string[] => {
+    const skillMap: Record<string, string[]> = {
+      'Software Engineering': ['System Design', 'Cloud Architecture', 'DSA', 'Competitive Programming'],
+      'Healthcare & Medicine': ['Clinical Practice', 'Medical Ethics', 'Research Methods', 'Patient Care'],
+      'Civil Services': ['UPSC Strategy', 'GS Paper Prep', 'Essay Writing', 'Interview Coaching'],
+      'Entrepreneurship': ['Startup Strategy', 'Fundraising', 'Product Management', 'Go-to-Market'],
+    };
+    const field = mentor.profession || selectedField;
+    for (const [key, skills] of Object.entries(skillMap)) {
+      if (field.toLowerCase().includes(key.toLowerCase().split(' ')[0].toLowerCase())) {
+        return skills;
+      }
+    }
+    return ['Leadership', 'Character Building', 'Goal Setting', 'Career Mentoring'];
   };
 
   return (
@@ -121,7 +129,7 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
 
         {/* Active Pairings Widget */}
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
-          <h3 className="widget-title" style={{ marginBottom: '14px', fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <h3 className="widget-title" style={{ marginBottom: '14px', fontSize: '0.9rem', color: 'inherit', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span>My Active Pairings</span>
             <span style={{ background: '#ec4899', color: 'white', borderRadius: '10px', padding: '1px 6px', fontSize: '0.7rem' }}>
               {activeMentorships.filter(p => p.status === 'active').length}
@@ -129,14 +137,14 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {activeMentorships.filter(p => p.status === 'active').length === 0 ? (
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No active mentorship pairings.</span>
+              <span style={{ fontSize: '0.8rem', color: 'inherit', opacity: 0.6 }}>No active mentorship pairings.</span>
             ) : (
               activeMentorships.filter(p => p.status === 'active').map((pair: any) => {
                 const partner = pair.mentor_id === currentUser.id ? pair.mentee : pair.mentor;
                 const isMentorOfUser = pair.mentor_id === currentUser.id;
                 if (!partner) return null;
                 return (
-                  <div key={pair.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div key={pair.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <img 
                       src={partner.profile_photo} 
                       alt="" 
@@ -144,10 +152,10 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
                       onClick={() => onViewProfile(partner.id)}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => onViewProfile(partner.id)}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => onViewProfile(partner.id)}>
                         {partner.full_name}
                       </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'inherit', opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {isMentorOfUser ? 'Menteé' : 'Mentor'} • {partner.profession}
                       </div>
                     </div>
@@ -159,7 +167,7 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
         </div>
 
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '20px' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', lineHeight: 1.4 }}>
+          <span style={{ fontSize: '0.75rem', color: 'inherit', opacity: 0.6, display: 'block', lineHeight: 1.4 }}>
             Active pairings are reviewed by the school headmaster monthly to assure proper standards.
           </span>
         </div>
@@ -177,12 +185,12 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
         <div className="mentor-grid">
           {mentors.length === 0 ? (
             <div className="glass-panel loading-state" style={{ gridColumn: '1 / -1', minHeight: '250px' }}>
-              <GraduationCap size={48} style={{ color: 'var(--text-muted)' }} />
+              <GraduationCap size={48} style={{ color: 'inherit', opacity: 0.5 }} />
               <p>No active mentors found matching the {selectedField} domain in our database.</p>
             </div>
           ) : (
             mentors.map(m => {
-              const skills = getSkillsForMentor(m.id);
+              const skills = getSkillsForMentor(m);
               const currentActivePairings = activeMentorships.filter(pair => pair.mentor_id === m.id && pair.status === 'active').length;
               const isAlreadyMentee = activeMentorships.some(pair => pair.mentor_id === m.id && pair.mentee_id === currentUser.id && pair.status === 'active');
 
@@ -199,7 +207,7 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
                       style={{ cursor: 'pointer' }}
                     />
                     <div className="mentor-meta">
-                      <h3 style={{ cursor: 'pointer' }} onClick={() => onViewProfile(m.id)}>{m.full_name}</h3>
+                      <h3 style={{ cursor: 'pointer', margin: 0 }} onClick={() => onViewProfile(m.id)}>{m.full_name}</h3>
                       <span className="mentor-batch">Batch of {m.batch_year} • {m.house}</span>
                       <span className="mentor-work">{m.profession}</span>
                     </div>
@@ -208,25 +216,25 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
                   <div className="mentor-field-box" style={{ margin: '14px 0' }}>
                     <div className="mentor-skills" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {skills.map(s => (
-                        <span key={s} className="skill-tag" style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>
+                        <span key={s} className="skill-tag" style={{ background: 'rgba(0,0,0,0.05)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'inherit', opacity: 0.8 }}>
                           {s}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <p className="mentor-bio" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '14px', minHeight: '3.6em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <p className="mentor-bio" style={{ fontSize: '0.85rem', color: 'inherit', opacity: 0.7, marginBottom: '14px', minHeight: '3.6em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {m.bio}
                   </p>
 
-                  <div className="mentor-stats" style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '6px', marginBottom: '16px' }}>
+                  <div className="mentor-stats" style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.02)', padding: '10px 14px', borderRadius: '6px', marginBottom: '16px' }}>
                     <div className="mentor-stat">
-                      <span className="stat-val" style={{ display: 'block', fontWeight: 700, color: 'white' }}>{currentActivePairings} / 3</span>
-                      <span className="stat-lbl" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Active Mentees</span>
+                      <span className="stat-val" style={{ display: 'block', fontWeight: 700, color: 'inherit' }}>{currentActivePairings} / 3</span>
+                      <span className="stat-lbl" style={{ fontSize: '0.7rem', color: 'inherit', opacity: 0.6 }}>Active Mentees</span>
                     </div>
                     <div className="mentor-stat" style={{ textAlign: 'right' }}>
-                      <span className="stat-val" style={{ display: 'block', fontWeight: 700, color: 'white' }}>98%</span>
-                      <span className="stat-lbl" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Rating Score</span>
+                      <span className="stat-val" style={{ display: 'block', fontWeight: 700, color: 'var(--text-success)' }}>Verified</span>
+                      <span className="stat-lbl" style={{ fontSize: '0.7rem', color: 'inherit', opacity: 0.6 }}>Alumni Status</span>
                     </div>
                   </div>
 

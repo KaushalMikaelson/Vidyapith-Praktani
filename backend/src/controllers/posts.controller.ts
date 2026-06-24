@@ -3,6 +3,11 @@ import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { postCache } from '../utils/cache.js';
 
+const sanitizeContent = (text: string): string => {
+  if (!text) return '';
+  return text.replace(/<\/?[^>]+(>|$)/g, ""); // Remove HTML tags to prevent XSS
+};
+
 // Retrieve all posts for a group with author profiles joined
 export const listPosts = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -113,7 +118,7 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       data: {
         author_id: userId,
         group_id: groupId || 'grp-all',
-        content,
+        content: sanitizeContent(content),
         media_urls: mediaUrls || [],
         post_type: postType || 'text',
         is_pinned: false,
@@ -223,7 +228,7 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
       data: {
         post_id: id,
         author_id: userId,
-        content
+        content: sanitizeContent(content)
       }
     });
 

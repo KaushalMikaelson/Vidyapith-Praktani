@@ -101,7 +101,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
 export const login = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-    console.log(`\n🔑 [Login Request] Email: "${email}", Password: "${password}"`);
+    console.log(`\n🔑 [Login Request] Email: "${email}"`);
 
     const user = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },
@@ -115,13 +115,9 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    
-    // Accept any standard demo password for any account to prevent login failures during development
-    const demoPasswords = ['admin', 'admin123', 'alumni', 'alumni123', 'Alumni1', 'student', 'student123'];
-    const isDemoMatch = demoPasswords.includes(password);
 
-    if (!isMatch && password !== user.password_hash && !isDemoMatch) {
-      console.log(`❌ [Login Fail] Password mismatch for: "${email}". Input: "${password}", Hash: "${user.password_hash}"`);
+    if (!isMatch) {
+      console.log(`❌ [Login Fail] Password mismatch for: "${email}"`);
       res.status(400).json({ error: "Incorrect password." });
       return;
     }

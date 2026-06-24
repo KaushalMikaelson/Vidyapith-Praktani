@@ -2088,6 +2088,74 @@ button:disabled {
   gap: 28px;
 }
 
+/* B10: Mentorship Hub Light Theme Style Integrations */
+.screen-mentorship .glass-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02) !important;
+  color: var(--heritage-ink) !important;
+}
+
+.screen-mentorship .glass-panel:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.screen-mentorship .widget-title {
+  color: #1e293b !important;
+}
+
+.screen-mentorship .group-item-btn {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #f1f5f9 !important;
+}
+
+.screen-mentorship .group-item-btn:hover {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+.screen-mentorship .group-item-btn.active {
+  background: rgba(243, 112, 33, 0.08) !important;
+  border-color: rgba(243, 112, 33, 0.2) !important;
+  color: var(--primary-color) !important;
+}
+
+.screen-mentorship .mentor-meta h3 {
+  color: #1e293b !important;
+}
+
+.screen-mentorship .mentor-meta .mentor-batch {
+  color: #64748b !important;
+}
+
+.screen-mentorship .mentor-meta .mentor-work {
+  color: #1e293b !important;
+}
+
+.screen-mentorship .skill-tag {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.screen-mentorship .mentor-bio {
+  color: #475569 !important;
+}
+
+.screen-mentorship .mentor-stats {
+  background: #f8fafc !important;
+  border: 1px solid #f1f5f9 !important;
+}
+
+.screen-mentorship .stat-val {
+  color: #1e293b !important;
+}
+
+.screen-mentorship .stat-lbl {
+  color: #64748b !important;
+}
+
 @media (max-width: 900px) {
   .mentorship-layout {
     grid-template-columns: 1fr;
@@ -3682,7 +3750,8 @@ button:disabled {
 .screen-notifications .main-viewport,
 .screen-messages .main-viewport,
 .screen-admin .main-viewport,
-.screen-profile .main-viewport {
+.screen-profile .main-viewport,
+.screen-mentorship .main-viewport {
   background: var(--heritage-page);
   background-image: none;
   color: var(--heritage-ink);

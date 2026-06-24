@@ -56,6 +56,12 @@ export const Layout: React.FC<LayoutProps> = ({
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  // B01: Update browser tab title with unread count
+  useEffect(() => {
+    const base = 'Vidyapith Connect';
+    document.title = unreadNotifCount > 0 ? `(${unreadNotifCount}) ${base}` : base;
+  }, [unreadNotifCount]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
@@ -91,6 +97,7 @@ export const Layout: React.FC<LayoutProps> = ({
           className="rail-logo"
           onClick={() => setActiveScreen('feed')}
           title="Vidyapith Alumni"
+          aria-label="Return to Home Feed"
         >
           <img src="/logo.png" alt="Vidyapith Logo" className="rail-logo-image" />
           <span className="rail-tooltip">Vidyapith</span>

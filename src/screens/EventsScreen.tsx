@@ -88,7 +88,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const loadEvents = async () => {
     try {
       const list = await apiFetch('/events');
-      const source = list.length ? list : fallbackEvents;
+      const source = list;
       const now = new Date();
       setEvents(source.filter((event: any) => activeTab === 'upcoming' ? new Date(event.event_date) >= now : new Date(event.event_date) < now));
     } catch (err: any) {

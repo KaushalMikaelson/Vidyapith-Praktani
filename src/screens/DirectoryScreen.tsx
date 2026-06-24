@@ -35,6 +35,11 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [loading, setLoading] = useState(false);
   const [globalStats, setGlobalStats] = useState({ alumni: 0, students: 0, faculty: 0, range: 'N/A' });
   
+  // B06: Dynamic filter options computed from real DB data
+  const [availableCities, setAvailableCities] = useState<string[]>(['Mumbai', 'Delhi', 'Pune', 'Bangalore', 'Kolkata', 'Deoghar']);
+  const [availableDepartments, setAvailableDepartments] = useState<string[]>(['Engineering', 'Science', 'Commerce', 'Arts', 'Physics', 'Chemistry']);
+  const [availableIndustries, setAvailableIndustries] = useState<string[]>(['Technology', 'Healthcare', 'Finance', 'Government', 'Education', 'Research', 'Art']);
+
   // Advanced Connection Pipeline States
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [connectionStatuses, setConnectionStatuses] = useState<Record<string, 'accepted' | 'pending_sent' | 'pending_received'>>({});
@@ -103,6 +108,10 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
         let faculty = 0;
         const years: number[] = [];
 
+        const citiesSet = new Set<string>();
+        const deptsSet = new Set<string>();
+        const industriesSet = new Set<string>();
+
         results.forEach((u: User) => {
           if (u.role === 'alumni') alumni++;
           else if (u.role === 'student') students++;
@@ -110,6 +119,22 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           
           if (u.batch_year) {
             years.push(u.batch_year);
+          }
+
+          // Access profile or direct properties (supporting both models)
+          const cityVal = u.profile?.city || u.city;
+          if (cityVal && cityVal.trim()) {
+            citiesSet.add(cityVal.trim());
+          }
+
+          const deptVal = u.profile?.department || u.department;
+          if (deptVal && deptVal.trim()) {
+            deptsSet.add(deptVal.trim());
+          }
+
+          const indVal = u.profile?.industry || u.industry;
+          if (indVal && indVal.trim()) {
+            industriesSet.add(indVal.trim());
           }
         });
 
@@ -122,6 +147,17 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           faculty,
           range: minYear ? (minYear === maxYear ? `${minYear}` : `${minYear}-${maxYear}`) : 'N/A'
         });
+
+        // Seed default locations if set size is zero, otherwise update
+        if (citiesSet.size > 0) {
+          setAvailableCities(Array.from(citiesSet).sort());
+        }
+        if (deptsSet.size > 0) {
+          setAvailableDepartments(Array.from(deptsSet).sort());
+        }
+        if (industriesSet.size > 0) {
+          setAvailableIndustries(Array.from(industriesSet).sort());
+        }
       }
     } catch (err: any) {
       showToast(err.message, 'danger');
@@ -346,12 +382,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               className="directory-pill-select"
             >
               <option value="">Department</option>
-              <option value="Engineering">Engineering</option>
-              <option value="Science">Science</option>
-              <option value="Commerce">Commerce</option>
-              <option value="Arts">Arts</option>
-              <option value="Physics">Physics</option>
-              <option value="Chemistry">Chemistry</option>
+              {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
             </select>
 
             {/* Location Select */}
@@ -361,12 +392,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               className="directory-pill-select"
             >
               <option value="">Location</option>
-              <option value="Mumbai">Mumbai</option>
-              <option value="Delhi">Delhi</option>
-              <option value="Pune">Pune</option>
-              <option value="Bangalore">Bangalore</option>
-              <option value="Kolkata">Kolkata</option>
-              <option value="Deoghar">Deoghar</option>
+              {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
             </select>
 
             {/* Industry Select */}
@@ -376,13 +402,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               className="directory-pill-select"
             >
               <option value="">Industry</option>
-              <option value="Technology">Technology</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Finance">Finance</option>
-              <option value="Government">Government</option>
-              <option value="Education">Education</option>
-              <option value="Research">Research</option>
-              <option value="Art">Art</option>
+              {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
             </select>
           </div>
 
