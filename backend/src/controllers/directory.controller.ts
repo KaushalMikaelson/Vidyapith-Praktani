@@ -617,6 +617,31 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       return;
     }
 
+    // Count actual posts, accepted connections, and active mentorships
+    const postsCount = await prisma.post.count({
+      where: { author_id: id }
+    });
+
+    const connectionsCount = await prisma.connection.count({
+      where: {
+        OR: [
+          { sender_id: id },
+          { receiver_id: id }
+        ],
+        status: 'accepted'
+      }
+    });
+
+    const mentorshipsCount = await prisma.mentorship.count({
+      where: {
+        OR: [
+          { mentor_id: id },
+          { mentee_id: id }
+        ],
+        status: 'active'
+      }
+    });
+
     const requesterId = req.user?.id;
     const isSelf = requesterId === user.id;
     const isAdmin = req.user?.role === 'admin';
@@ -645,6 +670,9 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       help_categories: user.profile?.help_categories || [],
       looking_for: user.profile?.looking_for || [],
       mentorship_status: user.profile?.mentorship_status || "Not Available",
+      posts_count: postsCount,
+      connections_count: connectionsCount,
+      mentorships_count: mentorshipsCount,
       privacy: {
         show_email: user.profile?.show_email ?? true,
         show_mobile: user.profile?.show_phone ?? false

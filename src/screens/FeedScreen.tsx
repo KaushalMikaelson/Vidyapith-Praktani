@@ -593,6 +593,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         setProfileConnectionStatus('pending_sent');
         showToast(`Connection request sent to ${name}!`, 'success');
       }
+      loadProfile(id);
     } catch (err: any) {
       showToast(err.message, 'danger');
     }
@@ -2452,6 +2453,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           });
           setProfileConnectionStatus('accepted');
           showToast(`You are now connected with ${person.full_name}!`, 'success');
+          loadProfile(profileUser.id);
         } catch (err: any) {
           showToast(err.message, 'danger');
         }
@@ -2470,6 +2472,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         await apiFetch(`/directory/connections/${profileUser.id}`, { method: 'DELETE' });
         setProfileConnectionStatus('none');
         showToast(`Removed connection with ${person.full_name}`, 'info');
+        loadProfile(profileUser.id);
       } catch (err: any) {
         showToast(err.message || 'Failed to remove connection', 'danger');
       }
@@ -2483,6 +2486,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         });
         setProfileConnectionStatus('none');
         showToast(`Declined connection request from ${person.full_name}`, 'info');
+        loadProfile(profileUser.id);
       } catch (err: any) {
         showToast(err.message, 'danger');
       }
