@@ -430,6 +430,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [likedAnimationPostId, setLikedAnimationPostId] = useState<{ [postId: string]: boolean }>({});
   const [activePdfPreviewUrl, setActivePdfPreviewUrl] = useState<string | null>(null);
 
+  // Feature 10: QR Code Profile Sharing Modal
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+
   // AI Generation loader simulation
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
@@ -629,6 +632,30 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       composerTextareaRef.current.focus();
     }
   };
+
+  const memoryPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMemoryPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const file of files) {
+      try {
+        showToast(`Uploading ${file.name}...`, "info");
+        const result = await uploadMedia(file, 'posts/images');
+        if (result && result.url) {
+          setMediaImages(prev => [...prev, result.url]);
+        } else {
+          showToast(`Upload failed for ${file.name}.`, "danger");
+        }
+      } catch (err: any) {
+        showToast(err.message || `Failed to upload ${file.name}.`, "danger");
+      }
+    }
+    if (files.length > 0) showToast(`${files.length} photo(s) uploaded successfully!`, "success");
+    // Reset input so same file can be re-selected if needed
+    if (e.target) e.target.value = '';
+  };
+
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2551,12 +2578,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
                 {profileUser.id === currentUser.id ? (
-                  <button 
-                    onClick={openEditProfileModal} 
-                    className="btn-ig-black"
-                  >
-                    <Settings size={16} /> Edit Profile
-                  </button>
+                  <>
+                    <button 
+                      onClick={openEditProfileModal} 
+                      className="btn-ig-black"
+                    >
+                      <Settings size={16} /> Edit Profile
+                    </button>
+                    {/* Feature 10: QR Share Button */}
+                    <button
+                      onClick={() => setQrModalOpen(true)}
+                      className="btn-ig-grey"
+                      title="Share your profile QR code"
+                    >
+                      📱 Share QR
+                    </button>
+                  </>
                 ) : (
                   <>
                     {profileConnectionStatus === 'accepted' ? (
@@ -3849,6 +3886,80 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           })()
         )}
 
+        {/* Feature 10: QR Code Profile Sharing Modal */}
+        {qrModalOpen && (() => {
+          const profileUrl = `${window.location.origin}/profile/${currentUser.id}`;
+          const qrSrc = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(profileUrl)}&choe=UTF-8`;
+          return (
+            <div
+              onClick={() => setQrModalOpen(false)}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                  background: 'linear-gradient(145deg, #1a2035 0%, #0f172a 100%)',
+                  border: '1px solid rgba(212,175,55,0.35)',
+                  borderRadius: '20px',
+                  padding: '32px 28px',
+                  width: '320px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '16px',
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.1)',
+                  position: 'relative'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setQrModalOpen(false)}
+                  style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.3rem', marginBottom: '4px' }}>📱</div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', margin: 0 }}>Share Your Profile</h3>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0' }}>Scan this QR code to connect instantly</p>
+                </div>
+
+                <div style={{
+                  background: 'white', borderRadius: '12px', padding: '12px',
+                  border: '3px solid #d4af37', boxShadow: '0 0 24px rgba(212,175,55,0.3)'
+                }}>
+                  <img src={qrSrc} alt="Profile QR Code" width={180} height={180} style={{ display: 'block', borderRadius: '4px' }} />
+                </div>
+
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>{currentUser.full_name}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#d4af37', marginTop: '2px' }}>RKMV Batch of {currentUser.batch_year}</div>
+                </div>
+
+                <div style={{
+                  display: 'flex', gap: '8px', width: '100%',
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px', padding: '8px 12px', alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.68rem', color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileUrl}</span>
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(profileUrl); showToast('Profile link copied!', 'success'); }}
+                    style={{ background: '#d4af37', border: 'none', color: '#0f172a', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
     );
   }
@@ -4243,40 +4354,49 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>Memory Photos (Drag & Drop or click below to upload)</span>
                 
-                {/* Drag and Drop Zone */}
+                {/* Drag and Drop Zone — Feature 3: Real Cloudinary Upload */}
+                <input
+                  type="file"
+                  ref={memoryPhotoInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  multiple
+                  onChange={handleMemoryPhotoFileChange}
+                />
                 <div 
                   className={`drag-drop-zone ${dragOverActive ? 'active' : ''}`}
                   onDragOver={(e) => { e.preventDefault(); setDragOverActive(true); }}
                   onDragLeave={() => setDragOverActive(false)}
-                  onDrop={(e) => {
+                  onDrop={async (e) => {
                     e.preventDefault();
                     setDragOverActive(false);
-                    const mockPics = [
-                      'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=600&fit=crop&q=80',
-                      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&fit=crop&q=80',
-                      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&fit=crop&q=80'
-                    ];
-                    setMediaImages(prev => [...prev, mockPics[Math.floor(Math.random() * mockPics.length)]]);
-                    showToast("Simulated drop: memory image uploaded successfully!", "success");
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                    if (files.length === 0) {
+                      showToast("Please drop image files only.", "danger");
+                      return;
+                    }
+                    for (const file of files) {
+                      try {
+                        showToast(`Uploading ${file.name}...`, "info");
+                        const result = await uploadMedia(file, 'posts/images');
+                        if (result && result.url) {
+                          setMediaImages(prev => [...prev, result.url]);
+                        }
+                      } catch {
+                        showToast(`Failed to upload ${file.name}.`, "danger");
+                      }
+                    }
+                    showToast("All photos uploaded!", "success");
                   }}
-                  onClick={() => {
-                    const mockPics = [
-                      'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=600&fit=crop&q=80',
-                      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&fit=crop&q=80',
-                      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&fit=crop&q=80',
-                      'https://images.unsplash.com/photo-1460518451285-cd7af74a2c16?w=600&fit=crop&q=80'
-                    ];
-                    setMediaImages(prev => [...prev, mockPics[Math.floor(Math.random() * mockPics.length)]]);
-                    showToast("Photo added successfully!", "success");
-                  }}
+                  onClick={() => memoryPhotoInputRef.current?.click()}
                   style={{
                     border: '2px dashed ' + (dragOverActive ? 'var(--primary-color)' : 'var(--border-color)'),
                     padding: '20px', borderRadius: '12px', textAlign: 'center', background: 'rgba(0,0,0,0.15)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem',
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '4px' }}>ðŸ“¤</span>
-                  <span>Drag & Drop photos here, or click to add a school memory picture.</span>
+                  <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '4px' }}>📤</span>
+                  <span>Drag & Drop photos here, or click to select memory photos from your device.</span>
                 </div>
 
                 {/* Crop & Reorder display */}

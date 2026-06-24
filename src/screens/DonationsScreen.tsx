@@ -212,23 +212,52 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
               leaderboard.map((item, index) => {
                 const u = item.user;
                 const rank = index + 1;
+                const amount = item.total_amount / 100;
                 let rankEmblem = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank.toString();
-                
+
+                // Feature 6: Determine patron tier
+                const isGold = amount >= 50000;
+                const isSilver = !isGold && amount >= 10000;
+                const isBronze = !isGold && !isSilver;
+
+                const tierLabel = isGold ? 'Gold Patron' : isSilver ? 'Silver Benefactor' : 'Bronze Supporter';
+                const tierIcon = isGold ? '🌟' : isSilver ? '🩸' : '🛡️';
+                const tierColor = isGold ? '#d4af37' : isSilver ? '#94a3b8' : '#cd7f32';
+                const tierBg = isGold 
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)'
+                  : isSilver 
+                    ? 'linear-gradient(135deg, rgba(148,163,184,0.1) 0%, rgba(148,163,184,0.03) 100%)'
+                    : 'linear-gradient(135deg, rgba(205,127,50,0.1) 0%, rgba(205,127,50,0.03) 100%)';
+                const tierBorder = isGold ? `1px solid rgba(212,175,55,0.3)` : isSilver ? '1px solid rgba(148,163,184,0.2)' : '1px solid rgba(205,127,50,0.2)';
+
                 return (
-                  <div key={u.id} className="leader-item" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span className="leader-rank" style={{ width: '24px', textAlign: 'center', fontWeight: 700 }}>{rankEmblem}</span>
+                  <div 
+                    key={u.id} 
+                    className="leader-item" 
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      background: tierBg,
+                      border: tierBorder,
+                      borderRadius: '12px',
+                      padding: '10px 12px',
+                      transition: 'transform 0.2s'
+                    }}
+                  >
+                    <span className="leader-rank" style={{ width: '24px', textAlign: 'center', fontWeight: 700, fontSize: '1.1rem' }}>{rankEmblem}</span>
                     <img 
                       src={u.profile_photo} 
                       alt={u.full_name} 
                       className="leader-photo" 
                       onClick={() => onViewProfile(u.id)}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${tierColor}`, objectFit: 'cover' }}
                     />
                     <div className="leader-info" style={{ flexGrow: 1 }}>
-                      <span className="leader-name" onClick={() => onViewProfile(u.id)} style={{ fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>{u.full_name}</span>
-                      <span className="leader-batch" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Batch of {u.batch_year}</span>
+                      <span className="leader-name" onClick={() => onViewProfile(u.id)} style={{ fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'block' }}>{u.full_name}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', color: tierColor, fontWeight: 700, marginTop: '2px' }}>
+                        {tierIcon} {tierLabel}
+                      </span>
                     </div>
-                    <span className="leader-amount" style={{ fontWeight: 700, color: 'var(--text-success)' }}>₹{(item.total_amount / 100).toLocaleString('en-IN')}</span>
+                    <span className="leader-amount" style={{ fontWeight: 800, color: tierColor, fontSize: '0.88rem' }}>&#8377;{amount.toLocaleString('en-IN')}</span>
                   </div>
                 );
               })

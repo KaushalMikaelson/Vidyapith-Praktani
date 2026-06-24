@@ -17,6 +17,7 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterReferral, setFilterReferral] = useState(false);
+  const [activeTab, setActiveTab] = useState<'explore' | 'applications'>('explore');
 
   // Modal post job
   const [postModalVisible, setPostModalVisible] = useState(false);
@@ -120,7 +121,29 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
       await apiFetch(`/jobs/${selectedJob.id}/apply`, {
         method: 'POST'
       });
-      showToast(`Application successfully filed for ${selectedJob.title}!`, "success");
+
+      // Feature 1: Send automatic direct message to job poster
+      if (applyMemo.trim() && selectedJob.posted_by) {
+        const referralRequestMsg = `Hello! I have just applied for your posted role "${selectedJob.title}" at "${selectedJob.company}" on Vidyapith Praktani.
+
+Cover Note / Referral Request:
+"${applyMemo.trim()}"
+
+Here is my verified Vidyapith profile: http://localhost:3000/profile/${currentUser.id}`;
+
+        try {
+          await apiFetch(`/messages/${selectedJob.posted_by}`, {
+            method: 'POST',
+            body: JSON.stringify({ content: referralRequestMsg })
+          });
+          showToast(`Application successfully filed and referral request message sent to ${selectedJob.poster?.full_name || 'sponsor'}!`, "success");
+        } catch {
+          showToast(`Applied successfully, but direct message referral request could not be sent.`, "info");
+        }
+      } else {
+        showToast(`Application successfully filed for ${selectedJob.title}!`, "success");
+      }
+
       setApplyModalVisible(false);
       loadJobsData();
     } catch (err: any) {
@@ -144,15 +167,55 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
           </button>
         </div>
 
+        {/* Feature 9: Tab Switcher for Application Tracking */}
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '2px' }}>
+          <button 
+            type="button"
+            onClick={() => setActiveTab('explore')}
+            style={{
+              background: 'none', border: 'none', color: activeTab === 'explore' ? 'var(--primary-color)' : 'var(--text-muted)',
+              fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', paddingBottom: '12px',
+              borderBottom: activeTab === 'explore' ? '3px solid var(--primary-color)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            Explore Openings ({jobs.length})
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveTab('applications')}
+            style={{
+              background: 'none', border: 'none', color: activeTab === 'applications' ? 'var(--primary-color)' : 'var(--text-muted)',
+              fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', paddingBottom: '12px',
+              borderBottom: activeTab === 'applications' ? '3px solid var(--primary-color)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            My Applications ({jobs.filter(j => j.applications?.includes(currentUser.id)).length})
+          </button>
+        </div>
+
         {/* Listings */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {jobs.length === 0 ? (
-            <div className="glass-panel loading-state" style={{ minHeight: '250px' }}>
-              <Briefcase size={48} style={{ color: 'var(--text-muted)' }} />
-              <p>No job listings matching these filters have been posted.</p>
-            </div>
-          ) : (
-            jobs.map(job => {
+          {(() => {
+            const listToShow = activeTab === 'explore' 
+              ? jobs 
+              : jobs.filter(j => j.applications?.includes(currentUser.id));
+              
+            if (listToShow.length === 0) {
+              return (
+                <div className="glass-panel loading-state" style={{ minHeight: '250px' }}>
+                  <Briefcase size={48} style={{ color: 'var(--text-muted)' }} />
+                  <p>
+                    {activeTab === 'explore' 
+                      ? 'No job listings matching these filters have been posted.'
+                      : 'You have not applied to any jobs yet.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return listToShow.map(job => {
               const poster = (job as any).poster;
               const alreadyApplied = job.applications?.includes(currentUser.id) || false;
 
@@ -220,8 +283,8 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
                   </div>
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
       </div>
 

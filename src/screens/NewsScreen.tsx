@@ -100,6 +100,53 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
           )}
         </div>
 
+        {/* Feature 8: Alumni Spotlight Hero Card */}
+        {(() => {
+          const spotlight = news.find(n => n.category === 'Alumni Spotlight');
+          if (!spotlight) return null;
+          return (
+            <div
+              className="glass-panel"
+              style={{
+                padding: '28px',
+                marginBottom: '24px',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(18,33,56,0.98) 100%)',
+                border: '2px solid rgba(212,175,55,0.4)',
+                borderRadius: '16px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Background shimmer line */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #d4af37, #f5d87a, #d4af37)', backgroundSize: '200% 100%' }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <span style={{ fontSize: '1.3rem' }}>⭐</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#d4af37' }}>Alumni Spotlight</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {new Date(spotlight.published_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+
+              {spotlight.media_url && (
+                <img
+                  src={spotlight.media_url}
+                  alt={spotlight.title}
+                  style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', borderRadius: '10px', marginBottom: '16px', border: '1px solid rgba(212,175,55,0.2)' }}
+                />
+              )}
+
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'white', marginBottom: '8px', lineHeight: 1.25 }}>{spotlight.title}</h3>
+              <span style={{ fontSize: '0.75rem', color: '#d4af37', display: 'block', marginBottom: '12px', fontWeight: 600 }}>
+                Featured: {spotlight.author_name}
+              </span>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                {spotlight.body?.length > 300 ? spotlight.body.substring(0, 300) + '...' : spotlight.body}
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Featured Card */}
         {news.length > 0 && (
           <div className="glass-panel featured-news-card" style={{ padding: '24px', marginBottom: '24px', background: 'linear-gradient(135deg, rgba(12,30,54,0.7) 0%, rgba(18,33,56,0.95) 100%)', borderLeft: '4px solid var(--accent-gold)' }}>

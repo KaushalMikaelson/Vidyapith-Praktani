@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Event } from '../database/database';
-import { Calendar, Check, Clock, Filter, Image as ImageIcon, Lightbulb, MapPin, Plus, Send, Users, X } from 'lucide-react';
+import { Calendar, Check, Clock, Filter, Image as ImageIcon, Lightbulb, MapPin, Plus, Send, Users, X, QrCode } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 interface EventsScreenProps {
@@ -67,6 +67,51 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const [evtType, setEvtType] = useState<'physical' | 'virtual' | 'hybrid'>('physical');
   const [evtLocation, setEvtLocation] = useState('');
   const [evtCapacity, setEvtCapacity] = useState('100');
+
+  // Feature 2: RSVP Ticket & ICS states
+  const [ticketModalVisible, setTicketModalVisible] = useState(false);
+  const [ticketEvent, setTicketEvent] = useState<any | null>(null);
+
+  const downloadICS = (event: any) => {
+    const dDate = new Date(event.event_date);
+    const start = dDate.toISOString().replace(/-|:|\.\d\d\d/g, ""); // YYYYMMDDTHHmmssZ
+    const end = new Date(dDate.getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const title = event.title;
+    const desc = event.description.replace(/\n/g, "\\n");
+    const loc = event.location;
+
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Vidyapith Connect//Event Calendar//EN",
+      "BEGIN:VEVENT",
+      `UID:${event.id}@vidyapithconnect.in`,
+      `DTSTAMP:${start}`,
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${desc}`,
+      `LOCATION:${loc}`,
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, "_")}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(`Calendar invitation downloaded!`, 'success');
+  };
+
+  const openTicketModal = (event: any) => {
+    setTicketEvent(event);
+    setTicketModalVisible(true);
+  };
 
   const [filterBatch, setFilterBatch] = useState<string>('All');
   const [filterType, setFilterType] = useState<string>('All');
@@ -287,9 +332,29 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
                     <p>{evt.description}</p>
                     <small>{totalAttending} attending</small>
                   </div>
-                  <button onClick={() => openRSVPModal(evt.id)} disabled={isRSVPed}>
-                    <Check size={16} /> {isRSVPed ? 'RSVPed' : evt.event_type === 'virtual' ? 'Join' : 'RSVP'}
-                  </button>
+                  {isRSVPed ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '120px' }}>
+                      <button 
+                        type="button"
+                        onClick={() => openTicketModal(evt)} 
+                        className="heritage-primary-btn" 
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '36px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        <QrCode size={14} /> Pass
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => downloadICS(evt)} 
+                        style={{ padding: '6px 12px', fontSize: '0.78rem', minHeight: '34px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '4px', cursor: 'pointer', width: '100%' }}
+                      >
+                        Add to Cal
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => openRSVPModal(evt.id)}>
+                      <Check size={16} /> {evt.event_type === 'virtual' ? 'Join' : 'RSVP'}
+                    </button>
+                  )}
                 </article>
               );
             })}
@@ -313,10 +378,28 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
 
         <aside>
           <section className="heritage-widget">
-            <h3><Calendar size={20} /> My Events</h3>
-            <div className="my-event"><strong>DEC<br />15</strong><span>Centennial Grand Reunion<br /><small>6:00 PM · Grand Hall</small></span></div>
-            <div className="my-event"><strong>NOV<br />28</strong><span>Careers in Tech Panel<br /><small>7:30 PM · Online</small></span></div>
-            <button>View all my events <ChevronRightIcon /></button>
+            <h3><Calendar size={20} /> My RSVPs</h3>
+            {(() => {
+              const myRsvps = events.filter((e: any) => e.rsvps?.some((r: any) => r.user_id === currentUser.id));
+              if (myRsvps.length === 0) {
+                return <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', padding: '10px 0' }}>No active RSVPs. Click RSVP on any event to join!</span>;
+              }
+              return myRsvps.slice(0, 3).map((myEvt: any) => {
+                const dateObj = new Date(myEvt.event_date);
+                const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                const day = dateObj.toLocaleDateString('en-US', { day: '2-digit' });
+                const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div key={myEvt.id} className="my-event" style={{ cursor: 'pointer' }} onClick={() => openTicketModal(myEvt)}>
+                    <strong>{month}<br />{day}</strong>
+                    <span>
+                      {myEvt.title}<br />
+                      <small>{time} · {myEvt.location.substring(0, 18)}{myEvt.location.length > 18 ? '...' : ''}</small>
+                    </span>
+                  </div>
+                );
+              });
+            })()}
           </section>
 
           <section className="suggest-card">
@@ -370,6 +453,94 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
               <label>Max Seating Capacity<input type="number" min={5} value={evtCapacity} onChange={(event) => setEvtCapacity(event.target.value)} /></label>
               <button type="submit" className="heritage-primary-btn">Publish Event Listing</button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Ticket Pass Modal */}
+      {ticketModalVisible && ticketEvent && (
+        <div className="modal-overlay" style={{ display: 'flex', zIndex: 1000 }}>
+          <div className="modal-card" style={{ maxWidth: '380px', padding: '0', background: 'none', border: 'none', boxShadow: 'none' }}>
+            {/* The Ticket Pass Container */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              border: '2px solid #d4af37',
+              borderRadius: '20px',
+              padding: '24px',
+              color: 'white',
+              position: 'relative',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}>
+              {/* Ticket Notch Cutouts */}
+              <div style={{ position: 'absolute', left: '-12px', top: '55%', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', borderRight: '2px solid #d4af37' }}></div>
+              <div style={{ position: 'absolute', right: '-12px', top: '55%', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', borderLeft: '2px solid #d4af37' }}></div>
+
+              {/* Header */}
+              <div style={{ borderBottom: '1px dashed rgba(212, 175, 55, 0.3)', width: '100%', paddingBottom: '16px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#d4af37', fontWeight: 800 }}>Vidyapith Alumni Association</span>
+                <h4 style={{ margin: '6px 0 0', fontSize: '1.1rem', fontWeight: 800 }}>OFFICIAL EVENT PASS</h4>
+              </div>
+
+              {/* Body */}
+              <div style={{ flexGrow: 1, width: '100%', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', marginBottom: '12px', lineHeight: 1.3 }}>{ticketEvent.title}</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem', textAlign: 'left', marginBottom: '16px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', color: '#94a3b8', display: 'block' }}>Date</span>
+                    <strong>{dateParts(ticketEvent.event_date).date}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', color: '#94a3b8', display: 'block' }}>Time</span>
+                    <strong>{dateParts(ticketEvent.event_date).time}</strong>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', color: '#94a3b8', display: 'block' }}>Location</span>
+                    <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', whiteSpace: 'nowrap' }}>{ticketEvent.location}</strong>
+                  </div>
+                </div>
+
+                {/* QR Code Container */}
+                <div style={{
+                  background: 'white',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '10px',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
+                }}>
+                  <QrCode size={110} style={{ color: '#0f172a' }} />
+                </div>
+                
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                  <span>PASS ID: </span>
+                  <strong style={{ color: '#d4af37', fontFamily: 'monospace' }}>TK-{ticketEvent.id?.substring(0,8).toUpperCase()}</strong>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div style={{ borderTop: '1px dashed rgba(212, 175, 55, 0.3)', width: '100%', paddingTop: '16px', display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button"
+                  onClick={() => downloadICS(ticketEvent)} 
+                  style={{ flexGrow: 1, padding: '8px 12px', fontSize: '0.78rem', fontWeight: 700, background: '#d4af37', border: 'none', color: '#0f172a', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                >
+                  Save to Calendar
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setTicketModalVisible(false)} 
+                  style={{ padding: '8px 16px', fontSize: '0.78rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

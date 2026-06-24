@@ -26,6 +26,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [filterDepartment, setFilterDepartment] = useState('');
   const [filterCity, setFilterCity] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('');
+  const [filterHouse, setFilterHouse] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'alumni' | 'student' | 'faculty'>('all');
   const [sortBy] = useState('seed_order');
   
@@ -85,6 +86,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     if (sortBy) queryParams.append('sortBy', sortBy);
     if (filterDepartment) queryParams.append('department', filterDepartment);
     if (filterIndustry) queryParams.append('industry', filterIndustry);
+    if (filterHouse) queryParams.append('house', filterHouse);
 
     const cacheKey = queryParams.toString();
 
@@ -173,12 +175,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse]);
 
   // Pagination helper calculations
   const totalItems = alumniList.length;
@@ -363,8 +365,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </button>
           </div>
 
-          {/* 4 Pill Selectors Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          {/* 5-column Pill Selectors Row with House filter */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
             {/* Batch Year Select */}
             <select 
               value={filterBatch} 
@@ -403,6 +405,21 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             >
               <option value="">Industry</option>
               {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+            </select>
+
+            {/* Feature 4: House Select */}
+            <select 
+              value={filterHouse} 
+              onChange={(e) => setFilterHouse(e.target.value)}
+              className="directory-pill-select"
+            >
+              <option value="">🏠 House</option>
+              <option value="Vivekananda">Vivekananda</option>
+              <option value="Brahmananda">Brahmananda</option>
+              <option value="Ramakrishnananda">Ramakrishnananda</option>
+              <option value="Shardananda">Shardananda</option>
+              <option value="Premananda">Premananda</option>
+              <option value="Yogananda">Yogananda</option>
             </select>
           </div>
 
