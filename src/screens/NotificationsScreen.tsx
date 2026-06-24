@@ -78,18 +78,57 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [markingAll, setMarkingAll] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [processedRequests, setProcessedRequests] = useState<Record<string, 'accepted' | 'declined'>>({});
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+
+  const loadPendingRequests = useCallback(async () => {
+    try {
+      const pending = await apiFetch('/directory/connections/pending');
+      setPendingRequests(pending || []);
+    } catch (err) {
+      console.error("Error loading pending connections:", err);
+    }
+  }, []);
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiFetch('/notifications');
       setNotifications(data);
+      await loadPendingRequests();
     } catch (err: any) {
       showToast(err.message || 'Failed to load notifications', 'danger');
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, loadPendingRequests]);
+
+  const handleRespond = async (notificationId: string, targetUserId: string, action: 'accept' | 'decline') => {
+    setProcessingIds(prev => ({ ...prev, [targetUserId]: true }));
+    try {
+      await apiFetch('/directory/connections/respond', {
+        method: 'POST',
+        body: JSON.stringify({ targetId: targetUserId, action })
+      });
+      
+      setProcessedRequests(prev => ({ ...prev, [notificationId]: action === 'accept' ? 'accepted' : 'declined' }));
+      setPendingRequests(prev => prev.filter(req => req.id !== targetUserId));
+      
+      // Mark notification as read
+      await markOneRead(notificationId);
+      
+      if (action === 'accept') {
+        showToast("Connection request accepted!", "success");
+      } else {
+        showToast("Connection request declined.", "info");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to respond to connection request", "danger");
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [targetUserId]: false }));
+    }
+  };
 
   useEffect(() => {
     loadNotifications();
@@ -368,6 +407,115 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                   }}>
                     {notif.body}
                   </p>
+
+                  {/* Action buttons for pending connection requests */}
+                  {notif.title === "New Connection Request" && (
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const status = processedRequests[notif.id];
+                        if (status === 'accepted') {
+                          return (
+                            <span style={{ 
+                              fontSize: '0.78rem', 
+                              color: '#16a34a', 
+                              fontWeight: 700, 
+                              background: 'rgba(22,163,74,0.08)', 
+                              padding: '4px 10px', 
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              ✓ Connected
+                            </span>
+                          );
+                        }
+                        if (status === 'declined') {
+                          return (
+                            <span style={{ 
+                              fontSize: '0.78rem', 
+                              color: '#64748b', 
+                              fontWeight: 700, 
+                              background: 'rgba(0,0,0,0.04)', 
+                              padding: '4px 10px', 
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              Declined
+                            </span>
+                          );
+                        }
+                        
+                        const matchedRequest = pendingRequests.find(req => notif.body.includes(req.full_name));
+                        if (!matchedRequest) {
+                          return (
+                            <span style={{ 
+                              fontSize: '0.78rem', 
+                              color: '#475569', 
+                              fontWeight: 700, 
+                              background: 'rgba(0,0,0,0.04)', 
+                              padding: '4px 10px', 
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              Processed
+                            </span>
+                          );
+                        }
+                        
+                        const isProcessing = processingIds[matchedRequest.id];
+                        return (
+                          <>
+                            <button
+                              disabled={!!isProcessing}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleRespond(notif.id, matchedRequest.id, 'accept');
+                              }}
+                              style={{
+                                padding: '6px 16px',
+                                fontSize: '0.8rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                background: 'linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%)',
+                                boxShadow: '0 2px 4px rgba(236, 72, 153, 0.15)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                opacity: isProcessing ? 0.7 : 1
+                              }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              disabled={!!isProcessing}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleRespond(notif.id, matchedRequest.id, 'decline');
+                              }}
+                              style={{
+                                padding: '6px 16px',
+                                fontSize: '0.8rem',
+                                borderRadius: '8px',
+                                border: '1px solid #cbd5e1',
+                                background: '#ffffff',
+                                color: '#64748b',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                opacity: isProcessing ? 0.7 : 1
+                              }}
+                            >
+                              Decline
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Time */}

@@ -95,14 +95,71 @@ export default function App() {
     setProfileUserId(userId);
     setActiveScreen('profile');
     setSelectedProfileId(null);
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('screen', 'profile');
+      url.searchParams.set('id', userId);
+      window.history.pushState({ screen: 'profile', id: userId }, '', url.toString());
+    }
   };
 
   const handleActiveScreenChange = (screenId: string) => {
+    let targetUserId: string | null = null;
     if (screenId === 'profile') {
-      setProfileUserId(currentUser?.id || null);
+      targetUserId = currentUser?.id || null;
+      setProfileUserId(targetUserId);
+    } else {
+      setProfileUserId(null);
     }
     setActiveScreen(screenId);
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('screen', screenId);
+      if (targetUserId) {
+        url.searchParams.set('id', targetUserId);
+      } else {
+        url.searchParams.delete('id');
+      }
+      window.history.pushState({ screen: screenId, id: targetUserId }, '', url.toString());
+    }
   };
+
+  // Synchronize initial URL query parameters on load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      const screen = params.get('screen');
+      const id = params.get('id');
+      if (screen) {
+        setActiveScreen(screen);
+        if (screen === 'profile' && id) {
+          setProfileUserId(id);
+        }
+      }
+    }
+  }, [currentUser]);
+
+  // Listen for browser Back/Forward (popstate) actions
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== 'undefined' && currentUser) {
+        const params = new URLSearchParams(window.location.search);
+        const screen = params.get('screen') || 'feed';
+        const id = params.get('id');
+        setActiveScreen(screen);
+        if (screen === 'profile') {
+          setProfileUserId(id || currentUser.id || null);
+        } else {
+          setProfileUserId(null);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentUser]);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
   const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
