@@ -296,6 +296,16 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [editShowMobile, setEditShowMobile] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // Networking / Mentorship edit states
+  const [editLinkedinUrl, setEditLinkedinUrl] = useState('');
+  const [editGithubUrl, setEditGithubUrl] = useState('');
+  const [editPortfolioUrl, setEditPortfolioUrl] = useState('');
+  const [editSkills, setEditSkills] = useState<string[]>([]);
+  const [editSkillInput, setEditSkillInput] = useState('');
+  const [editHelpCategories, setEditHelpCategories] = useState<string[]>([]);
+  const [editLookingFor, setEditLookingFor] = useState<string[]>([]);
+  const [editMentorshipStatus, setEditMentorshipStatus] = useState('Not Available');
+  const [editIndustry, setEditIndustry] = useState('');
 
   // Cropper states
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -488,6 +498,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   // Fetch profile details
   const loadProfile = async (targetId: string) => {
+    setProfileTab('posts');
     setProfileConnectionStatus('none'); // Reset before loading new profile
     try {
       const uDetails = await apiFetch(`/directory/profile/${targetId}`);
@@ -837,6 +848,16 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setEditPhotoUrl(person.profile_photo || currentUser?.profile?.profile_photo || '');
     setEditShowEmail(person.show_email ?? currentUser?.profile?.show_email ?? true);
     setEditShowMobile(person.show_phone ?? currentUser?.profile?.show_phone ?? false);
+    // Networking fields
+    setEditLinkedinUrl(person.linkedin_url || currentUser?.profile?.linkedin_url || '');
+    setEditGithubUrl(person.github_url || currentUser?.profile?.github_url || '');
+    setEditPortfolioUrl(person.portfolio_url || currentUser?.profile?.portfolio_url || '');
+    setEditSkills(person.skills || currentUser?.profile?.skills || []);
+    setEditSkillInput('');
+    setEditHelpCategories(person.help_categories || currentUser?.profile?.help_categories || []);
+    setEditLookingFor(person.looking_for || currentUser?.profile?.looking_for || []);
+    setEditMentorshipStatus(person.mentorship_status || currentUser?.profile?.mentorship_status || 'Not Available');
+    setEditIndustry(person.industry || currentUser?.profile?.industry || '');
     setCropModalOpen(false);
     setEditProfileOpen(true);
   };
@@ -1008,6 +1029,23 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       showToast("A valid Batch Year is required.", "danger");
       return;
     }
+    // URL validation
+    const isValidUrl = (url: string): boolean => {
+      if (!url) return true;
+      return /^https?:\/\/[^\s$.?#].[^\s]*$/i.test(url);
+    };
+    if (editLinkedinUrl && !isValidUrl(editLinkedinUrl)) {
+      showToast("Invalid LinkedIn URL. Must start with http:// or https://", "danger");
+      return;
+    }
+    if (editGithubUrl && !isValidUrl(editGithubUrl)) {
+      showToast("Invalid GitHub URL. Must start with http:// or https://", "danger");
+      return;
+    }
+    if (editPortfolioUrl && !isValidUrl(editPortfolioUrl)) {
+      showToast("Invalid Portfolio URL. Must start with http:// or https://", "danger");
+      return;
+    }
     try {
       setUpdatingProfile(true);
 
@@ -1025,7 +1063,15 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           country: editCountry,
           profile_photo: editPhotoUrl,
           show_email: editShowEmail,
-          show_mobile: editShowMobile
+          show_mobile: editShowMobile,
+          linkedin_url: editLinkedinUrl,
+          github_url: editGithubUrl,
+          portfolio_url: editPortfolioUrl,
+          skills: editSkills,
+          help_categories: editHelpCategories,
+          looking_for: editLookingFor,
+          mentorship_status: editMentorshipStatus,
+          industry: editIndustry
         })
       });
       showToast("Profile updated successfully!", "success");
@@ -1833,9 +1879,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       return topLevel.map((comment: any) => (
                         <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
                           <div className="comment-item">
-                            <img src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} alt="" />
+                            <img 
+                              src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} 
+                              alt="" 
+                              onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
+                              style={{ cursor: 'pointer' }}
+                            />
                             <div className="comment-text-wrap" style={{ flex: 1 }}>
-                              <strong>{comment.author?.full_name || 'Alumnus'}</strong>
+                              <strong 
+                                onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {comment.author?.full_name || 'Alumnus'}
+                              </strong>
                               <p style={{ margin: '2px 0 4px' }}>{comment.content}</p>
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(comment.created_at)}</span>
@@ -1853,9 +1909,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                           {/* Render nested replies */}
                           {repliesMap[comment.id]?.map((reply: any) => (
                             <div key={reply.id} className="comment-item" style={{ marginLeft: '44px', marginTop: '4px', borderLeft: '2px solid #e2e8f0', paddingLeft: '12px' }}>
-                              <img src={reply.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&q=80'} alt="" style={{ width: '32px', height: '32px' }} />
+                              <img 
+                                src={reply.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&q=80'} 
+                                alt="" 
+                                style={{ width: '32px', height: '32px', cursor: 'pointer' }} 
+                                onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
+                              />
                               <div className="comment-text-wrap">
-                                <strong>{reply.author?.full_name || 'Alumnus'}</strong>
+                                <strong 
+                                  onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  {reply.author?.full_name || 'Alumnus'}
+                                </strong>
                                 <p style={{ margin: '2px 0 4px' }}>{reply.content}</p>
                                 <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(reply.created_at)}</span>
                               </div>
@@ -3109,9 +3175,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   }}>
                     {/* Header */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', borderBottom: '1px solid #efefef' }}>
-                      <img src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <img 
+                        src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
+                        alt="" 
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }} 
+                        onClick={() => { if (author.id) { onViewProfile(author.id); setSelectedPostForModal(null); } }}
+                      />
                       <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700 }}>{author.full_name || 'Vidyapith Alumnus'}</h4>
+                        <h4 
+                          style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}
+                          onClick={() => { if (author.id) { onViewProfile(author.id); setSelectedPostForModal(null); } }}
+                        >
+                          {author.full_name || 'Vidyapith Alumnus'}
+                        </h4>
                         <span style={{ fontSize: '0.74rem', color: '#8e8e8e' }}>Class of {author.batch_year || '—'}</span>
                       </div>
                       <button onClick={handleConnectClick} className="btn-ig-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
@@ -3123,10 +3199,20 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
                       {/* Caption */}
                       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <img src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <img 
+                          src={author.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
+                          alt="" 
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, cursor: 'pointer' }} 
+                          onClick={() => { if (author.id) { onViewProfile(author.id); setSelectedPostForModal(null); } }}
+                        />
                         <div>
                           <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.45 }}>
-                            <strong style={{ marginRight: '6px' }}>{author.full_name}</strong>
+                            <strong 
+                              style={{ marginRight: '6px', cursor: 'pointer' }}
+                              onClick={() => { if (author.id) { onViewProfile(author.id); setSelectedPostForModal(null); } }}
+                            >
+                              {author.full_name}
+                            </strong>
                             {selectedPostForModal.content}
                           </p>
                           <span style={{ fontSize: '0.72rem', color: '#8e8e8e', display: 'block', marginTop: '4px' }}>
@@ -3146,10 +3232,20 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                           const commentAuthor = comment.author || { full_name: "Alumnus", profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80", batch_year: 2012 };
                           return (
                             <div key={cIdx} style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-                              <img src={commentAuthor.profile_photo} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                              <img 
+                                src={commentAuthor.profile_photo} 
+                                alt="" 
+                                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, cursor: 'pointer' }} 
+                                onClick={() => { if (commentAuthor.id) { onViewProfile(commentAuthor.id); setSelectedPostForModal(null); } }}
+                              />
                               <div>
                                 <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.4 }}>
-                                  <strong style={{ marginRight: '6px' }}>{commentAuthor.full_name}</strong>
+                                  <strong 
+                                    style={{ marginRight: '6px', cursor: 'pointer' }}
+                                    onClick={() => { if (commentAuthor.id) { onViewProfile(commentAuthor.id); setSelectedPostForModal(null); } }}
+                                  >
+                                    {commentAuthor.full_name}
+                                  </strong>
                                   {comment.content}
                                 </p>
                                 <span style={{ fontSize: '0.68rem', color: '#8e8e8e', display: 'block', marginTop: '2px' }}>
@@ -3612,7 +3708,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </div>
 
                   {/* Location info */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>City Location</label>
                       <input 
@@ -3632,6 +3728,144 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
                         placeholder="e.g. India, United States"
                       />
+                    </div>
+                  </div>
+
+                  {/* Industry & Mentorship Dropdown */}
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Industry</label>
+                      <select
+                        value={editIndustry}
+                        onChange={(e) => setEditIndustry(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
+                      >
+                        <option value="">Select Industry</option>
+                        {["Technology", "Finance", "Healthcare", "Education", "Government", "Consulting", "Entrepreneurship", "Other"].map(ind => (
+                          <option key={ind} value={ind}>{ind}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Mentorship Status</label>
+                      <select
+                        value={editMentorshipStatus}
+                        onChange={(e) => setEditMentorshipStatus(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
+                      >
+                        <option value="Available">✅ Available</option>
+                        <option value="Limited Availability">⚡ Limited Availability</option>
+                        <option value="Not Available">❌ Not Available</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Tag-based Skills Editor */}
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Skills (Press Enter or comma to add)</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px 12px', border: '1px solid #cbd5e1', background: '#f8fafc', borderRadius: '8px', minHeight: '44px', alignItems: 'center' }}>
+                      {editSkills.map(skill => (
+                        <span key={skill} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)', color: 'white', padding: '3px 8px', borderRadius: '16px', fontSize: '0.78rem', fontWeight: 600 }}>
+                          {skill}
+                          <button
+                            type="button"
+                            onClick={() => setEditSkills(editSkills.filter(s => s !== skill))}
+                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', fontSize: '0.85rem', outline: 'none' }}
+                          >
+                            <X size={10} />
+                          </button>
+                        </span>
+                      ))}
+                      <input
+                        type="text"
+                        value={editSkillInput}
+                        onChange={e => setEditSkillInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            const val = editSkillInput.trim().replace(/,$/, '');
+                            if (val && !editSkills.includes(val)) {
+                              setEditSkills([...editSkills, val]);
+                            }
+                            setEditSkillInput('');
+                          }
+                        }}
+                        placeholder={editSkills.length === 0 ? "e.g. Java, React, Finance" : "Add more..."}
+                        style={{ border: 'none', background: 'transparent', color: '#0f172a', outline: 'none', flexGrow: 1, padding: '2px 4px', fontSize: '0.88rem', minWidth: '100px' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Multi-select: How I Can Help */}
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>How I Can Help</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                      {["Career Guidance", "Mentorship", "Job Referrals", "Internship Referrals", "Mock Interviews", "Startup Advice", "Higher Studies Guidance", "Networking"].map(opt => (
+                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.83rem', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600 }}>
+                          <input
+                            type="checkbox"
+                            checked={editHelpCategories.includes(opt)}
+                            onChange={() => setEditHelpCategories(editHelpCategories.includes(opt) ? editHelpCategories.filter(x => x !== opt) : [...editHelpCategories, opt])}
+                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#7c3aed' }}
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Multi-select: Looking For */}
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Looking For</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                      {["Networking", "Mentorship", "Job Opportunities", "Business Partnerships", "Hiring Talent", "Investors", "Co-founders"].map(opt => (
+                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.83rem', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600 }}>
+                          <input
+                            type="checkbox"
+                            checked={editLookingFor.includes(opt)}
+                            onChange={() => setEditLookingFor(editLookingFor.includes(opt) ? editLookingFor.filter(x => x !== opt) : [...editLookingFor, opt])}
+                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#0ea5e9' }}
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Social Links */}
+                  <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#475569', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🔗 Social Profiles</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>LinkedIn URL</label>
+                        <input
+                          type="text"
+                          value={editLinkedinUrl}
+                          onChange={(e) => setEditLinkedinUrl(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                          placeholder="https://linkedin.com/in/username"
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>GitHub URL</label>
+                        <input
+                          type="text"
+                          value={editGithubUrl}
+                          onChange={(e) => setEditGithubUrl(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                          placeholder="https://github.com/username"
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Portfolio Website</label>
+                        <input
+                          type="text"
+                          value={editPortfolioUrl}
+                          onChange={(e) => setEditPortfolioUrl(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                          placeholder="https://yourwebsite.com"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -4044,6 +4278,86 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <h4 style={{ color: 'white', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.05em' }}>Alumni Bio & Scholastic Memories</h4>
                   <p style={{ lineHeight: 1.5 }}>{profileUser.profile?.bio || profileUser.bio || "No biography added yet. Update via Settings."}</p>
                 </div>
+
+                {/* Mentorship Status Badge */}
+                {(() => {
+                  const status = profileUser.profile?.mentorship_status || profileUser.mentorship_status;
+                  if (!status || status === 'Not Available') return null;
+                  const isAvailable = status === 'Available';
+                  return (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '12px',
+                      padding: '8px 16px', borderRadius: '20px',
+                      background: isAvailable ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                      border: `1px solid ${isAvailable ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                      color: isAvailable ? '#10b981' : '#f59e0b', fontWeight: 700, fontSize: '0.85rem'
+                    }}>
+                      {isAvailable ? '🟢 Open to Mentoring' : '⚡ Limited Mentoring Availability'}
+                    </div>
+                  );
+                })()}
+
+                {/* Skills */}
+                {(() => {
+                  const skills: string[] = profileUser.profile?.skills || profileUser.skills || [];
+                  if (skills.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: '16px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Skills</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                        {skills.map(skill => (
+                          <span key={skill} style={{ fontSize: '0.78rem', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.25)' }}>
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* How I Can Help */}
+                {(() => {
+                  const help: string[] = profileUser.profile?.help_categories || profileUser.help_categories || [];
+                  if (help.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: '16px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>How I Can Help</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                        {help.map(h => (
+                          <span key={h} style={{ fontSize: '0.78rem', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: 'rgba(16,185,129,0.1)', color: '#6ee7b7', border: '1px solid rgba(16,185,129,0.25)' }}>
+                            {h}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Social Links */}
+                {(() => {
+                  const linkedin = profileUser.profile?.linkedin_url || profileUser.linkedin_url;
+                  const github = profileUser.profile?.github_url || profileUser.github_url;
+                  const portfolio = profileUser.profile?.portfolio_url || profileUser.portfolio_url;
+                  if (!linkedin && !github && !portfolio) return null;
+                  return (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px' }}>
+                      {linkedin && (
+                        <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '8px 14px', background: 'rgba(10,102,194,0.12)', border: '1px solid rgba(10,102,194,0.3)', borderRadius: '8px', color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>
+                          🔗 LinkedIn
+                        </a>
+                      )}
+                      {github && (
+                        <a href={github} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '8px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontWeight: 600, textDecoration: 'none' }}>
+                          🐙 GitHub
+                        </a>
+                      )}
+                      {portfolio && (
+                        <a href={portfolio} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '8px 14px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px', color: '#c4b5fd', fontWeight: 600, textDecoration: 'none' }}>
+                          🌐 Portfolio
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Stats row */}
                 <div style={{ display: 'flex', gap: '32px', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
@@ -5844,9 +6158,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     return (
                       <div key={post.id} className="glass-panel" style={{ padding: '20px' }}>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                          <img src={author.profile_photo || currentUser.profile_photo} alt={author.full_name} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                          <img 
+                            src={author.profile_photo || currentUser.profile_photo} 
+                            alt={author.full_name} 
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }} 
+                            onClick={() => { const aid = author.id || post.author_id; if (aid) onViewProfile(aid); }}
+                          />
                           <div>
-                            <h4 style={{ color: 'white', fontSize: '0.88rem', fontWeight: 700 }}>{author.full_name || currentUser.full_name}</h4>
+                            <h4 
+                              style={{ color: 'white', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}
+                              onClick={() => { const aid = author.id || post.author_id; if (aid) onViewProfile(aid); }}
+                            >
+                              {author.full_name || currentUser.full_name}
+                            </h4>
                             <span style={{ fontSize: '0.74rem', color: 'var(--accent-gold)' }}>Batch of {author.batch_year || currentUser.batch_year}</span>
                           </div>
                         </div>
@@ -6432,16 +6756,21 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             
             {/* Right Comments / Detail Panel */}
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '550px', borderLeft: '1px solid var(--border-color)' }}>
-              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <img 
                     src={activeMemoryLightbox.author?.profile_photo || currentUser.profile_photo} 
                     alt="Author" 
-                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }} 
+                    onClick={() => { const aid = activeMemoryLightbox.author?.id || activeMemoryLightbox.author_id; if (aid) { onViewProfile(aid); setActiveMemoryLightbox(null); } }}
                   />
                   <div>
-                    <h4 style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700 }}>{activeMemoryLightbox.author?.full_name || "Vidyapith Alumnus"}</h4>
+                    <h4 
+                      style={{ color: 'white', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                      onClick={() => { const aid = activeMemoryLightbox.author?.id || activeMemoryLightbox.author_id; if (aid) { onViewProfile(aid); setActiveMemoryLightbox(null); } }}
+                    >
+                      {activeMemoryLightbox.author?.full_name || "Vidyapith Alumnus"}
+                    </h4>
                     <span style={{ fontSize: '0.72rem', color: 'var(--accent-gold)' }}>Batch of {activeMemoryLightbox.author?.batch_year || currentUser.batch_year}</span>
                   </div>
                 </div>
@@ -6468,9 +6797,19 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 ) : (
                   (activeMemoryLightbox.comments as any[]).map((cmt: any, idx: number) => (
                     <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '0.78rem' }}>
-                      <img src={cmt.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} style={{ width: '24px', height: '24px', borderRadius: '50%' }} alt="cmt author" />
+                      <img 
+                        src={cmt.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
+                        style={{ width: '24px', height: '24px', borderRadius: '50%', cursor: 'pointer' }} 
+                        alt="cmt author" 
+                        onClick={() => { if (cmt.author?.id) { onViewProfile(cmt.author.id); setActiveMemoryLightbox(null); } }}
+                      />
                       <div>
-                        <span style={{ color: 'white', fontWeight: 700, marginRight: '6px' }}>{cmt.author?.full_name || 'Alumnus'}</span>
+                        <span 
+                          style={{ color: 'white', fontWeight: 700, marginRight: '6px', cursor: 'pointer' }}
+                          onClick={() => { if (cmt.author?.id) { onViewProfile(cmt.author.id); setActiveMemoryLightbox(null); } }}
+                        >
+                          {cmt.author?.full_name || 'Alumnus'}
+                        </span>
                         <span style={{ color: 'var(--text-secondary)' }}>{cmt.content}</span>
                         <span style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>{formatTimeAgo(cmt.created_at)}</span>
                       </div>

@@ -89,6 +89,20 @@ export default function App() {
 
   // Profile Modal
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+
+  const handleViewProfile = (userId: string) => {
+    setProfileUserId(userId);
+    setActiveScreen('profile');
+    setSelectedProfileId(null);
+  };
+
+  const handleActiveScreenChange = (screenId: string) => {
+    if (screenId === 'profile') {
+      setProfileUserId(currentUser?.id || null);
+    }
+    setActiveScreen(screenId);
+  };
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [profileRelations, setProfileRelations] = useState<{ followers: any[]; following: any[]; connections: any[] } | null>(null);
   const [activeRelationsTab, setActiveRelationsTab] = useState<'followers' | 'following' | 'connections' | null>(null);
@@ -426,10 +440,10 @@ export default function App() {
         return (
           <FeedScreen 
             showToast={showToast} 
-            onViewProfile={setSelectedProfileId} 
+            onViewProfile={handleViewProfile} 
             screenMode={screenId}
             refreshKey={feedRefreshKey}
-            onNavigate={setActiveScreen}
+            onNavigate={handleActiveScreenChange}
           />
         );
       case 'settings':
@@ -438,34 +452,34 @@ export default function App() {
         return (
           <FeedScreen 
             showToast={showToast} 
-            onViewProfile={setSelectedProfileId} 
+            onViewProfile={handleViewProfile} 
             screenMode="profile" 
-            forceProfileId={currentUser?.id} 
-            onNavigate={setActiveScreen}
+            forceProfileId={profileUserId || currentUser?.id} 
+            onNavigate={handleActiveScreenChange}
           />
         );
       case 'notifications':
-        return <NotificationsScreen showToast={showToast} onNavigate={setActiveScreen} />;
+        return <NotificationsScreen showToast={showToast} onNavigate={handleActiveScreenChange} />;
       case 'messages':
-        return <MessagesScreen showToast={showToast} onViewProfile={setSelectedProfileId} onNavigate={setActiveScreen} />;
+        return <MessagesScreen showToast={showToast} onViewProfile={handleViewProfile} onNavigate={handleActiveScreenChange} />;
       case 'search':
       case 'directory':
-        return <DirectoryScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <DirectoryScreen showToast={showToast} onViewProfile={handleViewProfile} />;
       case 'careers':
       case 'jobs':
-        return <JobsScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <JobsScreen showToast={showToast} onViewProfile={handleViewProfile} />;
       case 'mentorship':
-        return <MentorshipScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <MentorshipScreen showToast={showToast} onViewProfile={handleViewProfile} />;
       case 'events':
         return <EventsScreen showToast={showToast} />;
       case 'donations':
-        return <DonationsScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <DonationsScreen showToast={showToast} onViewProfile={handleViewProfile} />;
       case 'news':
         return <NewsScreen showToast={showToast} />;
       case 'admin':
-        return <AdminScreen showToast={showToast} onViewProfile={setSelectedProfileId} />;
+        return <AdminScreen showToast={showToast} onViewProfile={handleViewProfile} />;
       case 'create':
-        return <CreateScreen showToast={showToast} setActiveScreen={setActiveScreen} onPublished={triggerFeedRefresh} />;
+        return <CreateScreen showToast={showToast} setActiveScreen={handleActiveScreenChange} onPublished={triggerFeedRefresh} />;
       default:
         return <h2>Page Not Found</h2>;
     }
@@ -476,7 +490,7 @@ export default function App() {
       {currentUser ? (
         <Layout 
           activeScreen={activeScreen} 
-          setActiveScreen={setActiveScreen} 
+          setActiveScreen={handleActiveScreenChange} 
           setSelectedProfileId={setSelectedProfileId}
           showToast={showToast}
         >

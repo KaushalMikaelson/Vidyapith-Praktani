@@ -20,6 +20,12 @@ export interface User {
   city: string;
   country: string;
   linkedin_url: string;
+  github_url?: string;
+  portfolio_url?: string;
+  skills?: string[];
+  help_categories?: string[];
+  looking_for?: string[];
+  mentorship_status?: string;
   privacy: { show_email: boolean; show_mobile: boolean };
   created_at: string;
   certificate_url?: string;

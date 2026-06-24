@@ -3,11 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
-import { Shield, Eye, User as UserIcon, Building, Briefcase, MapPin, Globe, Linkedin, Check } from 'lucide-react';
+import { Shield, Eye, User as UserIcon, Building, Briefcase, MapPin, Globe, Link, Check, X, GitBranch } from 'lucide-react';
 
 interface SettingsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
 }
+
+const INDUSTRIES = ["Technology", "Finance", "Healthcare", "Education", "Government", "Consulting", "Entrepreneurship", "Other"];
+const HELP_OPTIONS = ["Career Guidance", "Mentorship", "Job Referrals", "Internship Referrals", "Mock Interviews", "Startup Advice", "Higher Studies Guidance", "Networking"];
+const LOOKING_FOR_OPTIONS = ["Networking", "Mentorship", "Job Opportunities", "Business Partnerships", "Hiring Talent", "Investors", "Co-founders"];
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => {
   const { currentUser, refreshSession } = useAuth();
@@ -23,9 +27,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
   const [country, setCountry] = useState('India');
   const [profilePhoto, setProfilePhoto] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
   const [department, setDepartment] = useState('');
   const [industry, setIndustry] = useState('');
   const [mobile, setMobile] = useState('');
+  
+  // New States
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState('');
+  const [helpCategories, setHelpCategories] = useState<string[]>([]);
+  const [lookingFor, setLookingFor] = useState<string[]>([]);
+  const [mentorshipStatus, setMentorshipStatus] = useState('Not Available');
 
   // Privacy State
   const [showEmail, setShowEmail] = useState(true);
@@ -42,19 +55,82 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
       setCountry(currentUser.country || 'India');
       setProfilePhoto(currentUser.profile_photo || '');
       setLinkedinUrl(currentUser.linkedin_url || '');
+      setGithubUrl(currentUser.github_url || '');
+      setPortfolioUrl(currentUser.portfolio_url || '');
       setDepartment(currentUser.department || '');
       setIndustry(currentUser.industry || '');
       setMobile(currentUser.mobile || '');
       setShowEmail(currentUser.privacy?.show_email ?? true);
       setShowMobile(currentUser.privacy?.show_mobile ?? false);
+      
+      setSkills(currentUser.skills || []);
+      setHelpCategories(currentUser.help_categories || []);
+      setLookingFor(currentUser.looking_for || []);
+      setMentorshipStatus(currentUser.mentorship_status || 'Not Available');
     }
   }, [currentUser]);
 
   if (!currentUser) return null;
 
+  // Tag helper functions
+  const handleSkillInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = skillInput.trim().replace(/,$/, '');
+      if (val && !skills.includes(val)) {
+        setSkills([...skills, val]);
+      }
+      setSkillInput('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setSkills(skills.filter(s => s !== skill));
+  };
+
+  const handleHelpCheckboxChange = (opt: string) => {
+    if (helpCategories.includes(opt)) {
+      setHelpCategories(helpCategories.filter(x => x !== opt));
+    } else {
+      setHelpCategories([...helpCategories, opt]);
+    }
+  };
+
+  const handleLookingForCheckboxChange = (opt: string) => {
+    if (lookingFor.includes(opt)) {
+      setLookingFor(lookingFor.filter(x => x !== opt));
+    } else {
+      setLookingFor([...lookingFor, opt]);
+    }
+  };
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    
+    // Validate URLs
+    const isValidUrl = (url: string): boolean => {
+      if (!url) return true;
+      const urlRegex = /^https?:\/\/[^\s$.?#].[^\s]*$/i;
+      return urlRegex.test(url);
+    };
+
+    if (linkedinUrl && !isValidUrl(linkedinUrl)) {
+      showToast("Invalid LinkedIn URL. Must start with http:// or https://", "danger");
+      setSaving(false);
+      return;
+    }
+    if (githubUrl && !isValidUrl(githubUrl)) {
+      showToast("Invalid GitHub URL. Must start with http:// or https://", "danger");
+      setSaving(false);
+      return;
+    }
+    if (portfolioUrl && !isValidUrl(portfolioUrl)) {
+      showToast("Invalid Portfolio URL. Must start with http:// or https://", "danger");
+      setSaving(false);
+      return;
+    }
+
     try {
       await apiFetch('/directory/profile/update', {
         method: 'POST',
@@ -67,9 +143,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
           country,
           profile_photo: profilePhoto,
           linkedin_url: linkedinUrl,
+          github_url: githubUrl,
+          portfolio_url: portfolioUrl,
           department,
           industry,
-          mobile
+          mobile,
+          skills,
+          help_categories: helpCategories,
+          looking_for: lookingFor,
+          mentorship_status: mentorshipStatus
         })
       });
       showToast("Profile details updated successfully!", "success");
@@ -158,12 +240,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
               <div className="auth-input-block">
-                <label className="auth-input-label">Profession Category</label>
-                <input type="text" value={profession} onChange={e => setProfession(e.target.value)} />
+                <label className="auth-input-label">Profession / Designation</label>
+                <input type="text" value={profession} onChange={e => setProfession(e.target.value)} placeholder="e.g. Software Engineer" />
               </div>
               <div className="auth-input-block">
-                <label className="auth-input-label">Company / Institute</label>
-                <input type="text" value={company} onChange={e => setCompany(e.target.value)} />
+                <label className="auth-input-label">Company / Organization</label>
+                <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google" />
               </div>
             </div>
 
@@ -184,22 +266,118 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
                 <input type="text" value={department} onChange={e => setDepartment(e.target.value)} />
               </div>
               <div className="auth-input-block">
-                <label className="auth-input-label">Industry (e.g. IT, Healthcare)</label>
-                <input type="text" value={industry} onChange={e => setIndustry(e.target.value)} />
+                <label className="auth-input-label">Industry</label>
+                <select 
+                  value={industry} 
+                  onChange={e => setIndustry(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', padding: '12px', borderRadius: '6px', outline: 'none', height: '46px', cursor: 'pointer' }}
+                >
+                  <option value="" style={{ background: '#1e293b' }}>Select Industry</option>
+                  {INDUSTRIES.map(ind => (
+                    <option key={ind} value={ind} style={{ background: '#1e293b' }}>{ind}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="auth-input-block">
-              <label className="auth-input-label">Profile Photo URL</label>
-              <input type="text" value={profilePhoto} onChange={e => setProfilePhoto(e.target.value)} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+              <div className="auth-input-block">
+                <label className="auth-input-label">Mentorship Status</label>
+                <select 
+                  value={mentorshipStatus} 
+                  onChange={e => setMentorshipStatus(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', padding: '12px', borderRadius: '6px', outline: 'none', height: '46px', cursor: 'pointer' }}
+                >
+                  <option value="Available" style={{ background: '#1e293b' }}>Available</option>
+                  <option value="Limited Availability" style={{ background: '#1e293b' }}>Limited Availability</option>
+                  <option value="Not Available" style={{ background: '#1e293b' }}>Not Available</option>
+                </select>
+              </div>
+              <div className="auth-input-block">
+                <label className="auth-input-label">Profile Photo URL</label>
+                <input type="text" value={profilePhoto} onChange={e => setProfilePhoto(e.target.value)} />
+              </div>
             </div>
 
+            {/* Skills Tag Editor */}
             <div className="auth-input-block">
-              <label className="auth-input-label">LinkedIn URL</label>
-              <input type="text" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} />
+              <label className="auth-input-label">Skills (Press Enter or comma to add)</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', minHeight: '44px', alignItems: 'center' }}>
+                {skills.map(skill => (
+                  <span key={skill} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--primary-color)', color: 'white', padding: '4px 10px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    {skill}
+                    <button type="button" onClick={() => handleRemoveSkill(skill)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', fontSize: '0.9rem', outline: 'none' }}>
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+                <input 
+                  type="text" 
+                  value={skillInput} 
+                  onChange={e => setSkillInput(e.target.value)} 
+                  onKeyDown={handleSkillInputKeyDown}
+                  placeholder={skills.length === 0 ? "e.g. Java, React, Node.js" : "Add more..."} 
+                  style={{ border: 'none', background: 'transparent', color: 'white', outline: 'none', flexGrow: 1, padding: '2px 4px', fontSize: '0.9rem' }}
+                />
+              </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '12px 24px' }} disabled={saving}>
+            {/* Checkboxes: How I Can Help */}
+            <div className="auth-input-block">
+              <label className="auth-input-label" style={{ marginBottom: '10px' }}>How I Can Help</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', padding: '12px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                {HELP_OPTIONS.map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={helpCategories.includes(opt)} 
+                      onChange={() => handleHelpCheckboxChange(opt)} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Checkboxes: Looking For */}
+            <div className="auth-input-block">
+              <label className="auth-input-label" style={{ marginBottom: '10px' }}>Looking For</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', padding: '12px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                {LOOKING_FOR_OPTIONS.map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={lookingFor.includes(opt)} 
+                      onChange={() => handleLookingForCheckboxChange(opt)} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Social & Web Links</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="auth-input-block">
+                  <label className="auth-input-label">LinkedIn URL</label>
+                  <input type="text" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/username" />
+                </div>
+                <div className="auth-input-block">
+                  <label className="auth-input-label">GitHub URL</label>
+                  <input type="text" value={githubUrl} onChange={e => setGithubUrl(e.target.value)} placeholder="https://github.com/username" />
+                </div>
+                <div className="auth-input-block">
+                  <label className="auth-input-label">Portfolio Website URL</label>
+                  <input type="text" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} placeholder="https://username.com" />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '12px 24px', marginTop: '10px' }} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>

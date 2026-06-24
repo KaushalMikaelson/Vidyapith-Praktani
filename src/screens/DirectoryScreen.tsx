@@ -3,8 +3,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User } from '../database/database';
 import { 
-  Briefcase, ChevronLeft, ChevronRight, MapPin, Search, 
-  UserPlus, Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen
+  Briefcase, ChevronLeft, ChevronRight, Search, 
+  Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [filterCity, setFilterCity] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('');
   const [filterHouse, setFilterHouse] = useState('');
+  const [filterSkill, setFilterSkill] = useState('');
+  const [filterMentorship, setFilterMentorship] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'alumni' | 'student' | 'faculty'>('all');
   const [sortBy] = useState('seed_order');
   
@@ -87,6 +89,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     if (filterDepartment) queryParams.append('department', filterDepartment);
     if (filterIndustry) queryParams.append('industry', filterIndustry);
     if (filterHouse) queryParams.append('house', filterHouse);
+    if (filterSkill) queryParams.append('skills', filterSkill);
+    if (filterMentorship) queryParams.append('mentorshipStatus', filterMentorship);
 
     const cacheKey = queryParams.toString();
 
@@ -104,7 +108,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
       setAlumniList(results);
 
       // Compute overall stats if no search query or filters are active
-      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry) {
+      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry && !filterSkill && !filterMentorship) {
         let alumni = 0;
         let students = 0;
         let faculty = 0;
@@ -175,12 +179,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship]);
 
   // Pagination helper calculations
   const totalItems = alumniList.length;
@@ -271,6 +275,18 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     if (depts === "Commerce") return "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)";
     if (depts === "Arts") return "linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)";
     return "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)";
+  };
+
+  // Shared style objects for active filter chips
+  const chipStyle: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+    fontSize: '0.76rem', fontWeight: 600, padding: '3px 10px',
+    borderRadius: '9999px', background: '#f1f5f9',
+    color: '#475569', border: '1px solid #e2e8f0'
+  };
+  const chipXStyle: React.CSSProperties = {
+    background: 'none', border: 'none', cursor: 'pointer',
+    padding: '0 0 0 2px', fontSize: '0.9rem', lineHeight: 1, color: 'inherit'
   };
 
   return (
@@ -365,62 +381,126 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </button>
           </div>
 
-          {/* 5-column Pill Selectors Row with House filter */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-            {/* Batch Year Select */}
-            <select 
-              value={filterBatch} 
-              onChange={(e) => setFilterBatch(e.target.value)}
-              className="directory-pill-select"
-            >
-              <option value="">Batch Year</option>
-              {batchYears.map(year => <option key={year} value={year}>{year}</option>)}
-            </select>
+          {/* Filter rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Row 1: 5-column Pill Selectors */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+              {/* Batch Year Select */}
+              <select 
+                value={filterBatch} 
+                onChange={(e) => setFilterBatch(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">Batch Year</option>
+                {batchYears.map(year => <option key={year} value={year}>{year}</option>)}
+              </select>
 
-            {/* Department Select */}
-            <select 
-              value={filterDepartment} 
-              onChange={(e) => setFilterDepartment(e.target.value)}
-              className="directory-pill-select"
-            >
-              <option value="">Department</option>
-              {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-            </select>
+              {/* Department Select */}
+              <select 
+                value={filterDepartment} 
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">Department</option>
+                {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+              </select>
 
-            {/* Location Select */}
-            <select 
-              value={filterCity} 
-              onChange={(e) => setFilterCity(e.target.value)}
-              className="directory-pill-select"
-            >
-              <option value="">Location</option>
-              {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
-            </select>
+              {/* Location Select */}
+              <select 
+                value={filterCity} 
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">Location</option>
+                {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
+              </select>
 
-            {/* Industry Select */}
-            <select 
-              value={filterIndustry} 
-              onChange={(e) => setFilterIndustry(e.target.value)}
-              className="directory-pill-select"
-            >
-              <option value="">Industry</option>
-              {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-            </select>
+              {/* Industry Select */}
+              <select 
+                value={filterIndustry} 
+                onChange={(e) => setFilterIndustry(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">Industry</option>
+                {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+              </select>
 
-            {/* Feature 4: House Select */}
-            <select 
-              value={filterHouse} 
-              onChange={(e) => setFilterHouse(e.target.value)}
-              className="directory-pill-select"
-            >
-              <option value="">🏠 House</option>
-              <option value="Vivekananda">Vivekananda</option>
-              <option value="Brahmananda">Brahmananda</option>
-              <option value="Ramakrishnananda">Ramakrishnananda</option>
-              <option value="Shardananda">Shardananda</option>
-              <option value="Premananda">Premananda</option>
-              <option value="Yogananda">Yogananda</option>
-            </select>
+              {/* House Select */}
+              <select 
+                value={filterHouse} 
+                onChange={(e) => setFilterHouse(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">🏠 House</option>
+                <option value="Vivekananda">Vivekananda</option>
+                <option value="Brahmananda">Brahmananda</option>
+                <option value="Ramakrishnananda">Ramakrishnananda</option>
+                <option value="Shardananda">Shardananda</option>
+                <option value="Premananda">Premananda</option>
+                <option value="Yogananda">Yogananda</option>
+              </select>
+            </div>
+
+            {/* Row 2: Networking Filters */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'center' }}>
+              {/* Skill Filter */}
+              <select
+                value={filterSkill}
+                onChange={(e) => setFilterSkill(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">🛠 Skill</option>
+                {['Java', 'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'PostgreSQL', 'Machine Learning',
+                  'Data Science', 'DevOps', 'Marketing', 'Finance', 'Law', 'Medicine', 'Teaching', 'Research',
+                  'Design', 'Product Management', 'Entrepreneurship', 'Consulting'].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+
+              {/* Mentorship Status Filter */}
+              <select
+                value={filterMentorship}
+                onChange={(e) => setFilterMentorship(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">🎓 Mentorship Status</option>
+                <option value="Available">✅ Available</option>
+                <option value="Limited Availability">⚡ Limited Availability</option>
+                <option value="Not Available">❌ Not Available</option>
+              </select>
+
+              {/* Clear Networking Filters */}
+              {(filterSkill || filterMentorship) && (
+                <button
+                  onClick={() => { setFilterSkill(''); setFilterMentorship(''); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: '#fef2f2', border: '1px solid #fecaca',
+                    color: '#ef4444', borderRadius: '10px', padding: '0 14px',
+                    height: '42px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <X size={14} /> Clear
+                </button>
+              )}
+            </div>
+
+            {/* Active filter chips */}
+            {(filterSkill || filterMentorship || filterBatch || filterDepartment || filterCity || filterIndustry || filterHouse) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Filter size={12} /> Active:
+                </span>
+                {filterBatch && <span style={chipStyle}>{filterBatch} <button onClick={() => setFilterBatch('')} style={chipXStyle}>×</button></span>}
+                {filterDepartment && <span style={chipStyle}>{filterDepartment} <button onClick={() => setFilterDepartment('')} style={chipXStyle}>×</button></span>}
+                {filterCity && <span style={chipStyle}>{filterCity} <button onClick={() => setFilterCity('')} style={chipXStyle}>×</button></span>}
+                {filterIndustry && <span style={chipStyle}>{filterIndustry} <button onClick={() => setFilterIndustry('')} style={chipXStyle}>×</button></span>}
+                {filterHouse && <span style={chipStyle}>{filterHouse} <button onClick={() => setFilterHouse('')} style={chipXStyle}>×</button></span>}
+                {filterSkill && <span style={{ ...chipStyle, background: 'rgba(139,92,246,0.1)', color: '#7c3aed', borderColor: 'rgba(139,92,246,0.3)' }}>{filterSkill} <button onClick={() => setFilterSkill('')} style={chipXStyle}>×</button></span>}
+                {filterMentorship && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>{filterMentorship} <button onClick={() => setFilterMentorship('')} style={chipXStyle}>×</button></span>}
+              </div>
+            )}
           </div>
 
           {/* Pending Connection Requests Widget */}
@@ -630,20 +710,78 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     </h2>
                     
                     {/* Role/Batch & Department Subtitle */}
-                    <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>
+                    <div style={{ fontSize: '0.83rem', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
                       {alumnus.role === 'faculty' ? (
-                        `Faculty - ${alumnus.department || 'Physics'}`
+                        `Faculty · ${alumnus.department || 'Physics'}`
                       ) : alumnus.role === 'student' ? (
-                        `Student - ${alumnus.department || 'Science'}`
+                        `Student · ${alumnus.department || 'Science'}`
                       ) : (
-                        `Class of ${alumnus.batch_year} - ${alumnus.department || 'Engineering'}`
+                        `Class of ${alumnus.batch_year} · ${alumnus.department || 'Engineering'}`
                       )}
                     </div>
-                    
+
+                    {/* Profession / Company */}
+                    {(alumnus.profession || alumnus.company) && (
+                      <div style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                        <Briefcase size={12} style={{ flexShrink: 0, color: '#8b5cf6' }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
+                          {alumnus.profession ? `${alumnus.profession}${alumnus.company ? ` @ ${alumnus.company}` : ''}` : alumnus.company}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Location */}
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '16px', flexGrow: 1 }}>
-                      <span>{alumnus.city || 'Mumbai'}</span>
+                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', justifyContent: 'center' }}>
+                      <span>📍 {alumnus.city || 'India'}</span>
                     </div>
+
+                    {/* Skill Tags */}
+                    {alumnus.skills && alumnus.skills.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                        {alumnus.skills.slice(0, 3).map(skill => (
+                          <span key={skill} style={{
+                            fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px',
+                            borderRadius: '9999px', background: 'rgba(139,92,246,0.08)',
+                            color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)'
+                          }}>{skill}</span>
+                        ))}
+                        {alumnus.skills.length > 3 && (
+                          <span style={{
+                            fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px',
+                            borderRadius: '9999px', background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0'
+                          }}>+{alumnus.skills.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mentorship Badge */}
+                    {alumnus.mentorship_status === 'Available' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                        <span style={{
+                          fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px',
+                          borderRadius: '9999px', background: 'rgba(16,185,129,0.1)',
+                          color: '#059669', border: '1px solid rgba(16,185,129,0.25)',
+                          display: 'flex', alignItems: 'center', gap: '4px'
+                        }}>
+                          <Star size={10} fill="#059669" /> Open to Mentor
+                        </span>
+                      </div>
+                    )}
+                    {alumnus.mentorship_status === 'Limited Availability' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                        <span style={{
+                          fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px',
+                          borderRadius: '9999px', background: 'rgba(245,158,11,0.1)',
+                          color: '#d97706', border: '1px solid rgba(245,158,11,0.25)',
+                          display: 'flex', alignItems: 'center', gap: '4px'
+                        }}>
+                          ⚡ Limited Slots
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Spacer */}
+                    <div style={{ flexGrow: 1 }} />
                     
                     {/* Connect Button */}
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
@@ -772,6 +910,46 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
         {/* Right Column: Sidebar Widgets */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '24px' }}>
+
+          {/* Widget 0: Mentors Available */}
+          <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(16,185,129,0.06) 100%)', border: '1px solid rgba(139,92,246,0.2)' }}>
+            <div className="sidebar-widget-title-row">
+              <div className="widget-icon-box" style={{ background: 'linear-gradient(135deg, #7c3aed, #059669)' }}>
+                <Star size={18} />
+              </div>
+              <h3>Find a Mentor</h3>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+              Connect with alumni who are actively available for career guidance, mock interviews, and more.
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+              <button
+                onClick={() => { setFilterMentorship('Available'); setCurrentPage(1); }}
+                className="btn-connect-gradient"
+                style={{ width: '100%', padding: '9px 0', fontSize: '0.85rem', borderRadius: '10px' }}
+              >
+                <Star size={14} /> Open Mentors
+              </button>
+              <button
+                onClick={() => { setFilterMentorship('Limited Availability'); setCurrentPage(1); }}
+                style={{
+                  width: '100%', padding: '9px 0', fontSize: '0.85rem', borderRadius: '10px',
+                  background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+                  color: '#d97706', fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                ⚡ Limited Availability
+              </button>
+            </div>
+            {filterMentorship && (
+              <button
+                onClick={() => setFilterMentorship('')}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+              >
+                × Clear mentorship filter
+              </button>
+            )}
+          </div>
           
           {/* Widget 1: Directory Index */}
           <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

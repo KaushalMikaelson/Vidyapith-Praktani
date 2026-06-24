@@ -37,6 +37,18 @@ model AlumniProfile {
   certificate_url     String?
   department          String?
   industry            String?
+  skills              String[]
+  help_categories     String[]
+  looking_for         String[]
+  github_url          String   @default("")
+  portfolio_url       String   @default("")
+  mentorship_status   String   @default("Not Available")
+
+  @@index([batch_year])
+  @@index([profession_category])
+  @@index([company])
+  @@index([industry])
+  @@index([mentorship_status])
 }
 
 model Mentorship {

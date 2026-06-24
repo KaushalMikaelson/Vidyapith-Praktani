@@ -6,7 +6,7 @@ import { directoryCache, connectionsCache } from '../utils/cache.js';
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { search, batchYear, house, city, role, profession, sortBy, department, industry } = req.query;
+    const { search, batchYear, house, city, role, profession, company, sortBy, department, industry, skills, mentorshipStatus } = req.query;
     const cacheKey = `directory:${JSON.stringify(req.query)}`;
 
     // Try to get from cache first
@@ -41,11 +41,23 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     if (profession) {
       profileConditions.profession_category = { contains: profession as string, mode: 'insensitive' };
     }
+    if (company) {
+      profileConditions.company = { contains: company as string, mode: 'insensitive' };
+    }
     if (department && department !== 'all') {
       profileConditions.department = department as string;
     }
     if (industry && industry !== 'all') {
       profileConditions.industry = industry as string;
+    }
+    if (skills) {
+      const skillsList = Array.isArray(skills) ? skills : (skills as string).split(',').map(s => s.trim()).filter(Boolean);
+      if (skillsList.length > 0) {
+        profileConditions.skills = { hasSome: skillsList };
+      }
+    }
+    if (mentorshipStatus && mentorshipStatus !== 'all') {
+      profileConditions.mentorship_status = mentorshipStatus as string;
     }
 
     if (Object.keys(profileConditions).length > 0) {
@@ -97,6 +109,13 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         {
           profile: {
             industry: { contains: searchStr, mode: 'insensitive' }
+          }
+        },
+        {
+          profile: {
+            skills: {
+              has: searchStr
+            }
           }
         }
       ];
@@ -178,6 +197,12 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         city: u.profile?.city || "",
         country: u.profile?.country || "India",
         linkedin_url: u.profile?.linkedin_url || "",
+        github_url: u.profile?.github_url || "",
+        portfolio_url: u.profile?.portfolio_url || "",
+        skills: u.profile?.skills || [],
+        help_categories: u.profile?.help_categories || [],
+        looking_for: u.profile?.looking_for || [],
+        mentorship_status: u.profile?.mentorship_status || "Not Available",
         privacy: {
           show_email: u.profile?.show_email ?? true,
           show_mobile: u.profile?.show_phone ?? false
@@ -614,6 +639,12 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       city: user.profile?.city || "",
       country: user.profile?.country || "India",
       linkedin_url: user.profile?.linkedin_url || "",
+      github_url: user.profile?.github_url || "",
+      portfolio_url: user.profile?.portfolio_url || "",
+      skills: user.profile?.skills || [],
+      help_categories: user.profile?.help_categories || [],
+      looking_for: user.profile?.looking_for || [],
+      mentorship_status: user.profile?.mentorship_status || "Not Available",
       privacy: {
         show_email: user.profile?.show_email ?? true,
         show_mobile: user.profile?.show_phone ?? false
@@ -639,9 +670,30 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
     const { 
       bio, profession_category, company, city, country, profile_photo, 
-      show_email, show_mobile, full_name, batch_year, house, department, industry, mobile 
+      show_email, show_mobile, full_name, batch_year, house, department, industry, mobile,
+      skills, help_categories, looking_for, github_url, portfolio_url, mentorship_status, linkedin_url
     } = req.body;
     
+    // Validate URLs
+    const isValidUrl = (url: string): boolean => {
+      if (!url) return true;
+      const urlRegex = /^https?:\/\/[^\s$.?#].[^\s]*$/i;
+      return urlRegex.test(url);
+    };
+
+    if (linkedin_url !== undefined && linkedin_url !== "" && !isValidUrl(linkedin_url)) {
+      res.status(400).json({ error: "Invalid LinkedIn URL. Must start with http:// or https://" });
+      return;
+    }
+    if (github_url !== undefined && github_url !== "" && !isValidUrl(github_url)) {
+      res.status(400).json({ error: "Invalid GitHub URL. Must start with http:// or https://" });
+      return;
+    }
+    if (portfolio_url !== undefined && portfolio_url !== "" && !isValidUrl(portfolio_url)) {
+      res.status(400).json({ error: "Invalid Portfolio URL. Must start with http:// or https://" });
+      return;
+    }
+
     if (mobile !== undefined) {
       // Check if another user has this phone number
       const existingUserWithPhone = await prisma.user.findFirst({
@@ -677,6 +729,15 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (house !== undefined) profileData.house = house;
     if (department !== undefined) profileData.department = department;
     if (industry !== undefined) profileData.industry = industry;
+    
+    // New fields
+    if (skills !== undefined) profileData.skills = skills;
+    if (help_categories !== undefined) profileData.help_categories = help_categories;
+    if (looking_for !== undefined) profileData.looking_for = looking_for;
+    if (github_url !== undefined) profileData.github_url = github_url;
+    if (portfolio_url !== undefined) profileData.portfolio_url = portfolio_url;
+    if (mentorship_status !== undefined) profileData.mentorship_status = mentorship_status;
+    if (linkedin_url !== undefined) profileData.linkedin_url = linkedin_url;
 
     await prisma.alumniProfile.upsert({
       where: { user_id: userId },
@@ -691,7 +752,13 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
         company: company || "Not specified",
         city: city || "Not specified",
         country: country || "India",
-        linkedin_url: "",
+        linkedin_url: linkedin_url || "",
+        github_url: github_url || "",
+        portfolio_url: portfolio_url || "",
+        skills: skills || [],
+        help_categories: help_categories || [],
+        looking_for: looking_for || [],
+        mentorship_status: mentorship_status || "Not Available",
         ...profileData
       }
     });
