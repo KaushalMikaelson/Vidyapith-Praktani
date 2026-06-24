@@ -141,19 +141,32 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       };
     }
 
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 15;
+    const skip = (page - 1) * limit;
+
     const users = await prisma.user.findMany({
       where: whereCondition,
       include: { profile: true },
-      orderBy: orderByCondition
+      orderBy: orderByCondition,
+      take: limit,
+      skip: skip
     });
+
+    const requesterId = req.user?.id;
+    const isAdmin = req.user?.role === 'admin';
 
     // Format list to match front-end User interface expectations
     const formattedUsers = users.map(u => {
+      const isSelf = requesterId === u.id;
+      const showEmail = isSelf || isAdmin || (u.profile?.show_email ?? true);
+      const showPhone = isSelf || isAdmin || (u.profile?.show_phone ?? false);
+
       return {
         id: u.id,
         full_name: u.profile?.full_name || "Vidyapith Alumnus",
-        email: u.email,
-        mobile: u.phone,
+        email: showEmail ? u.email : "",
+        mobile: showPhone ? u.phone : "",
         batch_year: u.profile?.batch_year || 0,
         house: u.profile?.house || "",
         role: u.role,
@@ -579,11 +592,17 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       return;
     }
 
+    const requesterId = req.user?.id;
+    const isSelf = requesterId === user.id;
+    const isAdmin = req.user?.role === 'admin';
+    const showEmail = isSelf || isAdmin || (user.profile?.show_email ?? true);
+    const showPhone = isSelf || isAdmin || (user.profile?.show_phone ?? false);
+
     const formattedUser = {
       id: user.id,
       full_name: user.profile?.full_name || "Vidyapith Alumnus",
-      email: user.email,
-      mobile: user.phone,
+      email: showEmail ? user.email : "",
+      mobile: showPhone ? user.phone : "",
       batch_year: user.profile?.batch_year || 0,
       house: user.profile?.house || "",
       role: user.role,
@@ -597,7 +616,7 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       linkedin_url: user.profile?.linkedin_url || "",
       privacy: {
         show_email: user.profile?.show_email ?? true,
-        show_phone: user.profile?.show_phone ?? false
+        show_mobile: user.profile?.show_phone ?? false
       },
       created_at: user.created_at,
       department: user.profile?.department || "",

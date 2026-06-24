@@ -28,10 +28,20 @@ export const createNews = async (req: AuthenticatedRequest, res: Response): Prom
     const { title, body, category, mediaUrl } = req.body;
     const authorName = req.user?.email.split('@')[0] || "Alumni Cell Secretary";
 
+    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let slug = baseSlug || 'news';
+    let counter = 1;
+    while (true) {
+      const existing = await prisma.news.findUnique({ where: { slug } });
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
     const newPost = await prisma.news.create({
       data: {
         title,
-        slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        slug,
         body,
         category,
         media_url: mediaUrl || null,

@@ -6,7 +6,7 @@ import { cloudinary } from '../config/cloudinary.js';
  *   vidyapith/posts/videos  — video posts
  *   vidyapith/profiles      — profile photos
  */
-export type UploadFolder = 'posts/images' | 'posts/videos' | 'profiles';
+export type UploadFolder = 'posts/images' | 'posts/videos' | 'profiles' | 'certificates';
 
 export interface UploadResult {
   url:       string;   // https://res.cloudinary.com/...

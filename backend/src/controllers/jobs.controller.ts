@@ -5,7 +5,11 @@ import { jobsCache } from '../utils/cache.js';
 
 export const listJobs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const cacheKey = "jobs:all";
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const cacheKey = `jobs:all:page:${page}:limit:${limit}`;
     const cachedJobs = jobsCache.get<any[]>(cacheKey);
     if (cachedJobs) {
       res.status(200).json(cachedJobs);
@@ -13,7 +17,9 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
     }
 
     const list = await prisma.job.findMany({
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
+      take: limit,
+      skip: skip
     });
 
     if (list.length === 0) {

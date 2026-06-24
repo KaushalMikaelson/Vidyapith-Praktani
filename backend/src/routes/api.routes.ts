@@ -19,7 +19,11 @@ import { listConversations, getConversation, sendMessage } from '../controllers/
 
 export const apiRouter = Router();
 
+const generalLimiter = rateLimiter(100, 60 * 1000); // Max 100 requests per minute
 const authLimiter = rateLimiter(10, 60 * 1000); // Max 10 requests per minute
+
+// Apply general rate limiting to all api routes
+apiRouter.use(generalLimiter);
 
 // ── Media Upload (Cloudinary) ─────────────────────────────────────────────
 apiRouter.post('/upload', requireAuth, uploadMiddleware.single('file'), uploadMedia);
@@ -33,6 +37,7 @@ apiRouter.post('/auth/request-otp', authLimiter, requestEmailOTP);
 apiRouter.post('/auth/verify-otp', authLimiter, verifyEmailOTP);
 apiRouter.post('/auth/forgot-password', authLimiter, forgotPassword);
 apiRouter.post('/auth/reset-password', authLimiter, resetPassword);
+apiRouter.post('/auth/upload-certificate', authLimiter, uploadMiddleware.single('file'), uploadMedia);
 
 
 // Donations Endpoints

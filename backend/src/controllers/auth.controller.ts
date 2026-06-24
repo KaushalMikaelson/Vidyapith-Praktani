@@ -2,8 +2,10 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { directoryCache, mentorsCache } from '../utils/cache.js';
+import { sendMail } from '../services/mail.service.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vidyapith-connect-secret-key';
 
@@ -244,9 +246,7 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
   }
 };
 
-// In-memory maps for verification OTPs and password reset tokens
-export const verificationOtps = new Map<string, { otp: string, expires: number }>();
-export const resetTokens = new Map<string, { email: string, expires: number }>();
+// Database-backed verification OTPs and password reset tokens
 
 export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -255,13 +255,24 @@ export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response):
       res.status(400).json({ error: "Email is required." });
       return;
     }
+    const cleanEmail = email.toLowerCase().trim();
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    verificationOtps.set(email.toLowerCase().trim(), {
-      otp,
-      expires: Date.now() + 15 * 60 * 1000
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+
+    // Save/upsert OTP in database
+    await prisma.oTP.upsert({
+      where: { email: cleanEmail },
+      update: { otp, expires_at, created_at: new Date() },
+      create: { email: cleanEmail, otp, expires_at }
     });
-    console.log(`[SIMULATED EMAIL] OTP for ${email}: ${otp}`);
-    res.status(200).json({ success: true, message: "OTP sent successfully.", otp });
+
+    const subject = "Vidyapith Connect Verification OTP";
+    const text = `Greetings from Vidyapith Connect. Your verification OTP is: ${otp}. It will expire in 15 minutes.`;
+    const html = `<p>Greetings from Vidyapith Connect.</p><p>Your verification OTP is: <strong>${otp}</strong>.</p><p>It will expire in 15 minutes.</p>`;
+    
+    await sendMail(cleanEmail, subject, text, html);
+
+    res.status(200).json({ success: true, message: "OTP sent successfully." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -270,12 +281,25 @@ export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response):
 export const verifyEmailOTP = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { email, otp } = req.body;
-    const record = verificationOtps.get(email.toLowerCase().trim());
-    if (!record || record.otp !== otp || record.expires < Date.now()) {
+    if (!email || !otp) {
+      res.status(400).json({ error: "Email and OTP are required." });
+      return;
+    }
+    const cleanEmail = email.toLowerCase().trim();
+    const record = await prisma.oTP.findUnique({
+      where: { email: cleanEmail }
+    });
+
+    if (!record || record.otp !== otp || record.expires_at.getTime() < Date.now()) {
       res.status(400).json({ error: "Invalid or expired OTP." });
       return;
     }
-    verificationOtps.delete(email.toLowerCase().trim());
+
+    // Delete OTP on successful verification
+    await prisma.oTP.delete({
+      where: { email: cleanEmail }
+    });
+
     res.status(200).json({ success: true, message: "Email verified successfully." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -285,18 +309,35 @@ export const verifyEmailOTP = async (req: AuthenticatedRequest, res: Response): 
 export const forgotPassword = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (!email) {
+      res.status(400).json({ error: "Email is required." });
+      return;
+    }
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user) {
       res.status(404).json({ error: "No account found with this email." });
       return;
     }
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    resetTokens.set(token, {
-      email: email.toLowerCase().trim(),
-      expires: Date.now() + 15 * 60 * 1000
+
+    // Generate secure random token
+    const token = crypto.randomBytes(20).toString('hex');
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+
+    // Save/upsert Reset Token in database
+    await prisma.passwordReset.upsert({
+      where: { email: cleanEmail },
+      update: { token, expires_at, created_at: new Date() },
+      create: { email: cleanEmail, token, expires_at }
     });
-    console.log(`[SIMULATED EMAIL] Password reset token for ${email}: ${token}`);
-    res.status(200).json({ success: true, message: "Reset token generated.", token });
+
+    const subject = "Vidyapith Connect Password Reset";
+    const text = `Greetings. You requested a password reset. Use verification code: ${token} to reset your password. It is valid for 15 minutes.`;
+    const html = `<p>Greetings.</p><p>You requested a password reset. Use verification code below to reset your password:</p><h3>${token}</h3><p>It is valid for 15 minutes.</p>`;
+
+    await sendMail(cleanEmail, subject, text, html);
+
+    res.status(200).json({ success: true, message: "Password reset instructions sent." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -305,18 +346,32 @@ export const forgotPassword = async (req: AuthenticatedRequest, res: Response): 
 export const resetPassword = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { token, newPassword } = req.body;
-    const record = resetTokens.get(token);
-    if (!record || record.expires < Date.now()) {
+    if (!token || !newPassword) {
+      res.status(400).json({ error: "Token and new password are required." });
+      return;
+    }
+    const record = await prisma.passwordReset.findUnique({
+      where: { token }
+    });
+
+    if (!record || record.expires_at.getTime() < Date.now()) {
       res.status(400).json({ error: "Invalid or expired reset token." });
       return;
     }
+
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(newPassword, salt);
+    
     await prisma.user.update({
       where: { email: record.email },
       data: { password_hash }
     });
-    resetTokens.delete(token);
+
+    // Delete token on successful reset
+    await prisma.passwordReset.delete({
+      where: { token }
+    });
+
     res.status(200).json({ success: true, message: "Password reset successfully." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -286,6 +286,13 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
               </div>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Secure Alumni Payment Gateway</p>
               
+              <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '10px', marginTop: '12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                <span style={{ fontSize: '0.74rem', color: '#f87171', fontWeight: 500 }}>
+                  <strong>Demo Mode Only</strong>: No actual payments are processed. Use dummy credentials to simulate.
+                </span>
+              </div>
+              
               <div style={{ marginTop: '14px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Cause supported:</span>
                 <strong style={{ color: 'var(--accent-gold)', fontSize: '0.95rem' }}>{checkoutCause}</strong>
@@ -414,6 +421,9 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({ showToast, onV
                   </p>
                   
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '14px', textAlign: 'left', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(239, 68, 68, 0.7)', fontWeight: 800, fontSize: '0.72rem', textAlign: 'center', border: '1px dashed rgba(239, 68, 68, 0.4)', padding: '6px', borderRadius: '4px', marginBottom: '4px' }}>
+                      DEMO TRANSACTION - NOT FOR TAX USE
+                    </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Receipt ID:</span> 
                       <strong style={{ float: 'right', color: 'white' }}>{generatedDonation.razorpay_id}</strong>

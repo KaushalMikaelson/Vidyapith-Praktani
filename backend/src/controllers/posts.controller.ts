@@ -13,7 +13,12 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
   try {
     const { groupId } = req.query;
     const filterGroup = (groupId as string) || 'grp-all';
-    const cacheKey = `posts:${filterGroup}`;
+    
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const cacheKey = `posts:${filterGroup}:page:${page}:limit:${limit}`;
 
     // Try to get from cache first
     const cachedData = postCache.get<any[]>(cacheKey);
@@ -27,7 +32,9 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
       orderBy: [
         { is_pinned: 'desc' },
         { created_at: 'desc' }
-      ]
+      ],
+      take: limit,
+      skip: skip
     });
 
     if (posts.length === 0) {
@@ -136,7 +143,7 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
 // Toggle like
 export const likePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string;
+    const id = req.params.id as string; // post id
     const userId = req.user?.id;
 
     if (!userId) {
@@ -144,26 +151,19 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       return;
     }
 
-    const post = await prisma.post.findUnique({ where: { id } });
-    if (!post) {
+    const result: any = await prisma.$queryRawUnsafe(
+      `UPDATE "Post" SET likes = CASE WHEN $1 = ANY(likes) THEN array_remove(likes, $1) ELSE array_append(likes, $1) END WHERE id = $2 RETURNING likes`,
+      userId,
+      id
+    );
+
+    if (!result || result.length === 0) {
       res.status(404).json({ error: "Post not found." });
       return;
     }
 
-    let likes = post.likes || [];
-    if (likes.includes(userId)) {
-      likes = likes.filter(uid => uid !== userId);
-    } else {
-      likes.push(userId);
-    }
-
-    const updatedPost = await prisma.post.update({
-      where: { id },
-      data: { likes }
-    });
-
-    postCache.invalidate('posts:');
-    res.status(200).json({ success: true, likes: updatedPost.likes });
+    postCache.clear(); // Clear cached posts to ensure update is reflected
+    res.status(200).json({ success: true, likes: result[0].likes });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

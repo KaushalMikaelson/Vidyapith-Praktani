@@ -551,4 +551,4 @@ export const RKMV_DB = {
 };
 
 // Initialize DB immediately on module import
-RKMV_DB.init();
+// RKMV_DB.init();

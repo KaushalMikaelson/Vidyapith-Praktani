@@ -6,7 +6,8 @@ const ALLOWED_MIME_TYPES = [
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
+  // PDF
+  'application/pdf',
   // Videos
   'video/mp4',
   'video/webm',

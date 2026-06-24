@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User } from '../database/database';
 import { Layout } from '../components/Layout';
-import { apiFetch } from '../utils/api';
+import { apiFetch, apiUploadFetch } from '../utils/api';
 
 // Screens
 import { FeedScreen } from '../screens/FeedScreen';
@@ -18,6 +18,7 @@ import { AdminScreen } from '../screens/AdminScreen';
 import { CreateScreen } from '../screens/CreateScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 import { 
   Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
@@ -76,7 +77,7 @@ export default function App() {
   // Email OTP registration verification states
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtpVerified, setEmailOtpVerified] = useState(true);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Forgot password flow states
@@ -237,10 +238,28 @@ export default function App() {
       showToast("Please fill in all required fields.", "danger");
       return;
     }
+    if (!emailOtpVerified) {
+      showToast("Please verify your email address first using OTP.", "danger");
+      return;
+    }
     setAuthError(null);
     setIsSubmitting(true);
 
     try {
+      let certificate_name = "Certificate_Scan.pdf";
+      if (regFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', regFile);
+          const uploadRes = await apiUploadFetch('/auth/upload-certificate?folder=certificates', formData);
+          certificate_name = uploadRes.url;
+        } catch (err: any) {
+          showToast("Certificate upload failed. Please try again.", "danger");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const res = await register({
         full_name: regName.trim(),
         email: regEmail.trim(),
@@ -248,7 +267,7 @@ export default function App() {
         house: regHouse,
         mobile: regMobile.trim(),
         password: regPass,
-        certificate_name: regFile ? regFile.name : "Certificate_Scan.pdf"
+        certificate_name: certificate_name
       });
 
       if (res.success) {
@@ -402,7 +421,6 @@ export default function App() {
       case 'reunions':
       case 'archives':
       case 'saved':
-      case 'settings':
       case 'explore':
       case 'notes':
         return (
@@ -414,6 +432,8 @@ export default function App() {
             onNavigate={setActiveScreen}
           />
         );
+      case 'settings':
+        return <SettingsScreen showToast={showToast} />;
       case 'profile':
         return (
           <FeedScreen 

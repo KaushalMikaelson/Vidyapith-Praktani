@@ -16,7 +16,7 @@ export const uploadMedia = async (req: AuthenticatedRequest, res: Response): Pro
     }
 
     const folder = (req.query.folder as UploadFolder | undefined) ?? 'posts/images';
-    const validFolders: UploadFolder[] = ['posts/images', 'posts/videos', 'profiles'];
+    const validFolders: UploadFolder[] = ['posts/images', 'posts/videos', 'profiles', 'certificates'];
     if (!validFolders.includes(folder)) {
       res.status(400).json({ error: `Invalid folder. Must be one of: ${validFolders.join(', ')}` });
       return;

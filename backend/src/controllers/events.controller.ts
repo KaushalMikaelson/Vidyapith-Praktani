@@ -6,7 +6,11 @@ import { eventsCache } from '../utils/cache.js';
 // List all events
 export const listEvents = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const cacheKey = "events:all";
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const cacheKey = `events:all:page:${page}:limit:${limit}`;
     const cachedEvents = eventsCache.get<any[]>(cacheKey);
     if (cachedEvents) {
       res.status(200).json(cachedEvents);
@@ -14,7 +18,9 @@ export const listEvents = async (req: AuthenticatedRequest, res: Response): Prom
     }
 
     const events = await prisma.event.findMany({
-      orderBy: { event_date: 'asc' }
+      orderBy: { event_date: 'asc' },
+      take: limit,
+      skip: skip
     });
 
     const eventIds = events.map(e => e.id);
