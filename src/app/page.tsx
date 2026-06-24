@@ -24,7 +24,7 @@ import {
   Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
   CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles,
   Search, BookOpen, Award, Briefcase, GraduationCap, Compass, Heart, Menu, ShieldCheck, ChevronRight,
-  MapPin, UserPlus, MessageCircle, Globe
+  MapPin, UserPlus, UserMinus, MessageCircle, Globe, ChevronDown
 } from 'lucide-react';
 
 interface ToastMsg {
@@ -168,6 +168,8 @@ export default function App() {
   const [connectionSentIds, setConnectionSentIds] = useState<string[]>([]);
   // Connection status for the currently-open profile modal
   const [modalConnectionStatus, setModalConnectionStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
+  const [showModalConnectionDropdown, setShowModalConnectionDropdown] = useState(false);
+  const [confirmRemoveModalOpen, setConfirmRemoveModalOpen] = useState(false);
 
   const getUsername = (user: any) => {
     if (user.email) {
@@ -1620,13 +1622,53 @@ export default function App() {
             <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
               {currentUser && currentUser.id !== selectedProfile.id && (
                 modalConnectionStatus === 'accepted' ? (
-                  <button
-                    className="btn-ig-grey"
-                    style={{ flex: 1, color: '#16a34a', borderColor: 'rgba(22,163,74,0.4)', background: 'rgba(22,163,74,0.06)', cursor: 'default' }}
-                    title="Already connected"
-                  >
-                    <Check size={16} /> Connected
-                  </button>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <button
+                      className="btn-ig-grey"
+                      style={{ width: '100%', color: '#16a34a', borderColor: 'rgba(22,163,74,0.4)', background: 'rgba(22,163,74,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      title="Manage connection"
+                      onClick={() => setShowModalConnectionDropdown(prev => !prev)}
+                    >
+                      <Check size={16} /> Connected <ChevronDown size={14} />
+                    </button>
+                    {showModalConnectionDropdown && (
+                      <>
+                        <div
+                          style={{ position: 'fixed', inset: 0, zIndex: 1098 }}
+                          onClick={() => setShowModalConnectionDropdown(false)}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 6px)',
+                          left: 0,
+                          right: 0,
+                          background: '#fff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                          zIndex: 1099,
+                          overflow: 'hidden'
+                        }}>
+                          <button
+                            onClick={() => {
+                              setShowModalConnectionDropdown(false);
+                              setConfirmRemoveModalOpen(true);
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              width: '100%', padding: '12px 16px',
+                              background: 'none', border: 'none', cursor: 'pointer',
+                              fontSize: '0.88rem', fontWeight: 600, color: '#ef4444', textAlign: 'left'
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          >
+                            <UserMinus size={16} /> Remove Connection
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ) : modalConnectionStatus === 'pending_sent' ? (
                   <button
                     className="btn-ig-grey"
@@ -1636,19 +1678,34 @@ export default function App() {
                     <UserPlus size={16} /> Request Pending...
                   </button>
                 ) : modalConnectionStatus === 'pending_received' ? (
-                  <button
-                    className="btn-ig-black"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff' }}
-                    onClick={async () => {
-                      try {
-                        await apiFetch('/directory/connections/respond', { method: 'POST', body: JSON.stringify({ targetId: selectedProfile.id, action: 'accept' }) });
-                        setModalConnectionStatus('accepted');
-                        showToast(`Connected with ${selectedProfile.full_name}!`, 'success');
-                      } catch (err: any) { showToast(err.message, 'danger'); }
-                    }}
-                  >
-                    <Check size={16} /> Accept Request
-                  </button>
+                  <>
+                    <button
+                      className="btn-ig-black"
+                      style={{ flex: 1, background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff' }}
+                      onClick={async () => {
+                        try {
+                          await apiFetch('/directory/connections/respond', { method: 'POST', body: JSON.stringify({ targetId: selectedProfile.id, action: 'accept' }) });
+                          setModalConnectionStatus('accepted');
+                          showToast(`Connected with ${selectedProfile.full_name}!`, 'success');
+                        } catch (err: any) { showToast(err.message, 'danger'); }
+                      }}
+                    >
+                      <Check size={16} /> Accept
+                    </button>
+                    <button
+                      className="btn-ig-grey"
+                      style={{ flex: 1, color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+                      onClick={async () => {
+                        try {
+                          await apiFetch('/directory/connections/respond', { method: 'POST', body: JSON.stringify({ targetId: selectedProfile.id, action: 'decline' }) });
+                          setModalConnectionStatus('none');
+                          showToast(`Declined request from ${selectedProfile.full_name}`, 'info');
+                        } catch (err: any) { showToast(err.message, 'danger'); }
+                      }}
+                    >
+                      <X size={16} /> Decline
+                    </button>
+                  </>
                 ) : (
                   <button
                     className="btn-ig-black"
@@ -2023,6 +2080,79 @@ export default function App() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Custom Remove Connection Confirmation Modal (for profile mini-overlay) */}
+      {confirmRemoveModalOpen && selectedProfile && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1300,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)'
+          }}
+          onClick={() => setConfirmRemoveModalOpen(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#ffffff', borderRadius: '20px',
+              padding: '32px 28px', maxWidth: '380px', width: '90%',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              border: '1px solid #f1f5f9', textAlign: 'center'
+            }}
+          >
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: 'rgba(239,68,68,0.1)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px'
+            }}>
+              <UserMinus size={26} style={{ color: '#ef4444' }} />
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+              Remove Connection?
+            </h3>
+            <p style={{ margin: '0 0 24px', fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6 }}>
+              You will be disconnected from{' '}
+              <strong style={{ color: '#0f172a' }}>{selectedProfile.full_name}</strong>.
+              You can send a new request anytime.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setConfirmRemoveModalOpen(false)}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: '10px',
+                  border: '1.5px solid #e2e8f0', background: '#f8fafc',
+                  fontSize: '0.9rem', fontWeight: 700, color: '#475569', cursor: 'pointer'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setConfirmRemoveModalOpen(false);
+                  try {
+                    await apiFetch(`/directory/connections/${selectedProfile.id}`, { method: 'DELETE' });
+                    setModalConnectionStatus('none');
+                    showToast(`Removed connection with ${selectedProfile.full_name}`, 'info');
+                  } catch (err: any) { showToast(err.message, 'danger'); }
+                }}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: '10px',
+                  border: 'none', background: '#ef4444',
+                  fontSize: '0.9rem', fontWeight: 700, color: '#fff',
+                  cursor: 'pointer', boxShadow: '0 4px 12px rgba(239,68,68,0.35)'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#dc2626')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#ef4444')}
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}

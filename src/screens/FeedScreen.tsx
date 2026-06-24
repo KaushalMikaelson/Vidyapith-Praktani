@@ -10,7 +10,7 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck, RotateCw
+  Users, Camera, ChevronDown, Quote, UserPlus, UserMinus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck, RotateCw
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
@@ -279,6 +279,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [relationsSearchQuery, setRelationsSearchQuery] = useState('');
   // Real connection status with the currently-viewed profile (fetched from API)
   const [profileConnectionStatus, setProfileConnectionStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
+  const [showConnectionDropdown, setShowConnectionDropdown] = useState(false);
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
   // Edit Profile States
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -2438,7 +2440,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
     const handleConnectClick = async () => {
       if (profileConnectionStatus === 'accepted') {
-        showToast(`You are already connected with ${person.full_name}`, 'info');
+        setShowConnectionDropdown(prev => !prev);
       } else if (profileConnectionStatus === 'pending_sent') {
         showToast(`Connection request already sent to ${person.full_name}`, 'info');
       } else if (profileConnectionStatus === 'pending_received') {
@@ -2455,6 +2457,34 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         }
       } else {
         handleConnectRequest(profileUser.id, person.full_name);
+      }
+    };
+
+    const handleRemoveConnection = async () => {
+      setConfirmRemoveOpen(true);
+    };
+
+    const doRemoveConnection = async () => {
+      setConfirmRemoveOpen(false);
+      try {
+        await apiFetch(`/directory/connections/${profileUser.id}`, { method: 'DELETE' });
+        setProfileConnectionStatus('none');
+        showToast(`Removed connection with ${person.full_name}`, 'info');
+      } catch (err: any) {
+        showToast(err.message || 'Failed to remove connection', 'danger');
+      }
+    };
+
+    const handleDeclineRequest = async () => {
+      try {
+        await apiFetch('/directory/connections/respond', {
+          method: 'POST',
+          body: JSON.stringify({ targetId: profileUser.id, action: 'decline' })
+        });
+        setProfileConnectionStatus('none');
+        showToast(`Declined connection request from ${person.full_name}`, 'info');
+      } catch (err: any) {
+        showToast(err.message, 'danger');
       }
     };
 
@@ -2663,36 +2693,48 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 ) : (
                   <>
                     {profileConnectionStatus === 'accepted' ? (
+                      /* Already connected — show Remove Connection directly */
                       <button
-                        onClick={handleConnectClick}
+                        onClick={handleRemoveConnection}
                         className="btn-ig-grey"
-                        style={{ color: '#16a34a', borderColor: 'rgba(22,163,74,0.4)', background: 'rgba(22,163,74,0.06)', cursor: 'default' }}
-                        title="Already connected"
+                        style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.06)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        title="Remove this connection"
                       >
-                        <Check size={16} /> Connected
+                        <UserMinus size={16} /> Remove Connection
                       </button>
                     ) : profileConnectionStatus === 'pending_sent' ? (
                       <button
-                        onClick={handleConnectClick}
                         className="btn-ig-grey"
                         style={{ color: '#94a3b8', cursor: 'default' }}
                         title="Request already sent"
+                        disabled
                       >
-                        <UserPlus size={16} /> Pending...
+                        <UserPlus size={16} /> Request Sent
                       </button>
                     ) : profileConnectionStatus === 'pending_received' ? (
+                      <>
+                        <button
+                          onClick={handleConnectClick}
+                          className="btn-ig-black"
+                          style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}
+                          title="Accept connection request"
+                        >
+                          <Check size={16} /> Accept
+                        </button>
+                        <button
+                          onClick={handleDeclineRequest}
+                          className="btn-ig-grey"
+                          style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+                          title="Decline connection request"
+                        >
+                          <X size={16} /> Decline
+                        </button>
+                      </>
+                    ) : (
+                      /* Not connected — show Connect */
                       <button
                         onClick={handleConnectClick}
                         className="btn-ig-black"
-                        style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', border: 'none', color: '#fff', boxShadow: '0 4px 14px rgba(139,92,246,0.35)' }}
-                        title="Accept connection request"
-                      >
-                        <Check size={16} /> Accept Request
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleConnectClick}
-                        className="btn-ig-grey"
                       >
                         <UserPlus size={16} /> Connect
                       </button>
@@ -4194,6 +4236,75 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           );
         })()}
 
+        {/* Custom Remove Connection Confirmation Modal */}
+        {confirmRemoveOpen && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1200,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)'
+            }}
+            onClick={() => setConfirmRemoveOpen(false)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: '#ffffff', borderRadius: '20px',
+                padding: '32px 28px', maxWidth: '380px', width: '90%',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                border: '1px solid #f1f5f9', textAlign: 'center'
+              }}
+            >
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'rgba(239,68,68,0.1)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <UserMinus size={26} style={{ color: '#ef4444' }} />
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                Remove Connection?
+              </h3>
+              <p style={{ margin: '0 0 24px', fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6 }}>
+                You will be disconnected from{' '}
+                <strong style={{ color: '#0f172a' }}>
+                  {profileUser && (profileUser.profile?.full_name || profileUser.full_name)}
+                </strong>.
+                You can send a new request anytime.
+              </p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setConfirmRemoveOpen(false)}
+                  style={{
+                    flex: 1, padding: '11px 0', borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0', background: '#f8fafc',
+                    fontSize: '0.9rem', fontWeight: 700, color: '#475569',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={doRemoveConnection}
+                  style={{
+                    flex: 1, padding: '11px 0', borderRadius: '10px',
+                    border: 'none', background: '#ef4444',
+                    fontSize: '0.9rem', fontWeight: 700, color: '#fff',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(239,68,68,0.35)'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#dc2626')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#ef4444')}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
