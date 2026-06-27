@@ -4940,10 +4940,22 @@ button:disabled {
 .profile-middle-right {
   flex: 1;
 }
+.profile-middle-grid > div:first-child {
+  flex: 1.4;
+  min-width: 0;
+}
+.profile-middle-grid > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
 
 @media (max-width: 768px) {
   .profile-middle-grid {
     flex-direction: column;
+  }
+  .profile-middle-grid > div:first-child,
+  .profile-middle-grid > div:last-child {
+    flex: 1;
   }
   .profile-stats-grid {
     flex-wrap: wrap;

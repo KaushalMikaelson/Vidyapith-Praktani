@@ -10,7 +10,8 @@ import {
   Flame, Trophy, Trash2, Plus, ShieldAlert, Award, Search, HelpCircle, 
   Briefcase, Star, Settings, CheckCircle2, AlertTriangle, BookMarked, User as UserIcon, X,
   Calendar, MapPin, Clock, Lock, Tag, MessageSquare, Paperclip, Volume2,
-  Users, Camera, ChevronDown, Quote, UserPlus, UserMinus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck, RotateCw
+  Users, Camera, ChevronDown, Quote, UserPlus, UserMinus, Loader2, AlertCircle, Upload, Globe, GraduationCap, ShieldCheck, RotateCw,
+  Link2, Code2, Phone, Mail, TrendingUp
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
@@ -296,18 +297,26 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [editPhotoUrl, setEditPhotoUrl] = useState('');
   const [editShowEmail, setEditShowEmail] = useState(true);
   const [editShowMobile, setEditShowMobile] = useState(false);
+  const [editShowSocial, setEditShowSocial] = useState(true);
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   // Networking / Mentorship edit states
   const [editLinkedinUrl, setEditLinkedinUrl] = useState('');
   const [editGithubUrl, setEditGithubUrl] = useState('');
   const [editPortfolioUrl, setEditPortfolioUrl] = useState('');
+  const [editPersonalUrl, setEditPersonalUrl] = useState('');
   const [editSkills, setEditSkills] = useState<string[]>([]);
   const [editSkillInput, setEditSkillInput] = useState('');
   const [editHelpCategories, setEditHelpCategories] = useState<string[]>([]);
   const [editLookingFor, setEditLookingFor] = useState<string[]>([]);
   const [editMentorshipStatus, setEditMentorshipStatus] = useState('Not Available');
   const [editIndustry, setEditIndustry] = useState('');
+  
+  // Upgraded Professional edit states
+  const [editDesignation, setEditDesignation] = useState('');
+  const [editYearsOfExperience, setEditYearsOfExperience] = useState('');
+  const [editEducation, setEditEducation] = useState('');
+  const [editOpenFor, setEditOpenFor] = useState<string[]>([]);
 
   // Cropper states
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -580,21 +589,24 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   }, [activeGroupId, screenMode, forceProfileId, refreshKey]);
 
   const handleConnectRequest = async (id: string, name: string) => {
+    // Optimistic: mark as pending immediately
+    setConnectionSentIds(prev => [...prev, id]);
+    setProfileConnectionStatus('pending_sent');
     try {
       const res = await apiFetch('/directory/connect', {
         method: 'POST',
         body: JSON.stringify({ targetId: id })
       });
-      setConnectionSentIds(prev => [...prev, id]);
       if (res.status === 'accepted') {
         setProfileConnectionStatus('accepted');
         showToast(`You are now connected with ${name}!`, 'success');
       } else {
-        setProfileConnectionStatus('pending_sent');
         showToast(`Connection request sent to ${name}!`, 'success');
       }
-      loadProfile(id);
     } catch (err: any) {
+      // Revert on failure
+      setConnectionSentIds(prev => prev.filter(x => x !== id));
+      setProfileConnectionStatus('none');
       showToast(err.message, 'danger');
     }
   };
@@ -616,11 +628,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       } else if (templateType === 'idea') {
         text = "Quick shoutout to the Class of 2016! Where is everyone settled now? Let's trace our batchmates. Comment down your current city and profession, let's plan a virtual meetup this weekend! #ClassOf2016 #Reconnect";
       } else if (templateType === 'reunion') {
-        text = "ðŸ“¢ Vidyapith Reunion Invite! Let's get together, catch up on old times, and share memories. Date: Oct 18, 2026. Venue: San Francisco Cafe. RSVP here! #Reunion2026 #RKMVAlumni";
+        text = "📢 Vidyapith Reunion Invite! Let's get together, catch up on old times, and share memories. Date: Oct 18, 2026. Venue: San Francisco Cafe. RSVP here! #Reunion2026 #RKMVAlumni";
       } else if (templateType === 'event') {
         text = "Join us for the Vidyapith Alumni Mentorship & Networking Meetup. An opportunity for young graduates and current students to connect with senior alumni in Tech, Medicine, and Public Services. #Mentorship #AlumniMeet";
       } else if (templateType === 'announcement') {
-        text = "ðŸš¨ URGENT ANNOUNCEMENT: Swami Asangananda-ji Memorial and Prayer Meeting. We request all alumni to join the prayer service in memory of our beloved teacher. Venue: Temple Hall & Zoom. #Announcements #VidyapithCommunity";
+        text = "🚨 URGENT ANNOUNCEMENT: Swami Asangananda-ji Memorial and Prayer Meeting. We request all alumni to join the prayer service in memory of our beloved teacher. Venue: Temple Hall & Zoom. #Announcements #VidyapithCommunity";
       }
       setNewPostText(text);
       showToast("Draft generated by Memory Assistant!", "success");
@@ -851,16 +863,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setEditPhotoUrl(person.profile_photo || currentUser?.profile?.profile_photo || '');
     setEditShowEmail(person.show_email ?? currentUser?.profile?.show_email ?? true);
     setEditShowMobile(person.show_phone ?? currentUser?.profile?.show_phone ?? false);
+    setEditShowSocial(person.privacy?.show_social ?? currentUser?.profile?.show_social ?? true);
     // Networking fields
     setEditLinkedinUrl(person.linkedin_url || currentUser?.profile?.linkedin_url || '');
     setEditGithubUrl(person.github_url || currentUser?.profile?.github_url || '');
     setEditPortfolioUrl(person.portfolio_url || currentUser?.profile?.portfolio_url || '');
+    setEditPersonalUrl(person.personal_url || currentUser?.profile?.personal_url || '');
     setEditSkills(person.skills || currentUser?.profile?.skills || []);
     setEditSkillInput('');
     setEditHelpCategories(person.help_categories || currentUser?.profile?.help_categories || []);
     setEditLookingFor(person.looking_for || currentUser?.profile?.looking_for || []);
     setEditMentorshipStatus(person.mentorship_status || currentUser?.profile?.mentorship_status || 'Not Available');
     setEditIndustry(person.industry || currentUser?.profile?.industry || '');
+    setEditDesignation(person.designation || currentUser?.profile?.designation || '');
+    setEditYearsOfExperience(person.years_of_experience !== undefined ? String(person.years_of_experience) : (currentUser?.profile?.years_of_experience ? String(currentUser.profile.years_of_experience) : ''));
+    setEditEducation(person.education || currentUser?.profile?.education || '');
+    setEditOpenFor(person.open_for || currentUser?.profile?.open_for || []);
     setCropModalOpen(false);
     setEditProfileOpen(true);
   };
@@ -1049,6 +1067,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       showToast("Invalid Portfolio URL. Must start with http:// or https://", "danger");
       return;
     }
+    if (editPersonalUrl && !isValidUrl(editPersonalUrl)) {
+      showToast("Invalid Personal Website URL. Must start with http:// or https://", "danger");
+      return;
+    }
     try {
       setUpdatingProfile(true);
 
@@ -1067,14 +1089,20 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           profile_photo: editPhotoUrl,
           show_email: editShowEmail,
           show_mobile: editShowMobile,
+          show_social: editShowSocial,
           linkedin_url: editLinkedinUrl,
           github_url: editGithubUrl,
           portfolio_url: editPortfolioUrl,
+          personal_url: editPersonalUrl,
           skills: editSkills,
           help_categories: editHelpCategories,
           looking_for: editLookingFor,
           mentorship_status: editMentorshipStatus,
-          industry: editIndustry
+          industry: editIndustry,
+          designation: editDesignation,
+          years_of_experience: editYearsOfExperience ? parseInt(editYearsOfExperience) : 0,
+          education: editEducation,
+          open_for: editOpenFor
         })
       });
       showToast("Profile updated successfully!", "success");
@@ -1095,13 +1123,34 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   };
 
   const handleLike = async (postId: string) => {
+    const userId = currentUser?.id;
+    if (!userId) return;
+
+    // --- Optimistic update: toggle like instantly ---
+    const toggleLikes = (likesArr: string[]) =>
+      likesArr.includes(userId)
+        ? likesArr.filter(id => id !== userId)
+        : [...likesArr, userId];
+
+    const updatePost = (p: any) =>
+      p.id === postId ? { ...p, likes: toggleLikes(p.likes || []) } : p;
+
+    setPosts(prev => prev.map(updatePost));
+    setProfilePosts(prev => prev.map(updatePost));
+    setSelectedPostForModal((prev: any) =>
+      prev && prev.id === postId ? { ...prev, likes: toggleLikes(prev.likes || []) } : prev
+    );
+
+    // --- Fire API in background, revert on failure ---
     try {
       await apiFetch(`/posts/${postId}/like`, { method: 'POST' });
-      loadFeed();
-      if (screenMode === 'profile' && forceProfileId) {
-        loadProfile(forceProfileId);
-      }
     } catch (err: any) {
+      // Revert on error
+      setPosts(prev => prev.map(updatePost)); // toggle again to revert
+      setProfilePosts(prev => prev.map(updatePost));
+      setSelectedPostForModal((prev: any) =>
+        prev && prev.id === postId ? { ...prev, likes: toggleLikes(prev.likes || []) } : prev
+      );
       showToast(err.message, 'danger');
     }
   };
@@ -1180,15 +1229,63 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       ? JSON.stringify({ parentCommentId: replyingTo.commentId, text: commentText.trim() })
       : commentText.trim();
 
+    // --- Optimistic update: append comment instantly ---
+    const tempComment = {
+      id: `temp-${Date.now()}`,
+      post_id: postId,
+      content,
+      created_at: new Date().toISOString(),
+      author_id: currentUser?.id,
+      author: {
+        id: currentUser?.id,
+        email: currentUser?.email,
+        role: currentUser?.role,
+        full_name: currentUser?.full_name || currentUser?.profile?.full_name || 'You',
+        profile_photo: currentUser?.profile_photo || currentUser?.profile?.profile_photo ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80'
+      }
+    };
+
+    const appendComment = (p: any) =>
+      p.id === postId
+        ? { ...p, comments: [...(p.comments || []), tempComment] }
+        : p;
+
+    setPosts(prev => prev.map(appendComment));
+    setProfilePosts(prev => prev.map(appendComment));
+    setSelectedPostForModal((prev: any) =>
+      prev && prev.id === postId
+        ? { ...prev, comments: [...(prev.comments || []), tempComment] }
+        : prev
+    );
+
+    // Clear input immediately
+    setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+    setReplyingTo(null);
+
+    // --- Fire API in background ---
     try {
       await apiFetch(`/posts/${postId}/comments`, {
         method: 'POST',
         body: JSON.stringify({ content })
       });
-      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-      setReplyingTo(null);
-      loadFeed();
+      // Silently refresh feed in background to get real comment data (no loading spinner)
+      apiFetch(`/posts?groupId=${activeGroupId}`).then(feedPosts => setPosts(feedPosts)).catch(() => {});
     } catch (err: any) {
+      // Revert: remove temp comment on error
+      const revertComment = (p: any) =>
+        p.id === postId
+          ? { ...p, comments: (p.comments || []).filter((c: any) => c.id !== tempComment.id) }
+          : p;
+      setPosts(prev => prev.map(revertComment));
+      setProfilePosts(prev => prev.map(revertComment));
+      setSelectedPostForModal((prev: any) =>
+        prev && prev.id === postId
+          ? { ...prev, comments: (prev.comments || []).filter((c: any) => c.id !== tempComment.id) }
+          : prev
+      );
+      // Restore the comment text so user can retry
+      setCommentInputs(prev => ({ ...prev, [postId]: commentText }));
       showToast(err.message, 'danger');
     }
   };
@@ -2445,16 +2542,16 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       } else if (profileConnectionStatus === 'pending_sent') {
         showToast(`Connection request already sent to ${person.full_name}`, 'info');
       } else if (profileConnectionStatus === 'pending_received') {
-        // Accept the incoming request
+        // Optimistic: accept immediately
+        setProfileConnectionStatus('accepted');
+        showToast(`You are now connected with ${person.full_name}!`, 'success');
         try {
           await apiFetch('/directory/connections/respond', {
             method: 'POST',
             body: JSON.stringify({ targetId: profileUser.id, action: 'accept' })
           });
-          setProfileConnectionStatus('accepted');
-          showToast(`You are now connected with ${person.full_name}!`, 'success');
-          loadProfile(profileUser.id);
         } catch (err: any) {
+          setProfileConnectionStatus('pending_received');
           showToast(err.message, 'danger');
         }
       } else {
@@ -2468,26 +2565,28 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
     const doRemoveConnection = async () => {
       setConfirmRemoveOpen(false);
+      // Optimistic: remove immediately
+      setProfileConnectionStatus('none');
+      showToast(`Removed connection with ${person.full_name}`, 'info');
       try {
         await apiFetch(`/directory/connections/${profileUser.id}`, { method: 'DELETE' });
-        setProfileConnectionStatus('none');
-        showToast(`Removed connection with ${person.full_name}`, 'info');
-        loadProfile(profileUser.id);
       } catch (err: any) {
+        setProfileConnectionStatus('accepted');
         showToast(err.message || 'Failed to remove connection', 'danger');
       }
     };
 
     const handleDeclineRequest = async () => {
+      // Optimistic: decline immediately
+      setProfileConnectionStatus('none');
+      showToast(`Declined connection request from ${person.full_name}`, 'info');
       try {
         await apiFetch('/directory/connections/respond', {
           method: 'POST',
           body: JSON.stringify({ targetId: profileUser.id, action: 'decline' })
         });
-        setProfileConnectionStatus('none');
-        showToast(`Declined connection request from ${person.full_name}`, 'info');
-        loadProfile(profileUser.id);
       } catch (err: any) {
+        setProfileConnectionStatus('pending_received');
         showToast(err.message, 'danger');
       }
     };
@@ -2653,11 +2752,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
               {(() => {
                 const profession = person.profession || currentUser.profession;
+                const designation = person.designation || currentUser.designation;
                 const company = person.company || currentUser.company;
-                if (!profession && !company) return null;
+                const titleText = designation || profession;
+                if (!titleText && !company) return null;
                 return (
-                  <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
-                    {profession && company ? `${profession} at ${company}` : profession || company}
+                  <div style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 600 }}>
+                    {titleText && company ? `${titleText} at ${company}` : titleText || company}
                   </div>
                 );
               })()}
@@ -2674,6 +2775,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </div>
                 );
               })()}
+
+              {/* Open For area badges */}
+              {person.open_for && person.open_for.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {person.open_for.map((badge: string) => (
+                    <span key={badge} style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', padding: '3px 8px', borderRadius: '12px', fontSize: '0.74rem', fontWeight: 700 }}>
+                      🟢 Open For: {badge}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -2776,19 +2888,23 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           </div>
         </div>
 
-        {/* B02: Profile Completion Indicator — only on own profile */}
+        {/* Profile Completion Indicator — only on own profile */}
         {profileUser.id === currentUser.id && (() => {
           const fields = [
-            { label: 'Bio', done: !!(person.bio && person.bio.length > 20) },
-            { label: 'Profession', done: !!(person.profession_category || person.profession) },
-            { label: 'Company', done: !!(person.company && person.company !== 'Not specified') },
-            { label: 'City', done: !!(person.city && person.city !== 'Not specified') },
-            { label: 'LinkedIn', done: !!(person.linkedin_url && person.linkedin_url.length > 5) },
+            { label: 'Bio / Biography', done: !!(person.bio && person.bio.trim().length > 10) },
+            { label: 'Professional Designation', done: !!(person.designation && person.designation.trim().length > 1) },
+            { label: 'Profession Category', done: !!(person.profession_category || person.profession) },
+            { label: 'Company / Organization', done: !!(person.company && person.company !== 'Not specified') },
+            { label: 'Location (City)', done: !!(person.city && person.city !== 'Not specified') },
+            { label: 'Social Profile (LinkedIn/GitHub/Portfolio/Personal Website)', done: !!(person.linkedin_url || person.github_url || person.portfolio_url || person.personal_url) },
+            { label: 'Skills Tags', done: !!(person.skills && person.skills.length > 0) },
+            { label: 'Mentorship Preference', done: person.mentorship_status !== 'Not Available' },
+            { label: 'Open For Badges', done: !!(person.open_for && person.open_for.length > 0) },
             { label: 'Profile Photo', done: !!(person.profile_photo && !person.profile_photo.includes('unsplash.com/photo-1535713875002')) },
           ];
           const done = fields.filter(f => f.done).length;
           const pct = Math.round((done / fields.length) * 100);
-          const missing = fields.filter(f => !f.done).map(f => f.label);
+          const missing = fields.filter(f => !f.done);
           if (pct === 100) return null;
           return (
             <div className="profile-card" style={{ marginBottom: '16px', padding: '18px 24px' }}>
@@ -2802,71 +2918,153 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   Complete Profile →
                 </button>
               </div>
-              <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
+              <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', marginBottom: '12px' }}>
                 <div style={{ height: '100%', width: `${pct}%`, borderRadius: '99px', background: pct >= 80 ? 'linear-gradient(90deg, #16a34a, #22c55e)' : pct >= 50 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)', transition: 'width 1s ease' }} />
               </div>
               {missing.length > 0 && (
-                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>
-                  Missing: <strong style={{ color: '#334155' }}>{missing.join(', ')}</strong>
-                </p>
+                <div>
+                  <div style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Click missing sections to complete them:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {missing.map(f => (
+                      <button 
+                        key={f.label} 
+                        onClick={openEditProfileModal}
+                        style={{ background: 'none', border: '1px dashed #ef4444', color: '#ef4444', borderRadius: '12px', padding: '3px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                      >
+                        ➕ Add {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           );
         })()}
 
-        {/* 2. MIDDLE ROW: About & Highlights Cards side-by-side */}
+        {/* 2. MIDDLE ROW: Layout for professional details, skills, helps, looking-for & social links */}
         <div className="profile-middle-grid">
-          {/* About Card */}
-          <div className="profile-card profile-middle-left" style={{ marginBottom: 0 }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={16} style={{ color: '#a855f7' }} /> About
-            </h3>
-            <p style={{ fontSize: '0.92rem', color: '#334155', lineHeight: 1.6, margin: '0 0 20px 0' }}>
-              {person.bio || "Proud alumnus of RKMV Deoghar, joining the Vidyapith Connect network to share experiences, support students, and stay connected with the community."}
-            </p>
-            <div>
-              <a 
-                href="#" 
-                onClick={(e) => { e.preventDefault(); showToast("Opening alumni portfolio website...", "info"); }} 
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}
-              >
-                <Globe size={14} style={{ color: '#3b82f6' }} /> {person.full_name ? person.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
-              </a>
+
+          {/* Column A: About + Professional Info + Social Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {/* About Card */}
+            <div className="profile-card" style={{ padding: '20px 24px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={14} style={{ color: '#a855f7' }} /> About
+              </h4>
+              <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.65, margin: 0 }}>
+                {person.bio || currentUser.bio || 'No biography yet. Click Edit Profile to add a short bio.'}
+              </p>
             </div>
+
+            {(() => {
+              const des = person.designation || currentUser.designation;
+              const prof = person.profession || currentUser.profession;
+              const comp = person.company || currentUser.company;
+              const yoe = person.years_of_experience || currentUser.years_of_experience;
+              const edu = person.education || currentUser.education;
+              if (!des && !prof && !comp && !yoe && !edu) return null;
+              return (
+                <div className="profile-card" style={{ padding: '20px 24px' }}>
+                  <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Briefcase size={14} style={{ color: '#3b82f6' }} /> Professional Info
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                    {(des || prof) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                        <Briefcase size={13} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                        <span><strong>{des || prof}</strong>{comp ? ` · ${comp}` : ''}</span>
+                      </div>
+                    )}
+                    {yoe && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                        <TrendingUp size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                        <span>{yoe} years of experience</span>
+                      </div>
+                    )}
+                    {edu && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                        <GraduationCap size={13} style={{ color: '#22c55e', flexShrink: 0 }} />
+                        <span>{edu}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const linkedin = person.linkedin_url || currentUser.linkedin_url;
+              const github = person.github_url || currentUser.github_url;
+              const portfolio = person.portfolio_url || currentUser.portfolio_url;
+              const personal = person.personal_url || currentUser.personal_url;
+              if (!linkedin && !github && !portfolio && !personal) return null;
+              return (
+                <div className="profile-card" style={{ padding: '20px 24px' }}>
+                  <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Globe size={14} style={{ color: '#3b82f6' }} /> Links
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                    {linkedin && (<a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0a66c2', fontWeight: 600, textDecoration: 'none' }}><Link2 size={14} /> LinkedIn Profile</a>)}
+                    {github && (<a href={github} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#1e293b', fontWeight: 600, textDecoration: 'none' }}><Code2 size={14} /> GitHub Profile</a>)}
+                    {portfolio && (<a href={portfolio} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}><Globe size={14} /> Portfolio / Work</a>)}
+                    {personal && (<a href={personal} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}><ExternalLink size={14} /> Personal Website</a>)}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Highlights Card */}
-          <div className="profile-card profile-middle-right" style={{ marginBottom: 0 }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle2 size={16} style={{ color: '#22c55e' }} /> Highlights
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {highlights.map(h => (
-                <div 
-                  key={h.id} 
-                  onClick={() => setSelectedHighlightForGallery(h.id)}
-                  style={{
-                    background: '#f1f5f9',
-                    color: '#0f172a',
-                    borderRadius: '9999px',
-                    padding: '8px 16px',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: '1px solid #e2e8f0',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.background = '#e2e8f0';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = '#f1f5f9';
-                  }}
-                >
-                  {h.emoji} {h.labelShort}
+          {/* Column B: Skills + How I Can Help + Looking For + Contact */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {person.skills && person.skills.length > 0 && (
+              <div className="profile-card" style={{ padding: '20px 24px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Star size={14} style={{ color: '#f59e0b' }} /> Skills & Expertise
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {person.skills.map((skill: string) => (
+                    <span key={skill} style={{ background: 'rgba(139,92,246,0.08)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>{skill}</span>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+            {person.help_categories && person.help_categories.length > 0 && (
+              <div className="profile-card" style={{ padding: '20px 24px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>✋ How I Can Help</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {person.help_categories.map((cat: string) => (
+                    <span key={cat} style={{ background: 'rgba(16,185,129,0.08)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>✓ {cat}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {person.looking_for && person.looking_for.length > 0 && (
+              <div className="profile-card" style={{ padding: '20px 24px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>🔍 Looking For</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {person.looking_for.map((item: string) => (
+                    <span key={item} style={{ background: 'rgba(244,63,94,0.08)', color: '#e11d48', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>→ {item}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(() => {
+              const emailVis = person.show_email !== false && (person.email || currentUser.email);
+              const mobileVis = person.show_mobile !== false && (person.mobile || currentUser.mobile);
+              if (!emailVis && !mobileVis) return null;
+              return (
+                <div className="profile-card" style={{ padding: '20px 24px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14} style={{ color: '#3b82f6' }} /> Contact</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {emailVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Mail size={13} style={{ color: '#3b82f6', flexShrink: 0 }} /><span>{person.email || currentUser.email}</span></div>}
+                    {mobileVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Phone size={13} style={{ color: '#22c55e', flexShrink: 0 }} /><span>{person.mobile || currentUser.mobile}</span></div>}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -3345,21 +3543,28 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         const content = inputEl.value.trim();
                         if (!content) return;
                         
+                        // Optimistic: add comment instantly
+                        const tempModalComment = {
+                          id: `temp-modal-${Date.now()}`,
+                          post_id: selectedPostForModal.id,
+                          content,
+                          created_at: new Date().toISOString(),
+                          author_id: currentUser?.id,
+                          author: currentUser
+                        };
+                        const optimisticComments = [...(selectedPostForModal.comments || []), tempModalComment];
+                        setSelectedPostForModal((prev: any) => prev ? { ...prev, comments: optimisticComments } : prev);
+                        inputEl.value = '';
                         try {
-                          const newComment = await apiFetch(`/posts/${selectedPostForModal.id}/comments`, {
+                          await apiFetch(`/posts/${selectedPostForModal.id}/comments`, {
                             method: 'POST',
                             body: JSON.stringify({ content })
                           });
-                          
-                          // Update comments local list inside modal
-                          const updatedComments = [...(selectedPostForModal.comments || []), {
-                            ...newComment,
-                            author: currentUser
-                          }];
-                          setSelectedPostForModal({ ...selectedPostForModal, comments: updatedComments });
-                          inputEl.value = '';
                           showToast("Comment published!", "success");
                         } catch (err: any) {
+                          // Revert on failure
+                          setSelectedPostForModal((prev: any) => prev ? { ...prev, comments: (prev.comments || []).filter((c: any) => c.id !== tempModalComment.id) } : prev);
+                          inputEl.value = content;
                           showToast(err.message, "danger");
                         }
                       }}
@@ -3732,15 +3937,28 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   {/* Professional Details */}
                   <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Profession / Designation</label>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Profession Category</label>
                       <input 
                         type="text" 
                         value={editProfession} 
                         onChange={(e) => setEditProfession(e.target.value)} 
                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Software Engineer, Doctor, Student"
+                        placeholder="e.g. Software Development"
                       />
                     </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Designation / Title</label>
+                      <input 
+                        type="text" 
+                        value={editDesignation} 
+                        onChange={(e) => setEditDesignation(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Senior Architect"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Company / Institution</label>
                       <input 
@@ -3748,33 +3966,30 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         value={editCompany} 
                         onChange={(e) => setEditCompany(e.target.value)} 
                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Google, AIIMS, Stanford"
+                        placeholder="e.g. Google, AIIMS"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Years of Experience</label>
+                      <input 
+                        type="number" 
+                        value={editYearsOfExperience} 
+                        onChange={(e) => setEditYearsOfExperience(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. 5"
                       />
                     </div>
                   </div>
 
-                  {/* Location info */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>City Location</label>
-                      <input 
-                        type="text" 
-                        value={editCity} 
-                        onChange={(e) => setEditCity(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Kolkata, Bangalore, London"
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Country</label>
-                      <input 
-                        type="text" 
-                        value={editCountry} 
-                        onChange={(e) => setEditCountry(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. India, United States"
-                      />
-                    </div>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Education</label>
+                    <input 
+                      type="text" 
+                      value={editEducation} 
+                      onChange={(e) => setEditEducation(e.target.value)} 
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                      placeholder="e.g. B.Tech, Stanford University"
+                    />
                   </div>
 
                   {/* Industry & Mentorship Dropdown */}
@@ -3806,7 +4021,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Tag-based Skills Editor */}
+                  {/* Skill & Open For Badges */}
                   <div className="form-group" style={{ marginBottom: '16px' }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Skills (Press Enter or comma to add)</label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px 12px', border: '1px solid #cbd5e1', background: '#f8fafc', borderRadius: '8px', minHeight: '44px', alignItems: 'center' }}>
@@ -3842,35 +4057,16 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Multi-select: How I Can Help */}
                   <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>How I Can Help</label>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Open For Badges</label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                      {["Career Guidance", "Mentorship", "Job Referrals", "Internship Referrals", "Mock Interviews", "Startup Advice", "Higher Studies Guidance", "Networking"].map(opt => (
+                      {["Mentorship", "Networking", "Referrals", "Hiring", "Collaborations", "Career Guidance"].map(opt => (
                         <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.83rem', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600 }}>
                           <input
                             type="checkbox"
-                            checked={editHelpCategories.includes(opt)}
-                            onChange={() => setEditHelpCategories(editHelpCategories.includes(opt) ? editHelpCategories.filter(x => x !== opt) : [...editHelpCategories, opt])}
-                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#7c3aed' }}
-                          />
-                          <span>{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Multi-select: Looking For */}
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Looking For</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                      {["Networking", "Mentorship", "Job Opportunities", "Business Partnerships", "Hiring Talent", "Investors", "Co-founders"].map(opt => (
-                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.83rem', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600 }}>
-                          <input
-                            type="checkbox"
-                            checked={editLookingFor.includes(opt)}
-                            onChange={() => setEditLookingFor(editLookingFor.includes(opt) ? editLookingFor.filter(x => x !== opt) : [...editLookingFor, opt])}
-                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#0ea5e9' }}
+                            checked={editOpenFor.includes(opt)}
+                            onChange={() => setEditOpenFor(editOpenFor.includes(opt) ? editOpenFor.filter(x => x !== opt) : [...editOpenFor, opt])}
+                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#10b981' }}
                           />
                           <span>{opt}</span>
                         </label>
@@ -3912,6 +4108,16 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                           placeholder="https://yourwebsite.com"
                         />
                       </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Personal Website</label>
+                        <input
+                          type="text"
+                          value={editPersonalUrl}
+                          onChange={(e) => setEditPersonalUrl(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                          placeholder="https://personalwebsite.com"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -3934,6 +4140,15 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                       />
                       <span>Show Mobile Number to classmates</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600, fontSize: '0.85rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={editShowSocial} 
+                        onChange={(e) => setEditShowSocial(e.target.checked)} 
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <span>Show Social Links on profile</span>
                     </label>
                   </div>
 
@@ -6946,24 +7161,29 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   onClick={async () => {
                     const cText = commentInputs[activeMemoryLightbox.id];
                     if (!cText || !cText.trim()) return;
+                    // Optimistic: add comment instantly
+                    const tempLbComment = {
+                      id: `temp-lb-${Date.now()}`,
+                      post_id: activeMemoryLightbox.id,
+                      content: cText,
+                      created_at: new Date().toISOString(),
+                      author: { id: currentUser.id, full_name: currentUser.full_name, profile_photo: currentUser.profile_photo }
+                    };
+                    const optimisticLbComments = [...(activeMemoryLightbox.comments || []), tempLbComment];
+                    setActiveMemoryLightbox({ ...activeMemoryLightbox, comments: optimisticLbComments });
+                    setCommentInputs({ ...commentInputs, [activeMemoryLightbox.id]: '' });
+                    // Also update posts feed state silently
+                    setPosts(prev => prev.map((p: any) => p.id === activeMemoryLightbox.id ? { ...p, comments: optimisticLbComments } : p));
                     try {
-                      const resComment = await apiFetch(`/posts/${activeMemoryLightbox.id}/comments`, {
+                      await apiFetch(`/posts/${activeMemoryLightbox.id}/comments`, {
                         method: 'POST',
                         body: JSON.stringify({ content: cText })
                       });
-                      
-                      const updatedComments = [...(activeMemoryLightbox.comments || []), {
-                        ...resComment,
-                        author: { id: currentUser.id, full_name: currentUser.full_name, profile_photo: currentUser.profile_photo }
-                      }];
-                      
-                      const updatedLightbox = { ...activeMemoryLightbox, comments: updatedComments };
-                      setActiveMemoryLightbox(updatedLightbox);
-                      
-                      setCommentInputs({ ...commentInputs, [activeMemoryLightbox.id]: '' });
                       showToast("Comment posted!", "success");
-                      loadFeed();
                     } catch (err: any) {
+                      // Revert on failure
+                      setActiveMemoryLightbox({ ...activeMemoryLightbox, comments: (activeMemoryLightbox.comments || []) });
+                      setCommentInputs({ ...commentInputs, [activeMemoryLightbox.id]: cText });
                       showToast(err.message, 'danger');
                     }
                   }}

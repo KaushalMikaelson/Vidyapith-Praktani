@@ -192,9 +192,10 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         method: 'POST',
         body: JSON.stringify({ content: text })
       });
-      // Reload messages to get server-confirmed version
-      const data = await apiFetch(`/messages/${activePartnerId}`);
-      setMessages(data.messages || []);
+      // Non-blocking background refresh to get server-confirmed version
+      apiFetch(`/messages/${activePartnerId}`)
+        .then((data: any) => setMessages(data.messages || []))
+        .catch(() => {});
       loadConversations();
     } catch (err: any) {
       showToast(err.message || 'Failed to send message.', 'danger');

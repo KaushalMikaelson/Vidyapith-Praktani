@@ -159,15 +159,27 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
 
   const handleRSVPSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    // Optimistic: close modal and update RSVP count instantly
+    const currentEventId = rsvpEventId;
+    setRsvpModalVisible(false);
+    showToast("RSVP registered successfully! Ticket generated.", "success");
+    setEvents(prev => prev.map((e: any) =>
+      e.id === currentEventId
+        ? { ...e, rsvps: [...(e.rsvps || []), { user_id: currentUser!.id, guest_count: parseInt(rsvpGuests), dietary_pref: rsvpDiet }] }
+        : e
+    ));
     try {
-      await apiFetch(`/events/${rsvpEventId}/rsvp`, {
+      await apiFetch(`/events/${currentEventId}/rsvp`, {
         method: 'POST',
         body: JSON.stringify({ guestCount: parseInt(rsvpGuests), dietaryPref: rsvpDiet })
       });
-      showToast("RSVP registered successfully! Ticket generated.", "success");
-      setRsvpModalVisible(false);
-      loadEvents();
     } catch (err: any) {
+      // Revert on failure
+      setEvents(prev => prev.map((e: any) =>
+        e.id === currentEventId
+          ? { ...e, rsvps: (e.rsvps || []).filter((r: any) => r.user_id !== currentUser!.id) }
+          : e
+      ));
       showToast(err.message, 'danger');
     }
   };
@@ -178,29 +190,46 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
       showToast("Please fill all required fields.", "danger");
       return;
     }
+    // Optimistic: add event instantly and close modal
+    const tempEvent = {
+      id: `temp-evt-${Date.now()}`,
+      title: evtTitle.trim(),
+      description: evtDesc.trim(),
+      event_date: new Date(evtDate).toISOString(),
+      location: evtLocation.trim(),
+      event_type: evtType,
+      online_link: evtType === 'virtual' ? evtLocation.trim() : '',
+      max_capacity: parseInt(evtCapacity) || 100,
+      created_by: currentUser!.id,
+      created_at: new Date().toISOString(),
+      rsvps: []
+    };
+    setEvents(prev => [tempEvent, ...prev]);
+    showToast("Community gathering published successfully!", "success");
+    setCreateModalVisible(false);
+    setEvtTitle('');
+    setEvtDesc('');
+    setEvtDate('');
+    setEvtType('physical');
+    setEvtLocation('');
+    setEvtCapacity('100');
     try {
       await apiFetch('/events', {
         method: 'POST',
         body: JSON.stringify({
-          title: evtTitle.trim(),
-          description: evtDesc.trim(),
-          eventDate: new Date(evtDate).toISOString(),
-          location: evtLocation.trim(),
+          title: tempEvent.title,
+          description: tempEvent.description,
+          eventDate: tempEvent.event_date,
+          location: tempEvent.location,
           eventType: evtType,
-          onlineLink: evtType === 'virtual' ? evtLocation.trim() : '',
-          maxCapacity: parseInt(evtCapacity) || 100
+          onlineLink: tempEvent.online_link,
+          maxCapacity: tempEvent.max_capacity
         })
       });
-      showToast("Community gathering published successfully!", "success");
-      setCreateModalVisible(false);
-      setEvtTitle('');
-      setEvtDesc('');
-      setEvtDate('');
-      setEvtType('physical');
-      setEvtLocation('');
-      setEvtCapacity('100');
+      // Silently refresh to get real ID from server
       loadEvents();
     } catch (err: any) {
+      setEvents(prev => prev.filter((e: any) => e.id !== tempEvent.id));
       showToast(err.message, 'danger');
     }
   };

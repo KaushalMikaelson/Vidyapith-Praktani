@@ -77,32 +77,49 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
 
     const skillsArr = jobSkills.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
+    // Optimistic: add job instantly and close modal
+    const tempJob = {
+      id: `temp-job-${Date.now()}`,
+      title: jobTitle.trim(),
+      company: jobCompany.trim(),
+      location: jobLocation.trim(),
+      type: jobType,
+      description: jobDesc.trim(),
+      skills: skillsArr.length > 0 ? skillsArr : ['Communication', 'Logical Reasoning'],
+      referral_available: referralAvailable,
+      contact_email: contactEmail.trim() || currentUser.email,
+      posted_by: currentUser.id,
+      created_at: new Date().toISOString(),
+      applications: []
+    };
+    setJobs(prev => [tempJob, ...prev]);
+    showToast("Job opportunity posted successfully!", "success");
+    setPostModalVisible(false);
+    setJobTitle('');
+    setJobCompany('');
+    setJobLocation('');
+    setJobDesc('');
+    setJobSkills('');
+    setContactEmail('');
+
     try {
       await apiFetch('/jobs', {
         method: 'POST',
         body: JSON.stringify({
-          title: jobTitle.trim(),
-          company: jobCompany.trim(),
-          location: jobLocation.trim(),
+          title: tempJob.title,
+          company: tempJob.company,
+          location: tempJob.location,
           type: jobType,
-          description: jobDesc.trim(),
-          skills: skillsArr.length > 0 ? skillsArr : ['Communication', 'Logical Reasoning'],
+          description: tempJob.description,
+          skills: tempJob.skills,
           referralAvailable: referralAvailable,
-          contactEmail: contactEmail.trim() || currentUser.email
+          contactEmail: tempJob.contact_email
         })
       });
-
-      showToast("Job opportunity posted successfully!", "success");
-
-      setPostModalVisible(false);
-      setJobTitle('');
-      setJobCompany('');
-      setJobLocation('');
-      setJobDesc('');
-      setJobSkills('');
-      setContactEmail('');
+      // Silently refresh to get real server ID
       loadJobsData();
     } catch (err: any) {
+      setJobs(prev => prev.filter((j: any) => j.id !== tempJob.id));
       showToast(err.message, 'danger');
     }
   };
@@ -117,36 +134,50 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
     e.preventDefault();
     if (!selectedJob) return;
 
-    try {
-      await apiFetch(`/jobs/${selectedJob.id}/apply`, {
-        method: 'POST'
-      });
+    // Optimistic: close modal immediately and mark job as applied
+    const jobId = selectedJob.id;
+    const jobTitle = selectedJob.title;
+    const jobCompany = selectedJob.company;
+    const posterName = selectedJob.poster?.full_name || 'sponsor';
+    const posterId = selectedJob.posted_by;
+    const memo = applyMemo.trim();
 
-      // Feature 1: Send automatic direct message to job poster
-      if (applyMemo.trim() && selectedJob.posted_by) {
-        const referralRequestMsg = `Hello! I have just applied for your posted role "${selectedJob.title}" at "${selectedJob.company}" on Vidyapith Praktani.
+    setApplyModalVisible(false);
+    setJobs(prev => prev.map((j: any) =>
+      j.id === jobId
+        ? { ...j, applications: [...(j.applications || []), { applicant_id: currentUser.id }] }
+        : j
+    ));
+
+    try {
+      await apiFetch(`/jobs/${jobId}/apply`, { method: 'POST' });
+
+      if (memo && posterId) {
+        const referralRequestMsg = `Hello! I have just applied for your posted role "${jobTitle}" at "${jobCompany}" on Vidyapith Praktani.
 
 Cover Note / Referral Request:
-"${applyMemo.trim()}"
+"${memo}"
 
 Here is my verified Vidyapith profile: http://localhost:3000/profile/${currentUser.id}`;
-
         try {
-          await apiFetch(`/messages/${selectedJob.posted_by}`, {
+          await apiFetch(`/messages/${posterId}`, {
             method: 'POST',
             body: JSON.stringify({ content: referralRequestMsg })
           });
-          showToast(`Application successfully filed and referral request message sent to ${selectedJob.poster?.full_name || 'sponsor'}!`, "success");
+          showToast(`Application filed and referral request sent to ${posterName}!`, "success");
         } catch {
-          showToast(`Applied successfully, but direct message referral request could not be sent.`, "info");
+          showToast(`Applied successfully, but referral message could not be sent.`, "info");
         }
       } else {
-        showToast(`Application successfully filed for ${selectedJob.title}!`, "success");
+        showToast(`Application successfully filed for ${jobTitle}!`, "success");
       }
-
-      setApplyModalVisible(false);
-      loadJobsData();
     } catch (err: any) {
+      // Revert on failure
+      setJobs(prev => prev.map((j: any) =>
+        j.id === jobId
+          ? { ...j, applications: (j.applications || []).filter((a: any) => a.applicant_id !== currentUser.id) }
+          : j
+      ));
       showToast(err.message, 'danger');
     }
   };

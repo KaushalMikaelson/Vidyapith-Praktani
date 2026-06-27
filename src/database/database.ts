@@ -27,10 +27,20 @@ export interface User {
   looking_for?: string[];
   mentorship_status?: string;
   privacy: { show_email: boolean; show_mobile: boolean };
+  // Upgraded professional networking fields
+  designation?: string;
+  years_of_experience?: string;
+  education?: string;
+  open_for?: string[];
+  personal_url?: string;
+  show_social?: boolean;
+  show_email?: boolean;
+  show_mobile?: boolean;
   created_at: string;
   certificate_url?: string;
   department?: string;
   industry?: string;
+  profession_category?: string;
   profile?: any;
 }
 

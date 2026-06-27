@@ -29,6 +29,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [personalUrl, setPersonalUrl] = useState('');
   const [department, setDepartment] = useState('');
   const [industry, setIndustry] = useState('');
   const [mobile, setMobile] = useState('');
@@ -40,9 +41,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
   const [lookingFor, setLookingFor] = useState<string[]>([]);
   const [mentorshipStatus, setMentorshipStatus] = useState('Not Available');
 
+  // Upgraded Professional States
+  const [designation, setDesignation] = useState('');
+  const [yearsOfExperience, setYearsOfExperience] = useState('');
+  const [education, setEducation] = useState('');
+  const [openFor, setOpenFor] = useState<string[]>([]);
+
   // Privacy State
   const [showEmail, setShowEmail] = useState(true);
   const [showMobile, setShowMobile] = useState(false);
+  const [showSocial, setShowSocial] = useState(true);
 
   // Populate state with currentUser details
   useEffect(() => {
@@ -57,16 +65,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
       setLinkedinUrl(currentUser.linkedin_url || '');
       setGithubUrl(currentUser.github_url || '');
       setPortfolioUrl(currentUser.portfolio_url || '');
+      setPersonalUrl(currentUser.personal_url || '');
       setDepartment(currentUser.department || '');
       setIndustry(currentUser.industry || '');
       setMobile(currentUser.mobile || '');
       setShowEmail(currentUser.privacy?.show_email ?? true);
       setShowMobile(currentUser.privacy?.show_mobile ?? false);
+      setShowSocial(currentUser.privacy?.show_social ?? true);
       
       setSkills(currentUser.skills || []);
       setHelpCategories(currentUser.help_categories || []);
       setLookingFor(currentUser.looking_for || []);
       setMentorshipStatus(currentUser.mentorship_status || 'Not Available');
+
+      setDesignation(currentUser.designation || '');
+      setYearsOfExperience(currentUser.years_of_experience ? String(currentUser.years_of_experience) : '');
+      setEducation(currentUser.education || '');
+      setOpenFor(currentUser.open_for || []);
     }
   }, [currentUser]);
 
@@ -130,6 +145,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
       setSaving(false);
       return;
     }
+    if (personalUrl && !isValidUrl(personalUrl)) {
+      showToast("Invalid Personal Website URL. Must start with http:// or https://", "danger");
+      setSaving(false);
+      return;
+    }
 
     try {
       await apiFetch('/directory/profile/update', {
@@ -145,13 +165,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
           linkedin_url: linkedinUrl,
           github_url: githubUrl,
           portfolio_url: portfolioUrl,
+          personal_url: personalUrl,
           department,
           industry,
           mobile,
           skills,
           help_categories: helpCategories,
           looking_for: lookingFor,
-          mentorship_status: mentorshipStatus
+          mentorship_status: mentorshipStatus,
+          designation,
+          years_of_experience: yearsOfExperience ? parseInt(yearsOfExperience) : 0,
+          education,
+          open_for: openFor,
+          show_social: showSocial
         })
       });
       showToast("Profile details updated successfully!", "success");
@@ -171,7 +197,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
         method: 'POST',
         body: JSON.stringify({
           show_email: showEmail,
-          show_mobile: showMobile
+          show_mobile: showMobile,
+          show_social: showSocial
         })
       });
       showToast("Privacy preferences saved successfully!", "success");
@@ -240,13 +267,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
               <div className="auth-input-block">
-                <label className="auth-input-label">Profession / Designation</label>
-                <input type="text" value={profession} onChange={e => setProfession(e.target.value)} placeholder="e.g. Software Engineer" />
+                <label className="auth-input-label">Profession Category</label>
+                <input type="text" value={profession} onChange={e => setProfession(e.target.value)} placeholder="e.g. Software Development, Medicine" />
               </div>
               <div className="auth-input-block">
-                <label className="auth-input-label">Company / Organization</label>
-                <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google" />
+                <label className="auth-input-label">Professional Designation / Title</label>
+                <input type="text" value={designation} onChange={e => setDesignation(e.target.value)} placeholder="e.g. Tech Lead, MD, Consultant" />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+              <div className="auth-input-block">
+                <label className="auth-input-label">Company / Organization</label>
+                <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Google, AIIMS" />
+              </div>
+              <div className="auth-input-block">
+                <label className="auth-input-label">Years of Experience</label>
+                <input type="number" value={yearsOfExperience} onChange={e => setYearsOfExperience(e.target.value)} placeholder="e.g. 5" />
+              </div>
+            </div>
+
+            <div className="auth-input-block">
+              <label className="auth-input-label">Education (optional)</label>
+              <input type="text" value={education} onChange={e => setEducation(e.target.value)} placeholder="e.g. B.Tech from Stanford University" />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
@@ -358,6 +401,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
               </div>
             </div>
 
+            {/* Checkboxes: Open For */}
+            <div className="auth-input-block">
+              <label className="auth-input-label" style={{ marginBottom: '10px' }}>Open For Badges (badges shown on profile)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', padding: '12px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                {["Mentorship", "Networking", "Referrals", "Hiring", "Collaborations", "Career Guidance"].map(opt => (
+                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={openFor.includes(opt)} 
+                      onChange={() => setOpenFor(openFor.includes(opt) ? openFor.filter(x => x !== opt) : [...openFor, opt])} 
+                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Social Links */}
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
               <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Social & Web Links</h4>
@@ -373,6 +434,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
                 <div className="auth-input-block">
                   <label className="auth-input-label">Portfolio Website URL</label>
                   <input type="text" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} placeholder="https://username.com" />
+                </div>
+                <div className="auth-input-block">
+                  <label className="auth-input-label">Personal Website URL</label>
+                  <input type="text" value={personalUrl} onChange={e => setPersonalUrl(e.target.value)} placeholder="https://yourwebsite.com" />
                 </div>
               </div>
             </div>
@@ -417,6 +482,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <label htmlFor="showMobileCheck" style={{ fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Show Mobile Number</label>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Allow other alumni to see your phone/WhatsApp number on your profile.</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <input 
+                  type="checkbox" 
+                  id="showSocialCheck" 
+                  checked={showSocial} 
+                  onChange={e => setShowSocial(e.target.checked)} 
+                  style={{ marginTop: '4px', cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label htmlFor="showSocialCheck" style={{ fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Show Social Links</label>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Allow other alumni to see your LinkedIn, GitHub, Portfolio, and Personal website links on your profile.</span>
                 </div>
               </div>
             </div>

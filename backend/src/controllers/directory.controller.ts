@@ -6,7 +6,7 @@ import { directoryCache, connectionsCache } from '../utils/cache.js';
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { search, batchYear, house, city, role, profession, company, sortBy, department, industry, skills, mentorshipStatus } = req.query;
+    const { search, batchYear, house, city, role, profession, company, sortBy, department, industry, skills, mentorshipStatus, helpCategories, lookingFor, openFor } = req.query;
     const cacheKey = `directory:${JSON.stringify(req.query)}`;
 
     // Try to get from cache first
@@ -39,7 +39,10 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       profileConditions.city = { contains: city as string, mode: 'insensitive' };
     }
     if (profession) {
-      profileConditions.profession_category = { contains: profession as string, mode: 'insensitive' };
+      profileConditions.OR = [
+        { profession_category: { contains: profession as string, mode: 'insensitive' } },
+        { designation: { contains: profession as string, mode: 'insensitive' } }
+      ];
     }
     if (company) {
       profileConditions.company = { contains: company as string, mode: 'insensitive' };
@@ -58,6 +61,24 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     }
     if (mentorshipStatus && mentorshipStatus !== 'all') {
       profileConditions.mentorship_status = mentorshipStatus as string;
+    }
+    if (helpCategories && helpCategories !== 'all') {
+      const helpList = Array.isArray(helpCategories) ? helpCategories : (helpCategories as string).split(',').map(s => s.trim()).filter(Boolean);
+      if (helpList.length > 0) {
+        profileConditions.help_categories = { hasSome: helpList };
+      }
+    }
+    if (lookingFor && lookingFor !== 'all') {
+      const lookList = Array.isArray(lookingFor) ? lookingFor : (lookingFor as string).split(',').map(s => s.trim()).filter(Boolean);
+      if (lookList.length > 0) {
+        profileConditions.looking_for = { hasSome: lookList };
+      }
+    }
+    if (openFor && openFor !== 'all') {
+      const openList = Array.isArray(openFor) ? openFor : (openFor as string).split(',').map(s => s.trim()).filter(Boolean);
+      if (openList.length > 0) {
+        profileConditions.open_for = { hasSome: openList };
+      }
     }
 
     if (Object.keys(profileConditions).length > 0) {
@@ -88,6 +109,11 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         },
         {
           profile: {
+            designation: { contains: searchStr, mode: 'insensitive' }
+          }
+        },
+        {
+          profile: {
             company: { contains: searchStr, mode: 'insensitive' }
           }
         },
@@ -109,6 +135,11 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         {
           profile: {
             industry: { contains: searchStr, mode: 'insensitive' }
+          }
+        },
+        {
+          profile: {
+            education: { contains: searchStr, mode: 'insensitive' }
           }
         },
         {
@@ -180,6 +211,7 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       const isSelf = requesterId === u.id;
       const showEmail = isSelf || isAdmin || (u.profile?.show_email ?? true);
       const showPhone = isSelf || isAdmin || (u.profile?.show_phone ?? false);
+      const showSocial = isSelf || isAdmin || (u.profile?.show_social ?? true);
 
       return {
         id: u.id,
@@ -196,16 +228,22 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         company: u.profile?.company || "",
         city: u.profile?.city || "",
         country: u.profile?.country || "India",
-        linkedin_url: u.profile?.linkedin_url || "",
-        github_url: u.profile?.github_url || "",
-        portfolio_url: u.profile?.portfolio_url || "",
+        linkedin_url: showSocial ? (u.profile?.linkedin_url || "") : "",
+        github_url: showSocial ? (u.profile?.github_url || "") : "",
+        portfolio_url: showSocial ? (u.profile?.portfolio_url || "") : "",
+        personal_url: showSocial ? (u.profile?.personal_url || "") : "",
         skills: u.profile?.skills || [],
         help_categories: u.profile?.help_categories || [],
         looking_for: u.profile?.looking_for || [],
         mentorship_status: u.profile?.mentorship_status || "Not Available",
+        designation: u.profile?.designation || "",
+        years_of_experience: u.profile?.years_of_experience ?? 0,
+        education: u.profile?.education || "",
+        open_for: u.profile?.open_for || [],
         privacy: {
           show_email: u.profile?.show_email ?? true,
-          show_mobile: u.profile?.show_phone ?? false
+          show_mobile: u.profile?.show_phone ?? false,
+          show_social: u.profile?.show_social ?? true
         },
         created_at: u.created_at,
         department: u.profile?.department || "",
@@ -647,6 +685,7 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
     const isAdmin = req.user?.role === 'admin';
     const showEmail = isSelf || isAdmin || (user.profile?.show_email ?? true);
     const showPhone = isSelf || isAdmin || (user.profile?.show_phone ?? false);
+    const showSocial = isSelf || isAdmin || (user.profile?.show_social ?? true);
 
     const formattedUser = {
       id: user.id,
@@ -663,19 +702,25 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       company: user.profile?.company || "",
       city: user.profile?.city || "",
       country: user.profile?.country || "India",
-      linkedin_url: user.profile?.linkedin_url || "",
-      github_url: user.profile?.github_url || "",
-      portfolio_url: user.profile?.portfolio_url || "",
+      linkedin_url: showSocial ? (user.profile?.linkedin_url || "") : "",
+      github_url: showSocial ? (user.profile?.github_url || "") : "",
+      portfolio_url: showSocial ? (user.profile?.portfolio_url || "") : "",
+      personal_url: showSocial ? (user.profile?.personal_url || "") : "",
       skills: user.profile?.skills || [],
       help_categories: user.profile?.help_categories || [],
       looking_for: user.profile?.looking_for || [],
       mentorship_status: user.profile?.mentorship_status || "Not Available",
+      designation: user.profile?.designation || "",
+      years_of_experience: user.profile?.years_of_experience ?? 0,
+      education: user.profile?.education || "",
+      open_for: user.profile?.open_for || [],
       posts_count: postsCount,
       connections_count: connectionsCount,
       mentorships_count: mentorshipsCount,
       privacy: {
         show_email: user.profile?.show_email ?? true,
-        show_mobile: user.profile?.show_phone ?? false
+        show_mobile: user.profile?.show_phone ?? false,
+        show_social: user.profile?.show_social ?? true
       },
       created_at: user.created_at,
       department: user.profile?.department || "",
@@ -698,8 +743,9 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
     const { 
       bio, profession_category, company, city, country, profile_photo, 
-      show_email, show_mobile, full_name, batch_year, house, department, industry, mobile,
-      skills, help_categories, looking_for, github_url, portfolio_url, mentorship_status, linkedin_url
+      show_email, show_mobile, show_social, full_name, batch_year, house, department, industry, mobile,
+      skills, help_categories, looking_for, github_url, portfolio_url, personal_url, mentorship_status, linkedin_url,
+      designation, years_of_experience, education, open_for
     } = req.body;
     
     // Validate URLs
@@ -719,6 +765,10 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
     if (portfolio_url !== undefined && portfolio_url !== "" && !isValidUrl(portfolio_url)) {
       res.status(400).json({ error: "Invalid Portfolio URL. Must start with http:// or https://" });
+      return;
+    }
+    if (personal_url !== undefined && personal_url !== "" && !isValidUrl(personal_url)) {
+      res.status(400).json({ error: "Invalid Personal Website URL. Must start with http:// or https://" });
       return;
     }
 
@@ -750,6 +800,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (profile_photo !== undefined) profileData.profile_photo = profile_photo;
     if (show_email !== undefined) profileData.show_email = show_email;
     if (show_mobile !== undefined) profileData.show_phone = show_mobile;
+    if (show_social !== undefined) profileData.show_social = show_social;
     if (full_name !== undefined) profileData.full_name = full_name;
     if (batch_year !== undefined && batch_year !== null && batch_year !== '') {
       profileData.batch_year = parseInt(batch_year);
@@ -764,8 +815,15 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (looking_for !== undefined) profileData.looking_for = looking_for;
     if (github_url !== undefined) profileData.github_url = github_url;
     if (portfolio_url !== undefined) profileData.portfolio_url = portfolio_url;
+    if (personal_url !== undefined) profileData.personal_url = personal_url;
     if (mentorship_status !== undefined) profileData.mentorship_status = mentorship_status;
     if (linkedin_url !== undefined) profileData.linkedin_url = linkedin_url;
+    if (designation !== undefined) profileData.designation = designation;
+    if (years_of_experience !== undefined && years_of_experience !== null && years_of_experience !== '') {
+      profileData.years_of_experience = parseInt(years_of_experience);
+    }
+    if (education !== undefined) profileData.education = education;
+    if (open_for !== undefined) profileData.open_for = open_for;
 
     await prisma.alumniProfile.upsert({
       where: { user_id: userId },
@@ -783,10 +841,16 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
         linkedin_url: linkedin_url || "",
         github_url: github_url || "",
         portfolio_url: portfolio_url || "",
+        personal_url: personal_url || "",
         skills: skills || [],
         help_categories: help_categories || [],
         looking_for: looking_for || [],
         mentorship_status: mentorship_status || "Not Available",
+        designation: designation || "",
+        years_of_experience: years_of_experience ? parseInt(years_of_experience) : 0,
+        education: education || "",
+        open_for: open_for || [],
+        show_social: show_social !== undefined ? show_social : true,
         ...profileData
       }
     });

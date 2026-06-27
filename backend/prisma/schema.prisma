@@ -42,13 +42,20 @@ model AlumniProfile {
   looking_for         String[]
   github_url          String   @default("")
   portfolio_url       String   @default("")
+  personal_url        String   @default("")
   mentorship_status   String   @default("Not Available")
+  designation         String   @default("")
+  years_of_experience Int      @default(0)
+  education           String   @default("")
+  open_for            String[]
+  show_social         Boolean  @default(true)
 
   @@index([batch_year])
   @@index([profession_category])
   @@index([company])
   @@index([industry])
   @@index([mentorship_status])
+  @@index([designation])
 }
 
 model Mentorship {

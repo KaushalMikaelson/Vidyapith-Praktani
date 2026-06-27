@@ -105,28 +105,28 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   }, [showToast, loadPendingRequests]);
 
   const handleRespond = async (notificationId: string, targetUserId: string, action: 'accept' | 'decline') => {
-    setProcessingIds(prev => ({ ...prev, [targetUserId]: true }));
+    // Optimistic: update state instantly
+    setProcessedRequests(prev => ({ ...prev, [notificationId]: action === 'accept' ? 'accepted' : 'declined' }));
+    setPendingRequests(prev => prev.filter(req => req.id !== targetUserId));
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
+
+    if (action === 'accept') {
+      showToast("Connection request accepted!", "success");
+    } else {
+      showToast("Connection request declined.", "info");
+    }
+
+    // Fire API calls in background concurrently
     try {
-      await apiFetch('/directory/connections/respond', {
-        method: 'POST',
-        body: JSON.stringify({ targetId: targetUserId, action })
-      });
-      
-      setProcessedRequests(prev => ({ ...prev, [notificationId]: action === 'accept' ? 'accepted' : 'declined' }));
-      setPendingRequests(prev => prev.filter(req => req.id !== targetUserId));
-      
-      // Mark notification as read
-      await markOneRead(notificationId);
-      
-      if (action === 'accept') {
-        showToast("Connection request accepted!", "success");
-      } else {
-        showToast("Connection request declined.", "info");
-      }
+      await Promise.all([
+        apiFetch('/directory/connections/respond', {
+          method: 'POST',
+          body: JSON.stringify({ targetId: targetUserId, action })
+        }),
+        apiFetch(`/notifications/${notificationId}/read`, { method: 'POST' })
+      ]);
     } catch (err: any) {
       showToast(err.message || "Failed to respond to connection request", "danger");
-    } finally {
-      setProcessingIds(prev => ({ ...prev, [targetUserId]: false }));
     }
   };
 

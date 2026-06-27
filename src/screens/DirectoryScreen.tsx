@@ -29,6 +29,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [filterHouse, setFilterHouse] = useState('');
   const [filterSkill, setFilterSkill] = useState('');
   const [filterMentorship, setFilterMentorship] = useState('');
+  const [filterOpenFor, setFilterOpenFor] = useState('');
+  const [filterCompany, setFilterCompany] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'alumni' | 'student' | 'faculty'>('all');
   const [sortBy] = useState('seed_order');
   
@@ -59,14 +61,27 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   };
 
   const handleRespondConnection = async (targetId: string, action: 'accept' | 'decline') => {
+    // Optimistic: update status immediately
+    if (action === 'accept') {
+      setConnectionStatuses(prev => ({ ...prev, [targetId]: 'accepted' }));
+    } else {
+      setConnectionStatuses(prev => {
+        const updated = { ...prev };
+        delete updated[targetId];
+        return updated;
+      });
+    }
+    setPendingRequests(prev => prev.filter((r: any) => r.id !== targetId));
+    showToast(`Connection request ${action === 'accept' ? 'accepted' : 'declined'}!`, 'success');
+
     try {
       await apiFetch('/directory/connections/respond', {
         method: 'POST',
         body: JSON.stringify({ targetId, action })
       });
-      showToast(`Connection request ${action === 'accept' ? 'accepted' : 'declined'}!`, 'success');
-      loadConnectionDetails();
     } catch (err: any) {
+      // Revert on failure
+      loadConnectionDetails();
       showToast(err.message, 'danger');
     }
   };
@@ -91,6 +106,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     if (filterHouse) queryParams.append('house', filterHouse);
     if (filterSkill) queryParams.append('skills', filterSkill);
     if (filterMentorship) queryParams.append('mentorshipStatus', filterMentorship);
+    if (filterOpenFor) queryParams.append('openFor', filterOpenFor);
+    if (filterCompany) queryParams.append('company', filterCompany);
 
     const cacheKey = queryParams.toString();
 
@@ -108,7 +125,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
       setAlumniList(results);
 
       // Compute overall stats if no search query or filters are active
-      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry && !filterSkill && !filterMentorship) {
+      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry && !filterSkill && !filterMentorship && !filterOpenFor && !filterCompany) {
         let alumni = 0;
         let students = 0;
         let faculty = 0;
@@ -179,12 +196,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship]);
+  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany]);
 
   // Pagination helper calculations
   const totalItems = alumniList.length;
@@ -198,19 +215,27 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   }, []);
 
   const handleConnectRequest = async (id: string, name: string) => {
+    // Optimistic: show pending immediately
+    setConnectionStatuses(prev => ({ ...prev, [id]: 'pending_sent' }));
+    showToast(`Connection request sent to ${name}!`, 'success');
+
     try {
       const res = await apiFetch('/directory/connect', {
         method: 'POST',
         body: JSON.stringify({ targetId: id })
       });
-      directoryClientCache.clear(); // Clear client-side cache when a connection is sent to ensure fresh states on reload
-      loadConnectionDetails();
+      directoryClientCache.clear();
       if (res.status === 'accepted') {
+        setConnectionStatuses(prev => ({ ...prev, [id]: 'accepted' }));
         showToast(`Connected with ${name}!`, 'success');
-      } else {
-        showToast(`Connection request sent to ${name}!`, 'success');
       }
     } catch (err: any) {
+      // Revert on failure
+      setConnectionStatuses(prev => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
       showToast(err.message, 'danger');
     }
   };
@@ -442,7 +467,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </div>
 
             {/* Row 2: Networking Filters */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '10px', alignItems: 'center' }}>
               {/* Skill Filter */}
               <select
                 value={filterSkill}
@@ -469,10 +494,35 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                 <option value="Not Available">❌ Not Available</option>
               </select>
 
+              {/* Open For Filter */}
+              <select
+                value={filterOpenFor}
+                onChange={(e) => setFilterOpenFor(e.target.value)}
+                className="directory-pill-select"
+              >
+                <option value="">🟢 Open For</option>
+                <option value="Mentorship">Mentorship</option>
+                <option value="Networking">Networking</option>
+                <option value="Referrals">Referrals</option>
+                <option value="Hiring">Hiring</option>
+                <option value="Collaborations">Collaborations</option>
+                <option value="Career Guidance">Career Guidance</option>
+              </select>
+
+              {/* Company Filter */}
+              <input
+                type="text"
+                value={filterCompany}
+                onChange={(e) => setFilterCompany(e.target.value)}
+                className="directory-pill-select"
+                placeholder="🏢 Company"
+                style={{ fontFamily: 'inherit' }}
+              />
+
               {/* Clear Networking Filters */}
-              {(filterSkill || filterMentorship) && (
+              {(filterSkill || filterMentorship || filterOpenFor || filterCompany) && (
                 <button
-                  onClick={() => { setFilterSkill(''); setFilterMentorship(''); }}
+                  onClick={() => { setFilterSkill(''); setFilterMentorship(''); setFilterOpenFor(''); setFilterCompany(''); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
                     background: '#fef2f2', border: '1px solid #fecaca',
@@ -487,7 +537,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             </div>
 
             {/* Active filter chips */}
-            {(filterSkill || filterMentorship || filterBatch || filterDepartment || filterCity || filterIndustry || filterHouse) && (
+            {(filterSkill || filterMentorship || filterOpenFor || filterCompany || filterBatch || filterDepartment || filterCity || filterIndustry || filterHouse) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Filter size={12} /> Active:
@@ -499,6 +549,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                 {filterHouse && <span style={chipStyle}>{filterHouse} <button onClick={() => setFilterHouse('')} style={chipXStyle}>×</button></span>}
                 {filterSkill && <span style={{ ...chipStyle, background: 'rgba(139,92,246,0.1)', color: '#7c3aed', borderColor: 'rgba(139,92,246,0.3)' }}>{filterSkill} <button onClick={() => setFilterSkill('')} style={chipXStyle}>×</button></span>}
                 {filterMentorship && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>{filterMentorship} <button onClick={() => setFilterMentorship('')} style={chipXStyle}>×</button></span>}
+                {filterOpenFor && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>Open: {filterOpenFor} <button onClick={() => setFilterOpenFor('')} style={chipXStyle}>×</button></span>}
+                {filterCompany && <span style={{ ...chipStyle, background: 'rgba(59,130,246,0.1)', color: '#1d4ed8', borderColor: 'rgba(59,130,246,0.3)' }}>🏢 {filterCompany} <button onClick={() => setFilterCompany('')} style={chipXStyle}>×</button></span>}
               </div>
             )}
           </div>
@@ -720,12 +772,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       )}
                     </div>
 
-                    {/* Profession / Company */}
-                    {(alumnus.profession || alumnus.company) && (
+                    {/* Designation / Profession / Company */}
+                    {(alumnus.designation || alumnus.profession || alumnus.company) && (
                       <div style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
                         <Briefcase size={12} style={{ flexShrink: 0, color: '#8b5cf6' }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
-                          {alumnus.profession ? `${alumnus.profession}${alumnus.company ? ` @ ${alumnus.company}` : ''}` : alumnus.company}
+                          {alumnus.designation || alumnus.profession}{alumnus.company ? ` @ ${alumnus.company}` : ''}
                         </span>
                       </div>
                     )}
@@ -777,6 +829,22 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                         }}>
                           ⚡ Limited Slots
                         </span>
+                      </div>
+                    )}
+
+                    {/* Open For Badges */}
+                    {alumnus.open_for && alumnus.open_for.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                        {alumnus.open_for.slice(0, 2).map((badge: string) => (
+                          <span key={badge} style={{
+                            fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px',
+                            borderRadius: '9999px', background: 'rgba(16,185,129,0.08)',
+                            color: '#059669', border: '1px solid rgba(16,185,129,0.2)'
+                          }}>🟢 {badge}</span>
+                        ))}
+                        {alumnus.open_for.length > 2 && (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 8px', borderRadius: '9999px', background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }}>+{alumnus.open_for.length - 2}</span>
+                        )}
                       </div>
                     )}
 

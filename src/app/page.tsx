@@ -1608,7 +1608,7 @@ export default function App() {
                 </div>
 
                 <div style={{ fontSize: '0.88rem', color: '#64748b', fontWeight: 600 }}>
-                  {selectedProfile.profession} at {selectedProfile.company || 'Not specified'}
+                  {selectedProfile.designation || selectedProfile.profession || 'Alumni'}{(selectedProfile.company && selectedProfile.company !== 'Not specified') ? ` at ${selectedProfile.company}` : ''}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: '#64748b' }}>
@@ -1617,6 +1617,15 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Open For badges */}
+            {selectedProfile.open_for && selectedProfile.open_for.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+                {selectedProfile.open_for.map((badge: string) => (
+                  <span key={badge} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#059669', padding: '3px 10px', borderRadius: '9999px', fontSize: '0.74rem', fontWeight: 700 }}>🟢 {badge}</span>
+                ))}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
@@ -1797,13 +1806,29 @@ export default function App() {
                 </div>
 
                 <div>
-                  <a 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); showToast("Opening website...", "info"); }} 
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}
-                  >
-                    <Globe size={14} style={{ color: '#3b82f6' }} /> {selectedProfile.full_name ? selectedProfile.full_name.toLowerCase().replace(/\s+/g, '') + '.dev' : 'portfolio.dev'}
-                  </a>
+                  {selectedProfile.linkedin_url && (
+                    <a href={selectedProfile.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#0a66c2', fontWeight: 600, textDecoration: 'none', marginBottom: '6px' }}>
+                      <Globe size={14} style={{ color: '#0a66c2' }} /> LinkedIn
+                    </a>
+                  )}
+                  {selectedProfile.github_url && (
+                    <a href={selectedProfile.github_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#1e293b', fontWeight: 600, textDecoration: 'none', marginBottom: '6px' }}>
+                      <Globe size={14} /> GitHub
+                    </a>
+                  )}
+                  {selectedProfile.portfolio_url && (
+                    <a href={selectedProfile.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none', marginBottom: '6px' }}>
+                      <Globe size={14} style={{ color: '#7c3aed' }} /> Portfolio
+                    </a>
+                  )}
+                  {selectedProfile.personal_url && (
+                    <a href={selectedProfile.personal_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}>
+                      <Globe size={14} /> Personal Website
+                    </a>
+                  )}
+                  {!selectedProfile.linkedin_url && !selectedProfile.github_url && !selectedProfile.portfolio_url && !selectedProfile.personal_url && (
+                    <span style={{ fontSize: '0.84rem', color: '#94a3b8' }}>No social links shared.</span>
+                  )}
                 </div>
               </div>
 
@@ -1813,14 +1838,15 @@ export default function App() {
                   <CheckCircle size={14} style={{ color: '#22c55e' }} /> Highlights
                 </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {['Education', 'Achievements', 'Reunion', 'Career', 'Events', 'Travel', 'Mentorship'].map(tag => (
-                    <span 
-                      key={tag} 
-                      style={{ background: '#f1f5f9', color: '#0f172a', padding: '6px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid #e2e8f0' }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                  {selectedProfile.skills && selectedProfile.skills.length > 0 ? (
+                    selectedProfile.skills.slice(0, 6).map((s: string) => (
+                      <span key={s} style={{ background: 'rgba(139,92,246,0.08)', color: '#7c3aed', padding: '5px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700, border: '1px solid rgba(139,92,246,0.2)' }}>{s}</span>
+                    ))
+                  ) : (
+                    ['Education', 'Alumni', 'RKMV'].map(tag => (
+                      <span key={tag} style={{ background: '#f1f5f9', color: '#0f172a', padding: '6px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid #e2e8f0' }}>{tag}</span>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
