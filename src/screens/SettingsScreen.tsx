@@ -71,7 +71,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ showToast }) => 
       setMobile(currentUser.mobile || '');
       setShowEmail(currentUser.privacy?.show_email ?? true);
       setShowMobile(currentUser.privacy?.show_mobile ?? false);
-      setShowSocial(currentUser.privacy?.show_social ?? true);
+      setShowSocial((currentUser.privacy as any)?.show_social ?? true);
       
       setSkills(currentUser.skills || []);
       setHelpCategories(currentUser.help_categories || []);

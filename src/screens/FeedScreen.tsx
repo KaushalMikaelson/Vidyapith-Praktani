@@ -449,6 +449,12 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [activeOptionsPostId, setActiveOptionsPostId] = useState<string | null>(null);
   const [activeEmojiPostId, setActiveEmojiPostId] = useState<string | null>(null);
   const [likedAnimationPostId, setLikedAnimationPostId] = useState<{ [postId: string]: boolean }>({});
+  // Advanced comment section states
+  const [commentLikes, setCommentLikes] = useState<{ [commentId: string]: number }>({});
+  const [commentLikedByMe, setCommentLikedByMe] = useState<{ [commentId: string]: boolean }>({});
+  const [commentSortMode, setCommentSortMode] = useState<{ [postId: string]: 'newest' | 'top' | 'oldest' }>({});
+  const [visibleCommentCount, setVisibleCommentCount] = useState<{ [postId: string]: number }>({});
+  const [commentEmojiOpen, setCommentEmojiOpen] = useState<{ [postId: string]: boolean }>({});
   const [activePdfPreviewUrl, setActivePdfPreviewUrl] = useState<string | null>(null);
 
   // Feature 10: QR Code Profile Sharing Modal
@@ -1473,6 +1479,42 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     return { topLevel, repliesMap };
   };
 
+  // Sort comments based on selected mode
+  const sortComments = (comments: any[], postId: string): any[] => {
+    const mode = commentSortMode[postId] || 'newest';
+    const arr = [...comments];
+    if (mode === 'newest') return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (mode === 'oldest') return arr.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    if (mode === 'top') return arr.sort((a, b) => (commentLikes[b.id] || 0) - (commentLikes[a.id] || 0));
+    return arr;
+  };
+
+  // Render text with @mention highlighting
+  const renderMentions = (text: string): React.ReactNode => {
+    if (!text) return null;
+    const parts = text.split(/(@\w[\w\s]*)/g);
+    return parts.map((part, i) =>
+      part.startsWith('@') ? (
+        <span key={i} className="comment-mention">{part}</span>
+      ) : (
+        <span key={i}>{part}</span>
+      )
+    );
+  };
+
+  // Toggle comment like (frontend only)
+  const handleCommentLike = (commentId: string) => {
+    const liked = commentLikedByMe[commentId];
+    setCommentLikedByMe(prev => ({ ...prev, [commentId]: !liked }));
+    setCommentLikes(prev => ({
+      ...prev,
+      [commentId]: (prev[commentId] || 0) + (liked ? -1 : 1)
+    }));
+  };
+
+
+
+
   const handleCommentSubmit = (postId: string, text: string) => {
     if (!text.trim()) return;
     const content = replyingTo && replyingTo.postId === postId
@@ -1487,6 +1529,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       loadFeed();
     }).catch((err: any) => showToast(err.message, 'danger'));
   };
+
 
   const [spotlightPeople, setSpotlightPeople] = useState<any[]>([]);
 
@@ -1971,215 +2014,84 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </button>
                 </footer>
 
-                {/* Comments */}
-                {expandedComments[post.id] && (
-                  <div className="feed-card-comments">
-                    {(() => {
-                      const { topLevel, repliesMap } = parseCommentsAndReplies((post as any).comments);
-                      return topLevel.map((comment: any) => (
-                        <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
-                          <div className="comment-item">
-                            <img 
-                              src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'} 
-                              alt="" 
-                              onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
-                              style={{ cursor: 'pointer' }}
-                            />
-                            <div className="comment-text-wrap" style={{ flex: 1 }}>
-                              <strong 
-                                onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {comment.author?.full_name || 'Alumnus'}
-                              </strong>
-                              <p style={{ margin: '2px 0 4px' }}>{comment.content}</p>
-                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(comment.created_at)}</span>
+
+                {/* ──── Advanced Comment Section ──── */}
+                {expandedComments[post.id] && (() => {
+                  const { topLevel, repliesMap } = parseCommentsAndReplies((post as any).comments);
+                  const sorted = sortComments(topLevel, post.id);
+                  const totalCount = sorted.length;
+                  const showLimit = visibleCommentCount[post.id] ?? 3;
+                  const visible = sorted.slice(0, showLimit);
+                  const commentText = commentInputs[post.id] || '';
+                  const maxChars = 500;
+                  const emojiList = ['😄','😂','❤️','🔥','👍','🎉','😊','🙏','👏','💡','🤔','😍','✨','😢','🤣'];
+                  const sortMode = commentSortMode[post.id] || 'newest';
+
+                  return (
+                    <div className="adv-comments-panel">
+                      {/* Sort Bar */}
+                      <div className="adv-sort-bar">
+                        <span className="adv-sort-label">Comments</span>
+                        <div className="adv-sort-tabs">
+                          {(['newest', 'oldest', 'top'] as const).map(mode => (
+                            <button
+                              key={mode}
+                              type="button"
+                              className={`adv-sort-tab ${sortMode === mode ? 'active' : ''}`}
+                              onClick={() => setCommentSortMode(prev => ({ ...prev, [post.id]: mode }))}
+                            >
+                              {mode === 'newest' ? '🕐 Newest' : mode === 'oldest' ? '🕰 Oldest' : '🔥 Top'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Comment List */}
+                      <div className="adv-comment-list">
+                        {totalCount === 0 && (
+                          <p className="adv-no-comments">Be the first to comment ✨</p>
+                        )}
+                        {visible.map((comment: any) => (
+                          <div key={comment.id} className="adv-comment-thread">
+                            {/* Top-level comment */}
+                            <div className="adv-comment-item">
+                              <img
+                                src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'}
+                                alt=""
+                                className="adv-comment-avatar"
+                              />
+                              <div className="adv-comment-content">
+                                <div className="adv-comment-header">
+                                  <span
+                                    className="adv-comment-author"
+                                    onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
+                                  >
+                                    {comment.author?.full_name || 'Alumnus'}
+                                  </span>
+                                  <span className="adv-comment-time">{formatTimeAgo(comment.created_at || new Date().toISOString())}</span>
+                                </div>
+                                <p className="adv-comment-text">{comment.content}</p>
                                 <button
-                                  type="button"
-                                  onClick={() => setReplyingTo({ postId: post.id, commentId: comment.id, authorName: comment.author?.full_name || 'Alumnus' })}
-                                  style={{ background: 'none', border: 'none', color: '#ec4899', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                                  className="adv-reply-btn"
+                                  onClick={() => setReplyingTo(
+                                    replyingTo?.postId === post.id && replyingTo?.commentId === comment.id
+                                      ? null
+                                      : { postId: post.id, commentId: comment.id, authorName: comment.author?.full_name || 'Alumnus' }
+                                  )}
                                 >
                                   Reply
                                 </button>
                               </div>
                             </div>
                           </div>
-
-                          {/* Render nested replies */}
-                          {repliesMap[comment.id]?.map((reply: any) => (
-                            <div key={reply.id} className="comment-item" style={{ marginLeft: '44px', marginTop: '4px', borderLeft: '2px solid #e2e8f0', paddingLeft: '12px' }}>
-                              <img 
-                                src={reply.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&q=80'} 
-                                alt="" 
-                                style={{ width: '32px', height: '32px', cursor: 'pointer' }} 
-                                onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
-                              />
-                              <div className="comment-text-wrap">
-                                <strong 
-                                  onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  {reply.author?.full_name || 'Alumnus'}
-                                </strong>
-                                <p style={{ margin: '2px 0 4px' }}>{reply.content}</p>
-                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatTimeAgo(reply.created_at)}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ));
-                    })()}
-                    {replyingTo && replyingTo.postId === post.id && (
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: '#f1f5f9',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        fontSize: '0.78rem'
-                      }}>
-                        <span style={{ color: '#475569' }}>
-                          Replying to <strong style={{ color: '#ec4899' }}>@{replyingTo.authorName}</strong>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setReplyingTo(null)}
-                          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
-                        >
-                          ✕
-                        </button>
+                        ))}
                       </div>
-                    )}
-                    <div className="comment-input-wrap">
-                      <img src={currentUser.profile_photo} alt="" />
-                      <input
-                        value={commentInputs[post.id] || ''}
-                        onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={e => { if (e.key === 'Enter') handleCommentSubmit(post.id, commentInputs[post.id] || ''); }}
-                        placeholder="Add a comment..."
-                        className="comment-input"
-                      />
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </article>
             );
           })}
-
-          {/* ============ STORY VIEWER OVERLAY ============ */}
-          {activeStoryGroupIndex !== null && (() => {
-            const isOwnStory = activeStoryGroupIndex === -1;
-            const storyList = isOwnStory ? currentUserStories : (stories[activeStoryGroupIndex as number]?.stories || []);
-            const currentStory = storyList[activeStoryIndex];
-            const groupInfo = isOwnStory
-              ? {
-                  userName: currentUser?.full_name || 'You',
-                  userAvatar: currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80',
-                  userBatch: `Class of ${currentUser?.batch_year || 'â€”'}`
-                }
-              : {
-                  userName: stories[activeStoryGroupIndex as number]?.userName || '',
-                  userAvatar: stories[activeStoryGroupIndex as number]?.userAvatar || '',
-                  userBatch: `Batch of ${stories[activeStoryGroupIndex as number]?.userBatch || ''}`
-                };
-            if (!currentStory) return null;
-            const hasBg = currentStory.mediaUrl && currentStory.mediaUrl.startsWith('http');
-            return (
-              <div
-                className="sv-overlay"
-                onMouseDown={() => setStoryPaused(true)}
-                onMouseUp={() => setStoryPaused(false)}
-              >
-                {/* Progress bars */}
-                <div className="sv-progress-bar-row">
-                  {storyList.map((_, i) => (
-                    <div key={i} className="sv-progress-bar-track">
-                      <div
-                        className="sv-progress-bar-fill"
-                        style={{
-                          width: i < activeStoryIndex ? '100%'
-                            : i === activeStoryIndex ? `${storyProgress}%`
-                            : '0%'
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Header */}
-                <div className="sv-header">
-                  <img src={groupInfo.userAvatar} alt={groupInfo.userName} className="sv-header-avatar" />
-                  <div className="sv-header-info">
-                    <span className="sv-header-name">{groupInfo.userName}</span>
-                    <span className="sv-header-meta">{groupInfo.userBatch} Â· {currentStory.timestamp}</span>
-                  </div>
-                  <button className="sv-close-btn" onClick={(e) => { e.stopPropagation(); closeStoryViewer(); }}>
-                    <X size={26} />
-                  </button>
-                </div>
-
-                {/* Story content */}
-                <div
-                  className="sv-content"
-                  style={
-                    hasBg
-                      ? { backgroundImage: `url(${currentStory.mediaUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                      : { background: 'linear-gradient(135deg, #FF7A1A 0%, #d4af37 100%)' }
-                  }
-                  onClick={(e) => {
-                    const x = e.clientX;
-                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    if (x - rect.left < rect.width / 2) handlePrevStory();
-                    else handleNextStory();
-                  }}
-                >
-                  {currentStory.text && (
-                    <div className="sv-text-overlay">{currentStory.text}</div>
-                  )}
-                </div>
-
-                {/* Reply bar */}
-                <div className="sv-reply-bar">
-                  <input
-                    className="sv-reply-input"
-                    value={storyReplyText}
-                    onChange={e => setStoryReplyText(e.target.value)}
-                    placeholder={`Reply to ${groupInfo.userName.split(' ')[0]}...`}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && storyReplyText.trim()) {
-                        showToast('Reply sent!', 'success');
-                        setStoryReplyText('');
-                      }
-                    }}
-                    onClick={e => e.stopPropagation()}
-                  />
-                  <button
-                    className="sv-reply-send"
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (storyReplyText.trim()) {
-                        showToast('Reply sent!', 'success');
-                        setStoryReplyText('');
-                      }
-                    }}
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-
-                {/* Nav arrows */}
-                <button className="sv-nav sv-nav-left" onClick={e => { e.stopPropagation(); handlePrevStory(); }}>
-                  <ChevronLeft size={28} />
-                </button>
-                <button className="sv-nav sv-nav-right" onClick={e => { e.stopPropagation(); handleNextStory(); }}>
-                  <ChevronRight size={28} />
-                </button>
-              </div>
-            );
-          })()}
 
           {/* ============ STORY CREATION MODAL – FULL FEATURED ============ */}
           {createStoryOpen && (
