@@ -417,58 +417,6 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
               </div>
             ))}
           </div>
-
-          {/* Recent Drafts Section */}
-          <div style={{
-            marginTop: '40px',
-            background: 'var(--heritage-card, #ffffff)',
-            borderRadius: '16px',
-            padding: '24px 28px',
-            border: '1px solid var(--heritage-line, #e7e7e7)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '1rem'
-                }}>📂</span>
-                <div>
-                  <strong style={{ fontSize: '0.95rem', color: 'var(--heritage-ink, #161719)', display: 'block' }}>Recent Drafts</strong>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted, #77797d)' }}>Pick up where you left off</span>
-                </div>
-              </div>
-              <button type="button" onClick={() => showToast('Drafts feature coming soon!', 'info')} style={{
-                background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer',
-                fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px'
-              }}>View all ›</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-              {[
-                { title: 'Batch of 2015 Reunion Photos', meta: 'Edited 2 hours ago · 24 images', gradient: 'linear-gradient(135deg, #f857a6, #ff5858)', emoji: '📸' },
-                { title: 'My Journey After Graduation', meta: 'Edited yesterday · Draft', gradient: 'linear-gradient(135deg, #a855f7, #c026d3)', emoji: '📝' },
-              ].map(draft => (
-                <div key={draft.title} onClick={() => showToast('Opening draft...', 'info')} style={{
-                  display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
-                  borderRadius: '12px', border: '1px solid var(--heritage-line, #e7e7e7)',
-                  cursor: 'pointer', transition: 'background 0.15s',
-                  background: 'rgba(0,0,0,0.01)'
-                }}>
-                  <span style={{
-                    width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
-                    background: draft.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: '1.1rem'
-                  }}>{draft.emoji}</span>
-                  <div>
-                    <strong style={{ fontSize: '0.88rem', color: 'var(--heritage-ink, #161719)', display: 'block' }}>{draft.title}</strong>
-                    <span style={{ fontSize: '0.76rem', color: 'var(--heritage-muted, #77797d)' }}>{draft.meta}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </>
       )}
 

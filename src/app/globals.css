@@ -3751,7 +3751,9 @@ button:disabled {
 .screen-messages .main-viewport,
 .screen-admin .main-viewport,
 .screen-profile .main-viewport,
-.screen-mentorship .main-viewport {
+.screen-mentorship .main-viewport,
+.screen-careers .main-viewport,
+.screen-jobs .main-viewport {
   background: var(--heritage-page);
   background-image: none;
   color: var(--heritage-ink);
