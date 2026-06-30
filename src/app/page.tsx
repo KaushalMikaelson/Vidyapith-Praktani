@@ -18,7 +18,6 @@ import { AdminScreen } from '../screens/AdminScreen';
 import { CreateScreen } from '../screens/CreateScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
 
 import { 
   Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
@@ -505,15 +504,13 @@ export default function App() {
             onNavigate={handleActiveScreenChange}
           />
         );
-      case 'settings':
-        return <SettingsScreen showToast={showToast} />;
       case 'profile':
         return (
           <FeedScreen 
             showToast={showToast} 
             onViewProfile={handleViewProfile} 
             screenMode="profile" 
-            forceProfileId={profileUserId || currentUser?.id} 
+            forceProfileId={profileUserId ?? (activeScreen === 'profile' ? currentUser?.id : undefined)} 
             onNavigate={handleActiveScreenChange}
           />
         );

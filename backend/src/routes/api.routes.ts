@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { register, login, resolveVerificationQueue, getMe, requestEmailOTP, verifyEmailOTP, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { getLeaderboard, createCheckoutSession } from '../controllers/donations.controller.js';
-import { listJobs, createJob, applyJob } from '../controllers/jobs.controller.js';
+import { listJobs, createJob, applyJob, updateApplicationStatus } from '../controllers/jobs.controller.js';
 import { listNews, createNews, listHeritage } from '../controllers/news.controller.js';
 import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 import { rateLimiter } from '../middlewares/rateLimiter.js';
@@ -49,6 +49,7 @@ apiRouter.post('/donations/checkout', requireAuth, createCheckoutSession);
 apiRouter.get('/jobs', requireAuth, listJobs);
 apiRouter.post('/jobs', requireAuth, createJob);
 apiRouter.post('/jobs/:id/apply', requireAuth, applyJob);
+apiRouter.post('/jobs/:id/applications/:userId/status', requireAuth, updateApplicationStatus);
 
 // News & Heritage Endpoints
 apiRouter.get('/news', requireAuth, listNews);

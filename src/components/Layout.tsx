@@ -6,7 +6,7 @@ import { User, Notification } from '../database/database';
 import { apiFetch } from '../utils/api';
 import { 
   Home, Plus, Search, Bell, MessageCircle,
-  User as UserIcon, ShieldCheck, LogOut, Settings,
+  User as UserIcon, ShieldCheck, LogOut,
   Briefcase, Calendar, GraduationCap
 } from 'lucide-react';
 import { ThreeBackground } from './ThreeBackground';
@@ -166,9 +166,6 @@ export const Layout: React.FC<LayoutProps> = ({
               <div className="rail-popup-divider" />
               <button className="rail-popup-item" onClick={() => { setActiveScreen('profile'); setProfileOpen(false); }}>
                 <UserIcon size={15} /> My Profile
-              </button>
-              <button className="rail-popup-item" onClick={() => { setActiveScreen('settings'); setProfileOpen(false); }}>
-                <Settings size={15} /> Settings
               </button>
               {currentUser.role === 'admin' && (
                 <button className="rail-popup-item" onClick={() => { setActiveScreen('admin'); setProfileOpen(false); }}>

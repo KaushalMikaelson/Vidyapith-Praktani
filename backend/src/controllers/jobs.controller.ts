@@ -36,8 +36,20 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
 
     const postersMap = new Map(posters.map(u => [u.id, u]));
 
+    // Parse application strings
+    const parsedApplicationsList = list.map(job => {
+      return (job.applications || []).map(str => {
+        try {
+          if (str.startsWith('{')) {
+            return JSON.parse(str);
+          }
+        } catch {}
+        return { userId: str, coverNote: "", appliedAt: job.created_at, status: "Applied" };
+      });
+    });
+
     // Fetch and map applicant profiles
-    const applicantIds = Array.from(new Set(list.flatMap(j => j.applications || [])));
+    const applicantIds = Array.from(new Set(parsedApplicationsList.flat().map(app => app.userId)));
     const applicants = await prisma.user.findMany({
       where: { id: { in: applicantIds } },
       include: { profile: true }
@@ -52,9 +64,19 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
       company: u.profile?.company || ""
     }]));
 
-    const joinedList = list.map(job => {
+    const joinedList = list.map((job, idx) => {
       const poster = postersMap.get(job.posted_by);
-      const jobApplicants = (job.applications || []).map(id => applicantsMap.get(id)).filter(Boolean);
+      const parsedApps = parsedApplicationsList[idx];
+      const jobApplicants = parsedApps.map(app => {
+        const uDetails = applicantsMap.get(app.userId);
+        if (!uDetails) return null;
+        return {
+          ...uDetails,
+          cover_note: app.coverNote,
+          applied_at: app.appliedAt,
+          status: app.status || "Applied"
+        };
+      }).filter(Boolean);
       return {
         ...job,
         poster: poster ? {
@@ -112,6 +134,7 @@ export const createJob = async (req: AuthenticatedRequest, res: Response): Promi
 export const applyJob = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { coverNote } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -126,8 +149,27 @@ export const applyJob = async (req: AuthenticatedRequest, res: Response): Promis
     }
 
     const applications = job.applications || [];
-    if (!applications.includes(userId)) {
-      applications.push(userId);
+    
+    // Check if user has already applied
+    const alreadyApplied = applications.some(str => {
+      try {
+        if (str.startsWith('{')) {
+          const parsed = JSON.parse(str);
+          return parsed.userId === userId;
+        }
+      } catch {}
+      return str === userId;
+    });
+
+    if (!alreadyApplied) {
+      const appObj = {
+        userId,
+        coverNote: coverNote || "",
+        appliedAt: new Date().toISOString(),
+        status: "Applied"
+      };
+      
+      applications.push(JSON.stringify(appObj));
       await prisma.job.update({
         where: { id: id as string },
         data: { applications }
@@ -147,6 +189,79 @@ export const applyJob = async (req: AuthenticatedRequest, res: Response): Promis
     }
 
     res.status(200).json({ success: true, message: "Application filed successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id, userId } = req.params;
+    const { status } = req.body;
+    const currentUserId = req.user?.id;
+
+    if (!currentUserId) {
+      res.status(401).json({ error: "Unauthorized access." });
+      return;
+    }
+
+    const job = await prisma.job.findUnique({ where: { id: id as string } });
+    if (!job) {
+      res.status(404).json({ error: "Job opening not found." });
+      return;
+    }
+
+    if (job.posted_by !== currentUserId) {
+      res.status(403).json({ error: "Forbidden: Only the sponsor can update applicant status." });
+      return;
+    }
+
+    const applications = job.applications || [];
+    let updated = false;
+
+    const newApplications = applications.map(str => {
+      try {
+        if (str.startsWith('{')) {
+          const parsed = JSON.parse(str);
+          if (parsed.userId === userId) {
+            updated = true;
+            return JSON.stringify({ ...parsed, status });
+          }
+        } else if (str === userId) {
+          updated = true;
+          return JSON.stringify({
+            userId,
+            coverNote: "",
+            appliedAt: job.created_at.toISOString(),
+            status
+          });
+        }
+      } catch {}
+      return str;
+    });
+
+    if (!updated) {
+      res.status(404).json({ error: "Applicant not found on this job opening." });
+      return;
+    }
+
+    await prisma.job.update({
+      where: { id: id as string },
+      data: { applications: newApplications }
+    });
+
+    // Alert the applicant
+    await prisma.notification.create({
+      data: {
+        user_id: userId as string,
+        title: "Job Status Updated",
+        body: `Your application stage for ${job.title} at ${job.company} has been updated to "${status}".`,
+        type: "info"
+      }
+    });
+
+    jobsCache.invalidate("jobs:");
+    res.status(200).json({ success: true, message: `Applicant status updated to ${status}.` });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

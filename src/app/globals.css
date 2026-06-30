@@ -7399,3 +7399,23 @@ button:disabled {
   font-weight: 700 !important;
 }
 
+/* Hide injected third-party job extension bars that break layout */
+[class*="careerflow"],
+[id*="careerflow"],
+[class*="Careerflow"],
+[id*="Careerflow"],
+.cf-button-container,
+.cf-widget,
+.cf-tracker-btn,
+.careerflow-extension-toolbar,
+.careerflow-bar {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+

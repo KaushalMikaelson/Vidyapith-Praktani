@@ -586,6 +586,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
   useEffect(() => {
     if (screenMode === 'profile' && forceProfileId) {
+      setProfileUser(null);
       loadProfile(forceProfileId);
     } else {
       loadFeed();
@@ -2690,7 +2691,15 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     );
   }
 
-  if (screenMode === 'profile' && profileUser) {
+  if (screenMode === 'profile') {
+    if (!profileUser || profileUser.id !== forceProfileId) {
+      return (
+        <div className="forums-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
+          <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.92rem' }}>Loading profile...</p>
+        </div>
+      );
+    }
+
     const person = profileUser.profile || profileUser;
 
     // Helper states for follow and connection actions
@@ -4842,7 +4851,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
                 <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                   <h4 style={{ color: 'white', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.05em' }}>Alumni Bio & Scholastic Memories</h4>
-                  <p style={{ lineHeight: 1.5 }}>{profileUser.profile?.bio || profileUser.bio || "No biography added yet. Update via Settings."}</p>
+                  <p style={{ lineHeight: 1.5 }}>{profileUser.profile?.bio || profileUser.bio || "No biography added yet. Edit your profile to update."}</p>
                 </div>
 
                 {/* Mentorship Status Badge */}
