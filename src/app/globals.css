@@ -7342,3 +7342,58 @@ button:disabled {
   transform: translateY(-1px);
 }
 
+/* Center Options Dialog Overlay (Instagram Style) */
+.instagram-options-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.instagram-options-modal {
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  width: 400px !important;
+  max-width: 90% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+  animation: zoomIn 0.15s cubic-bezier(0.1, 0.8, 0.3, 1) !important;
+}
+
+.instagram-options-btn {
+  background: #ffffff !important;
+  border: none !important;
+  border-bottom: 1px solid #efefef !important;
+  padding: 14px 16px !important;
+  font-size: 0.88rem !important;
+  color: #262626 !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-weight: 400 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  transition: background 0.15s ease !important;
+}
+
+.instagram-options-btn:last-child {
+  border-bottom: none !important;
+}
+
+.instagram-options-btn:hover {
+  background: #f7f7f7 !important;
+}
+
+.instagram-options-btn.danger {
+  color: #ed4956 !important;
+}
+
+.instagram-options-btn.bold {
+  font-weight: 700 !important;
+}
+

@@ -118,6 +118,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [connections, setConnections] = useState<any[]>([]);
   const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; authorName: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<{ [postId: string]: boolean }>({});
+  const [activePostMenuId, setActivePostMenuId] = useState<string | null>(null);
+  const [postToDeleteId, setPostToDeleteId] = useState<string | null>(null);
 
   // Load user stories from localStorage
   useEffect(() => {
@@ -1186,6 +1188,44 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setActiveOptionsPostId(null);
   };
 
+  const handleDeletePost = (postId: string) => {
+    setPostToDeleteId(postId);
+    setActivePostMenuId(null);
+  };
+
+  const doDeletePost = async () => {
+    if (!postToDeleteId) return;
+    try {
+      await apiFetch(`/posts/${postToDeleteId}`, { method: 'DELETE' });
+      showToast('Post deleted successfully', 'success');
+      setPosts(prev => prev.filter(p => p.id !== postToDeleteId));
+      setProfilePosts(prev => prev.filter(p => p.id !== postToDeleteId));
+      setPostToDeleteId(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete post', 'danger');
+    }
+  };
+
+  const handleTogglePinPost = async (postId: string) => {
+    try {
+      const result = await apiFetch(`/posts/${postId}/pin`, { method: 'POST' });
+      showToast(result.is_pinned ? 'Post pinned successfully' : 'Post unpinned successfully', 'success');
+      const updatePin = (p: any) => p.id === postId ? { ...p, is_pinned: result.is_pinned } : p;
+      setPosts(prev => prev.map(updatePin));
+      setProfilePosts(prev => prev.map(updatePin));
+      setActivePostMenuId(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to toggle pin', 'danger');
+    }
+  };
+
+  const handleCopyPostLink = (postId: string) => {
+    const link = `${window.location.origin}/?post=${postId}`;
+    navigator.clipboard.writeText(link);
+    showToast("Shareable link copied to clipboard!", "success");
+    setActivePostMenuId(null);
+  };
+
   const handleDoubleLike = async (postId: string, isAlreadyLiked: boolean) => {
     setLikedAnimationPostId(prev => ({ ...prev, [postId]: true }));
     setTimeout(() => {
@@ -1954,10 +1994,58 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     <h3>{author?.full_name || 'Vidyapith Alumnus'}</h3>
                     <p>{formatTimeAgo(post.created_at)} · Class of {author?.batch_year || '—'}</p>
                   </div>
-                  <button className="post-more-btn" type="button" aria-label="More options" onClick={(e) => e.stopPropagation()}>
+                   <button 
+                    className="post-more-btn" 
+                    type="button" 
+                    aria-label="More options" 
+                    onClick={(e) => { e.stopPropagation(); setActivePostMenuId(post.id); }}
+                  >
                     <MoreHorizontal size={20} />
                   </button>
                 </header>
+
+                {/* Options Dialog Overlay (Instagram Style) */}
+                {activePostMenuId === post.id && (
+                  <div className="instagram-options-overlay" onClick={() => setActivePostMenuId(null)}>
+                    <div className="instagram-options-modal" onClick={(e) => e.stopPropagation()}>
+                      {(currentUser?.id === post.author_id || currentUser?.role === 'admin') && (
+                        <button
+                          type="button"
+                          className="instagram-options-btn danger bold"
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                      
+                      {currentUser?.role === 'admin' && (
+                        <button
+                          type="button"
+                          className="instagram-options-btn danger bold"
+                          onClick={() => handleTogglePinPost(post.id)}
+                        >
+                          {post.is_pinned ? 'Unpin Post' : 'Pin to Top'}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className="instagram-options-btn"
+                        onClick={() => handleCopyPostLink(post.id)}
+                      >
+                        Copy Link
+                      </button>
+
+                      <button
+                        type="button"
+                        className="instagram-options-btn"
+                        onClick={() => setActivePostMenuId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Caption */}
                 {post.content && (
@@ -4599,6 +4687,72 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   onMouseLeave={e => (e.currentTarget.style.background = '#ef4444')}
                 >
                   Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Delete Post Confirmation Modal */}
+        {postToDeleteId && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1200,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)'
+            }}
+            onClick={() => setPostToDeleteId(null)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: '#ffffff', borderRadius: '20px',
+                padding: '32px 28px', maxWidth: '380px', width: '90%',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                border: '1px solid #f1f5f9', textAlign: 'center'
+              }}
+            >
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'rgba(239,68,68,0.1)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <Trash2 size={26} style={{ color: '#ef4444' }} />
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                Delete Post?
+              </h3>
+              <p style={{ margin: '0 0 24px', fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6 }}>
+                Are you sure you want to permanently delete this post? This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setPostToDeleteId(null)}
+                  style={{
+                    flex: 1, padding: '11px 0', borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0', background: '#f8fafc',
+                    fontSize: '0.9rem', fontWeight: 700, color: '#475569',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={doDeletePost}
+                  style={{
+                    flex: 1, padding: '11px 0', borderRadius: '10px',
+                    border: 'none', background: '#ef4444',
+                    fontSize: '0.9rem', fontWeight: 700, color: '#fff',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(239,68,68,0.35)'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#dc2626')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#ef4444')}
+                >
+                  Delete
                 </button>
               </div>
             </div>

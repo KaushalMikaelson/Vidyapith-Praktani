@@ -7,7 +7,7 @@ import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 import { rateLimiter } from '../middlewares/rateLimiter.js';
 
 // Feature Controllers
-import { listPosts, createPost, likePost, listComments, createComment } from '../controllers/posts.controller.js';
+import { listPosts, createPost, likePost, listComments, createComment, deletePost, togglePinPost } from '../controllers/posts.controller.js';
 import { listEvents, createEvent, rsvpEvent } from '../controllers/events.controller.js';
 import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile, getUserRelations } from '../controllers/directory.controller.js';
 import { listMentors, listPairings, requestMentorship } from '../controllers/mentorship.controller.js';
@@ -60,6 +60,8 @@ apiRouter.post('/posts', requireAuth, createPost);
 apiRouter.post('/posts/:id/like', requireAuth, likePost);
 apiRouter.get('/posts/:id/comments', requireAuth, listComments);
 apiRouter.post('/posts/:id/comments', requireAuth, createComment);
+apiRouter.delete('/posts/:id', requireAuth, deletePost);
+apiRouter.post('/posts/:id/pin', requireAuth, togglePinPost);
 
 // Events Endpoints
 apiRouter.get('/events', requireAuth, listEvents);

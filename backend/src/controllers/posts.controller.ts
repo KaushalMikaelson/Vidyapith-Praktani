@@ -238,3 +238,86 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
     res.status(500).json({ error: err.message });
   }
 };
+
+// Delete a post
+export const deletePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized access." });
+      return;
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id }
+    });
+
+    if (!post) {
+      res.status(404).json({ error: "Post not found." });
+      return;
+    }
+
+    // Only allow author or admin to delete
+    if (post.author_id !== userId && userRole !== 'admin') {
+      res.status(403).json({ error: "You do not have permission to delete this post." });
+      return;
+    }
+
+    // Delete comments first
+    await prisma.comment.deleteMany({
+      where: { post_id: id }
+    });
+
+    await prisma.post.delete({
+      where: { id }
+    });
+
+    postCache.clear();
+    res.status(200).json({ success: true, message: "Post deleted successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Toggle pin a post
+export const togglePinPost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized access." });
+      return;
+    }
+
+    // Only admins can pin posts
+    if (userRole !== 'admin') {
+      res.status(403).json({ error: "Only admins can pin posts." });
+      return;
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id }
+    });
+
+    if (!post) {
+      res.status(404).json({ error: "Post not found." });
+      return;
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: { is_pinned: !post.is_pinned }
+    });
+
+    postCache.clear();
+    res.status(200).json({ success: true, is_pinned: updatedPost.is_pinned });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
