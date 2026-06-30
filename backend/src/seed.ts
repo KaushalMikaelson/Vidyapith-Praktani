@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
@@ -22,14 +25,18 @@ async function main() {
 
   console.log("Database cleared. Seeding admin user, news and heritage...");
 
+  const adminEmail = process.env.ADMIN_EMAIL || "kaushalstark1@gmail.com";
+  const adminPhone = process.env.ADMIN_PHONE || "+919608199425";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Klaus@6621";
+
   const salt = await bcrypt.genSalt(10);
-  const adminHash = await bcrypt.hash("Klaus@6621", salt);
+  const adminHash = await bcrypt.hash(adminPassword, salt);
 
   // Seed the admin user
   const adminUser = await prisma.user.create({
     data: {
-      email: "kaushalstar1@gmail.com",
-      phone: "+91 9431320000",
+      email: adminEmail,
+      phone: adminPhone,
       password_hash: adminHash,
       role: "admin",
       verify_status: "approved",
