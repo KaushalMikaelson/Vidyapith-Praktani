@@ -593,7 +593,7 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
 
     const cacheKey = `connections:list:${userId}`;
     const cachedData = connectionsCache.get<any[]>(cacheKey);
-    if (cachedData) {
+    if (cachedData && cachedData.length > 0) {
       res.status(200).json(cachedData);
       return;
     }
@@ -609,7 +609,7 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
     });
 
     if (connections.length === 0) {
-      connectionsCache.set(cacheKey, []);
+      // Don't cache empty — new connections could be accepted at any time
       res.status(200).json([]);
       return;
     }

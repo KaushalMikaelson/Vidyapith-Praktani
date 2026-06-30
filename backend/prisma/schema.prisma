@@ -225,4 +225,39 @@ model PasswordReset {
   created_at DateTime @default(now())
 }
 
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @default("") @db.Text
+  avatar_url  String?
+  created_by  String
+  created_at  DateTime @default(now())
+
+  @@index([created_by])
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  group_id  String
+  user_id   String
+  role      String   @default("member")
+  joined_at DateTime @default(now())
+
+  @@unique([group_id, user_id])
+  @@index([group_id])
+  @@index([user_id])
+}
+
+model GroupMessage {
+  id         String   @id @default(uuid())
+  group_id   String
+  sender_id  String
+  content    String   @db.Text
+  created_at DateTime @default(now())
+
+  @@index([group_id])
+  @@index([sender_id])
+}
+
+
 

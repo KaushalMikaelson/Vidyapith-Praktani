@@ -16,6 +16,7 @@ import { listPendingUsers } from '../controllers/admin.controller.js';
 import { uploadMedia } from '../controllers/upload.controller.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 import { listConversations, getConversation, sendMessage } from '../controllers/messages.controller.js';
+import { createGroup, listMyGroups, getGroupDetails, addMembers, removeMember, updateGroup, deleteGroup, listGroupMessages, sendGroupMessage } from '../controllers/groups.controller.js';
 
 export const apiRouter = Router();
 
@@ -98,3 +99,13 @@ apiRouter.get('/messages/conversations', requireAuth, listConversations);
 apiRouter.get('/messages/:partnerId', requireAuth, getConversation);
 apiRouter.post('/messages/:partnerId', requireAuth, sendMessage);
 
+// Group Chat Endpoints
+apiRouter.post('/groups', requireAuth, createGroup);
+apiRouter.get('/groups', requireAuth, listMyGroups);
+apiRouter.get('/groups/:id', requireAuth, getGroupDetails);
+apiRouter.patch('/groups/:id', requireAuth, updateGroup);
+apiRouter.delete('/groups/:id', requireAuth, deleteGroup);
+apiRouter.post('/groups/:id/members', requireAuth, addMembers);
+apiRouter.delete('/groups/:id/members/:userId', requireAuth, removeMember);
+apiRouter.get('/groups/:id/messages', requireAuth, listGroupMessages);
+apiRouter.post('/groups/:id/messages', requireAuth, sendGroupMessage);
