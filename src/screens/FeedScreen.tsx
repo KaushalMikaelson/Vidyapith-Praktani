@@ -117,6 +117,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [feedTab, setFeedTab] = useState<string>('All');
   const [connections, setConnections] = useState<any[]>([]);
   const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; authorName: string } | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<{ [postId: string]: boolean }>({});
 
   // Load user stories from localStorage
   useEffect(() => {
@@ -1271,10 +1272,36 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
     // --- Fire API in background ---
     try {
-      await apiFetch(`/posts/${postId}/comments`, {
+      const result = await apiFetch(`/posts/${postId}/comments`, {
         method: 'POST',
         body: JSON.stringify({ content })
       });
+      
+      if (result && result.comment) {
+        const realId = result.comment.id;
+        const replaceId = (p: any) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: (p.comments || []).map((c: any) =>
+                  c.id === tempComment.id ? { ...c, id: realId } : c
+                )
+              }
+            : p;
+        setPosts(prev => prev.map(replaceId));
+        setProfilePosts(prev => prev.map(replaceId));
+        setSelectedPostForModal((prev: any) =>
+          prev && prev.id === postId
+            ? {
+                ...prev,
+                comments: (prev.comments || []).map((c: any) =>
+                  c.id === tempComment.id ? { ...c, id: realId } : c
+                )
+              }
+            : prev
+        );
+      }
+
       // Silently refresh feed in background to get real comment data (no loading spinner)
       apiFetch(`/posts?groupId=${activeGroupId}`).then(feedPosts => setPosts(feedPosts)).catch(() => {});
     } catch (err: any) {
@@ -1445,6 +1472,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const parseCommentsAndReplies = (commentsList: any[]) => {
     const topLevel: any[] = [];
     const repliesMap: { [commentId: string]: any[] } = {};
+    const commentIds = new Set((commentsList || []).map(c => c.id));
 
     (commentsList || []).forEach(c => {
       let isReply = false;
@@ -1454,10 +1482,35 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       if (c.content && c.content.trim().startsWith('{')) {
         try {
           const parsed = JSON.parse(c.content);
-          if (parsed && parsed.parentCommentId) {
-            isReply = true;
-            parentId = parsed.parentCommentId;
+          if (parsed && parsed.text) {
             textContent = parsed.text;
+            if (parsed.parentCommentId) {
+              if (commentIds.has(parsed.parentCommentId)) {
+                isReply = true;
+                parentId = parsed.parentCommentId;
+              } else if (parsed.parentCommentId.startsWith('temp-')) {
+                // Heal orphaned reply: find the parent comment created at the same time
+                const tempTime = parseInt(parsed.parentCommentId.replace('temp-', ''), 10);
+                if (!isNaN(tempTime)) {
+                  let bestParent: any = null;
+                  let minDiff = Infinity;
+                  (commentsList || []).forEach(parentCandidate => {
+                    // Do not match self or another reply (which starts with '{' in database)
+                    if (parentCandidate.id === c.id || parentCandidate.content.trim().startsWith('{')) return;
+                    const diff = Math.abs(new Date(parentCandidate.created_at).getTime() - tempTime);
+                    if (diff < minDiff) {
+                      minDiff = diff;
+                      bestParent = parentCandidate;
+                    }
+                  });
+                  // If difference is within 5 seconds, match them!
+                  if (bestParent && minDiff < 5000) {
+                    isReply = true;
+                    parentId = bestParent.id;
+                  }
+                }
+              }
+            }
           }
         } catch (e) {
           // Not JSON
@@ -2018,74 +2071,189 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 {/* ──── Advanced Comment Section ──── */}
                 {expandedComments[post.id] && (() => {
                   const { topLevel, repliesMap } = parseCommentsAndReplies((post as any).comments);
-                  const sorted = sortComments(topLevel, post.id);
+                  // Sort newest on top
+                  const sorted = [...topLevel].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                   const totalCount = sorted.length;
-                  const showLimit = visibleCommentCount[post.id] ?? 3;
+                  const showLimit = visibleCommentCount[post.id] ?? 5;
                   const visible = sorted.slice(0, showLimit);
                   const commentText = commentInputs[post.id] || '';
                   const maxChars = 500;
                   const emojiList = ['😄','😂','❤️','🔥','👍','🎉','😊','🙏','👏','💡','🤔','😍','✨','😢','🤣'];
-                  const sortMode = commentSortMode[post.id] || 'newest';
 
                   return (
                     <div className="adv-comments-panel">
-                      {/* Sort Bar */}
-                      <div className="adv-sort-bar">
-                        <span className="adv-sort-label">Comments</span>
-                        <div className="adv-sort-tabs">
-                          {(['newest', 'oldest', 'top'] as const).map(mode => (
-                            <button
-                              key={mode}
-                              type="button"
-                              className={`adv-sort-tab ${sortMode === mode ? 'active' : ''}`}
-                              onClick={() => setCommentSortMode(prev => ({ ...prev, [post.id]: mode }))}
-                            >
-                              {mode === 'newest' ? '🕐 Newest' : mode === 'oldest' ? '🕰 Oldest' : '🔥 Top'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
                       {/* Comment List */}
                       <div className="adv-comment-list">
                         {totalCount === 0 && (
                           <p className="adv-no-comments">Be the first to comment ✨</p>
                         )}
-                        {visible.map((comment: any) => (
-                          <div key={comment.id} className="adv-comment-thread">
-                            {/* Top-level comment */}
-                            <div className="adv-comment-item">
-                              <img
-                                src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'}
-                                alt=""
-                                className="adv-comment-avatar"
-                              />
-                              <div className="adv-comment-content">
-                                <div className="adv-comment-header">
-                                  <span
-                                    className="adv-comment-author"
-                                    onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
-                                  >
-                                    {comment.author?.full_name || 'Alumnus'}
-                                  </span>
-                                  <span className="adv-comment-time">{formatTimeAgo(comment.created_at || new Date().toISOString())}</span>
+                        {visible.map((comment: any) => {
+                          const hasReplies = repliesMap[comment.id] && repliesMap[comment.id].length > 0;
+                          return (
+                            <div key={comment.id} className="adv-comment-thread">
+                              {/* Top-level comment */}
+                              <div className="adv-comment-item">
+                                <img
+                                  src={comment.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'}
+                                  alt=""
+                                  className="adv-comment-avatar"
+                                  onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
+                                />
+                                <div className="adv-comment-content">
+                                  <div className="adv-comment-text-wrapper">
+                                    <span
+                                      className="adv-comment-author"
+                                      onClick={() => comment.author?.id && onViewProfile(comment.author.id)}
+                                    >
+                                      {getUsername(comment.author || {})}
+                                    </span>
+                                    <span className="adv-comment-text">
+                                      {renderMentions(comment.content)}
+                                    </span>
+                                  </div>
+                                  <div className="adv-comment-meta">
+                                    <span className="adv-comment-time">{formatTimeAgo(comment.created_at || new Date().toISOString())}</span>
+                                    <button
+                                      className="adv-reply-btn"
+                                      onClick={() => setReplyingTo(
+                                        replyingTo?.postId === post.id && replyingTo?.commentId === comment.id
+                                          ? null
+                                          : { postId: post.id, commentId: comment.id, authorName: comment.author?.full_name || 'Alumnus' }
+                                      )}
+                                    >
+                                      Reply
+                                    </button>
+                                  </div>
                                 </div>
-                                <p className="adv-comment-text">{comment.content}</p>
                                 <button
-                                  className="adv-reply-btn"
-                                  onClick={() => setReplyingTo(
-                                    replyingTo?.postId === post.id && replyingTo?.commentId === comment.id
-                                      ? null
-                                      : { postId: post.id, commentId: comment.id, authorName: comment.author?.full_name || 'Alumnus' }
-                                  )}
+                                  type="button"
+                                  className={`adv-comment-heart-btn ${commentLikedByMe[comment.id] ? 'liked' : ''}`}
+                                  onClick={() => handleCommentLike(comment.id)}
                                 >
-                                  Reply
+                                  <Heart size={12} fill={commentLikedByMe[comment.id] ? '#e0245e' : 'none'} color={commentLikedByMe[comment.id] ? '#e0245e' : '#8e8e8e'} />
                                 </button>
                               </div>
+
+                              {/* Nested Replies */}
+                              {hasReplies && (
+                                <div className="adv-replies-container">
+                                  {repliesMap[comment.id].map((reply: any) => (
+                                    <div key={reply.id} className="adv-comment-reply-item">
+                                      <img
+                                        src={reply.author?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&q=80'}
+                                        alt=""
+                                        className="adv-comment-avatar sub-avatar"
+                                        onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
+                                      />
+                                      <div className="adv-comment-content">
+                                        <div className="adv-comment-text-wrapper">
+                                          <span
+                                            className="adv-comment-author"
+                                            onClick={() => reply.author?.id && onViewProfile(reply.author.id)}
+                                          >
+                                            {getUsername(reply.author || {})}
+                                          </span>
+                                          <span className="adv-comment-text">
+                                            {renderMentions(reply.content)}
+                                          </span>
+                                        </div>
+                                        <div className="adv-comment-meta">
+                                          <span className="adv-comment-time">{formatTimeAgo(reply.created_at || new Date().toISOString())}</span>
+                                          <button
+                                            className="adv-reply-btn"
+                                            onClick={() => setReplyingTo(
+                                              replyingTo?.postId === post.id && replyingTo?.commentId === reply.id
+                                                ? null
+                                                : { postId: post.id, commentId: reply.id, authorName: reply.author?.full_name || 'Alumnus' }
+                                            )}
+                                          >
+                                            Reply
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className={`adv-comment-heart-btn ${commentLikedByMe[reply.id] ? 'liked' : ''}`}
+                                        onClick={() => handleCommentLike(reply.id)}
+                                      >
+                                        <Heart size={10} fill={commentLikedByMe[reply.id] ? '#e0245e' : 'none'} color={commentLikedByMe[reply.id] ? '#e0245e' : '#8e8e8e'} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
+
+                      {/* Show More Comments Button */}
+                      {totalCount > showLimit && (
+                        <button
+                          type="button"
+                          className="adv-show-more-comments"
+                          onClick={() => setVisibleCommentCount(prev => ({ ...prev, [post.id]: showLimit + 5 }))}
+                        >
+                          View more comments
+                        </button>
+                      )}
+
+                      {/* Reply indicator */}
+                      {replyingTo && replyingTo.postId === post.id && (
+                        <div className="adv-replying-indicator">
+                          <span>Replying to <strong>{replyingTo.authorName}</strong></span>
+                          <button onClick={() => setReplyingTo(null)} className="adv-cancel-reply">✕</button>
+                        </div>
+                      )}
+
+                      {/* Comment Input */}
+                      <div className="adv-comment-input-row">
+                        <button
+                          type="button"
+                          className="adv-emoji-btn-left"
+                          onClick={() => setShowEmojiPicker(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                        >
+                          <Smile size={22} />
+                        </button>
+                        
+                        <input
+                          type="text"
+                          className="adv-comment-input"
+                          placeholder={replyingTo && replyingTo.postId === post.id ? `Replying to ${replyingTo.authorName}…` : 'Add a comment…'}
+                          value={commentText}
+                          onChange={e => handleCommentChange(post.id, e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleCreateComment(post.id, e); }}
+                          maxLength={maxChars}
+                          autoComplete="off"
+                        />
+                        
+                        <button
+                          type="button"
+                          className="adv-post-btn"
+                          disabled={!commentText.trim()}
+                          onClick={e => handleCreateComment(post.id, e)}
+                        >
+                          Post
+                        </button>
+                      </div>
+
+                      {/* Emoji picker tray */}
+                      {showEmojiPicker[post.id] && (
+                        <div className="adv-emoji-tray-pop">
+                          {emojiList.map(emoji => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              className="adv-emoji-btn-pop"
+                              onClick={() => {
+                                setCommentInputs(prev => ({ ...prev, [post.id]: (prev[post.id] || '') + emoji }));
+                              }}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
