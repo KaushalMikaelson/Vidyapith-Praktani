@@ -12,11 +12,28 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
+    
+    // Check if listed in ALLOWED_ORIGINS env variable
     if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+    
+    // Automatically allow any Vercel deployment (preview or production)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Automatically allow any localhost development port
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+
+    // Automatically allow the custom production domain
+    if (origin === 'https://vidyapithconnect.in' || origin.endsWith('.vidyapithconnect.in')) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
