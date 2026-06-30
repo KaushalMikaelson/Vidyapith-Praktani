@@ -8,6 +8,7 @@ import {
   Home, Plus, Search, Bell, MessageCircle,
   User as UserIcon, ShieldCheck, LogOut, Settings
 } from 'lucide-react';
+import { ThreeBackground } from './ThreeBackground';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -88,6 +89,8 @@ export const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className={`app-layout screen-${activeScreen}`}>
+      <ThreeBackground />
+
 
       {/* ── Icon Rail Sidebar ─────────────────────────────── */}
       <aside className="icon-rail" id="sidebar">

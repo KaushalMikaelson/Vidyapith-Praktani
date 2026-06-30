@@ -121,6 +121,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [activePostMenuId, setActivePostMenuId] = useState<string | null>(null);
   const [postToDeleteId, setPostToDeleteId] = useState<string | null>(null);
 
+
   // Load user stories from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1891,6 +1892,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               );
             })}
           </div>
+
 
           {/* Profile Completeness Banner */}
           {(!currentUser.bio || currentUser.bio === 'Not specified' || !currentUser.linkedin_url || !currentUser.company || currentUser.company === 'Not specified') && (
