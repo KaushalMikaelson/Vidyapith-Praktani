@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 
-// List all conversations for the current user
+// List all conversations for the current user (includes connections even with no messages)
 export const listConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
@@ -11,7 +11,7 @@ export const listConversations = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    // Get all messages involving this user
+    // 1. Get all messages involving this user
     const messages = await prisma.message.findMany({
       where: {
         OR: [{ sender_id: userId }, { receiver_id: userId }]
@@ -19,19 +19,30 @@ export const listConversations = async (req: AuthenticatedRequest, res: Response
       orderBy: { created_at: 'desc' }
     });
 
-    // Find unique partner IDs
-    const partnerIds = Array.from(new Set(
-      messages.map(m => m.sender_id === userId ? m.receiver_id : m.sender_id)
-    ));
+    // Find unique partner IDs from messages
+    const messagePartnerIds = messages.map(m => m.sender_id === userId ? m.receiver_id : m.sender_id);
 
-    if (partnerIds.length === 0) {
+    // 2. Get all accepted connections for this user
+    const connections = await prisma.connection.findMany({
+      where: {
+        status: 'accepted',
+        OR: [{ sender_id: userId }, { receiver_id: userId }]
+      }
+    });
+
+    const connectionPartnerIds = connections.map(c => c.sender_id === userId ? c.receiver_id : c.sender_id);
+
+    // Combine both sets of partner IDs
+    const allPartnerIds = Array.from(new Set([...messagePartnerIds, ...connectionPartnerIds]));
+
+    if (allPartnerIds.length === 0) {
       res.status(200).json([]);
       return;
     }
 
     // Fetch partner profiles
     const partners = await prisma.user.findMany({
-      where: { id: { in: partnerIds } },
+      where: { id: { in: allPartnerIds } },
       include: { profile: true }
     });
 
@@ -57,10 +68,13 @@ export const listConversations = async (req: AuthenticatedRequest, res: Response
       };
     });
 
-    // Sort by most recent message
-    conversations.sort((a, b) =>
-      new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
-    );
+    // Sort by: 1) most recent message, 2) alphabetically if no messages
+    conversations.sort((a, b) => {
+      const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return a.partnerName.localeCompare(b.partnerName);
+    });
 
     res.status(200).json(conversations);
   } catch (err: any) {
