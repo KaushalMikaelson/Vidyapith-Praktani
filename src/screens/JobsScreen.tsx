@@ -35,6 +35,12 @@ export const JobsScreen: React.FC<JobsScreenProps> = ({ showToast, onViewProfile
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [applyMemo, setApplyMemo] = useState('');
 
+  // Response modal states
+  const [responseModalVisible, setResponseModalVisible] = useState(false);
+  const [responseApplicant, setResponseApplicant] = useState<any | null>(null);
+  const [responseJob, setResponseJob] = useState<any | null>(null);
+  const [responseText, setResponseText] = useState('');
+
   const loadJobsData = async () => {
     try {
       let list = await apiFetch('/jobs');

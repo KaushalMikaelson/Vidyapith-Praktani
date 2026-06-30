@@ -36,8 +36,25 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
 
     const postersMap = new Map(posters.map(u => [u.id, u]));
 
+    // Fetch and map applicant profiles
+    const applicantIds = Array.from(new Set(list.flatMap(j => j.applications || [])));
+    const applicants = await prisma.user.findMany({
+      where: { id: { in: applicantIds } },
+      include: { profile: true }
+    });
+    
+    const applicantsMap = new Map(applicants.map(u => [u.id, {
+      id: u.id,
+      email: u.email,
+      full_name: u.profile?.full_name || "Vidyapith Alumnus",
+      profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+      profession: u.profile?.profession_category || "Alumnus",
+      company: u.profile?.company || ""
+    }]));
+
     const joinedList = list.map(job => {
       const poster = postersMap.get(job.posted_by);
+      const jobApplicants = (job.applications || []).map(id => applicantsMap.get(id)).filter(Boolean);
       return {
         ...job,
         poster: poster ? {
@@ -48,7 +65,8 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
           profile_photo: poster.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
           profession: poster.profile?.profession_category || "Alumnus",
           company: poster.profile?.company || ""
-        } : null
+        } : null,
+        applicants: jobApplicants
       };
     });
 

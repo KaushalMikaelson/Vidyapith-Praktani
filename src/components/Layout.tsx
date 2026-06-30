@@ -6,7 +6,8 @@ import { User, Notification } from '../database/database';
 import { apiFetch } from '../utils/api';
 import { 
   Home, Plus, Search, Bell, MessageCircle,
-  User as UserIcon, ShieldCheck, LogOut, Settings
+  User as UserIcon, ShieldCheck, LogOut, Settings,
+  Briefcase, Calendar, GraduationCap
 } from 'lucide-react';
 import { ThreeBackground } from './ThreeBackground';
 
@@ -81,6 +82,9 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'search',        label: 'Search',         icon: Search },
     { id: 'notifications', label: 'Notifications',  icon: Bell, badge: unreadNotifCount },
     { id: 'messages',      label: 'Messages',       icon: MessageCircle },
+    { id: 'jobs',          label: 'Careers',        icon: Briefcase },
+    { id: 'mentorship',    label: 'Mentorship',     icon: GraduationCap },
+    { id: 'events',        label: 'Events',         icon: Calendar },
     { id: 'profile',       label: 'My Profile',     icon: UserIcon },
     ...(currentUser.role === 'admin'
       ? [{ id: 'admin', label: 'Admin', icon: ShieldCheck, badge: pendingCount }]

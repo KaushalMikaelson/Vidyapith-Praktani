@@ -10,48 +10,6 @@ interface EventsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
 }
 
-const fallbackEvents = [
-  {
-    id: 'mock-gala',
-    title: 'Centennial Grand Reunion Gala',
-    description: 'Celebrating a century of legacy with our largest gathering yet - dinner, awards, and live performances.',
-    event_date: '2026-12-15T18:00:00.000Z',
-    location: 'Grand Hall, Campus',
-    event_type: 'physical',
-    online_link: '',
-    max_capacity: 500,
-    created_by: 'system',
-    created_at: new Date().toISOString(),
-    rsvps: [{ user_id: 'demo' }, { user_id: 'demo-2' }]
-  },
-  {
-    id: 'mock-tech',
-    title: 'Careers in Tech: Alumni Panel',
-    description: 'Hear from alumni leading at top tech companies. Q&A and mentorship matching included.',
-    event_date: '2026-11-28T19:30:00.000Z',
-    location: 'Online · Zoom',
-    event_type: 'virtual',
-    online_link: '#',
-    max_capacity: 300,
-    created_by: 'system',
-    created_at: new Date().toISOString(),
-    rsvps: []
-  },
-  {
-    id: 'mock-coffee',
-    title: 'Class of 2010 Coffee Catch-up',
-    description: 'Casual morning meetup for the 2010 batch. Bring your families and reconnect over coffee.',
-    event_date: '2026-12-02T11:00:00.000Z',
-    location: 'Brew Lane, NYC',
-    event_type: 'physical',
-    online_link: '',
-    max_capacity: 80,
-    created_by: 'system',
-    created_at: new Date().toISOString(),
-    rsvps: []
-  }
-] as any[];
-
 export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'archive'>('upcoming');
@@ -137,7 +95,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
       const now = new Date();
       setEvents(source.filter((event: any) => activeTab === 'upcoming' ? new Date(event.event_date) >= now : new Date(event.event_date) < now));
     } catch (err: any) {
-      setEvents(fallbackEvents);
+      setEvents([]);
       showToast(err.message, 'danger');
     }
   };
@@ -148,7 +106,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
 
   if (!currentUser) return null;
 
-  const canCreateEvent = currentUser.role === 'admin';
+  const canCreateEvent = true;
 
   const openRSVPModal = (eventId: string) => {
     setRsvpEventId(eventId);
@@ -389,20 +347,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
             })}
           </div>
 
-          <h2 className="past-title">Past Events</h2>
-          {['Silver Jubilee Homecoming 2024', 'Heritage Campus Walk & Tour'].map((title, index) => (
-            <article key={title} className="event-row-card muted">
-              <img src={index === 0 ? 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=500&h=330&fit=crop&q=80' : 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=500&h=330&fit=crop&q=80'} alt={title} />
-              <div>
-                <span className="event-type past">Past · {index === 0 ? 'Reunion' : 'Meetup'}</span>
-                <h3>{title}</h3>
-                <div className="event-meta"><Calendar size={16} /> {index === 0 ? 'Oct 12, 2024' : 'Sep 05, 2024'} <MapPin size={16} /> {index === 0 ? 'Main Auditorium' : 'Heritage Campus'}</div>
-                <p>{index === 0 ? 'A memorable evening reconnecting 320 alumni. Browse the photo gallery and event recap.' : 'A nostalgic walk through the historic halls where it all began. Relive the memories.'}</p>
-                <small><ImageIcon size={15} /> {index === 0 ? 184 : 96} photos</small>
-              </div>
-              <button className="ghost">View Highlights</button>
-            </article>
-          ))}
+
         </main>
 
         <aside>
