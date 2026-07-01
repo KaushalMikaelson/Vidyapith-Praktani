@@ -33,7 +33,7 @@ interface ToastMsg {
 }
 
 export default function App() {
-  const { currentUser, login, register, loginWithGoogle, refreshSession } = useAuth();
+  const { currentUser, isAuthLoading, login, register, loginWithGoogle, refreshSession } = useAuth();
   
   const googleCallbackRef = useRef<any>(null);
   useEffect(() => {
@@ -661,7 +661,27 @@ export default function App() {
 
   return (
     <>
-      {currentUser ? (
+      {isAuthLoading ? (
+        /* Full-screen loading splash while session is being verified */
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'var(--bg-primary, #0f172a)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, gap: '16px'
+        }}>
+          <div style={{
+            width: '48px', height: '48px', borderRadius: '50%',
+            border: '3px solid rgba(243,112,33,0.2)',
+            borderTop: '3px solid #f37021',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.875rem', fontFamily: 'Inter, sans-serif' }}>
+            Restoring session…
+          </span>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      ) : currentUser ? (
         <Layout 
           activeScreen={activeScreen} 
           setActiveScreen={handleActiveScreenChange} 

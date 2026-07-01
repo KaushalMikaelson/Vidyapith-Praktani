@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../utils/api';
 
 interface AuthContextType {
   currentUser: User | null;
+  isAuthLoading: boolean;
   login: (email: string, password_hash: string) => Promise<{ success: boolean; error?: string }>;
   register: (fields: any) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: (token: string) => Promise<{ success: boolean; status?: string; email?: string; name?: string; picture?: string; error?: string }>;
@@ -19,6 +20,7 @@ export const SESSION_KEY = 'rkmv_active_session';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
     // Resolve fresh user details on start
@@ -26,7 +28,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (session) {
       const sessionUser = JSON.parse(session) as User;
       setCurrentUser(sessionUser);
-      refreshSession();
+      // Verify token is still valid in background
+      const token = localStorage.getItem('rkmv_auth_token');
+      if (token) {
+        fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Session expired');
+        }).then(data => {
+          localStorage.setItem(SESSION_KEY, JSON.stringify(data.user));
+          setCurrentUser(data.user);
+        }).catch(() => {
+          localStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem('rkmv_auth_token');
+          setCurrentUser(null);
+        }).finally(() => {
+          setIsAuthLoading(false);
+        });
+      } else {
+        setIsAuthLoading(false);
+      }
+    } else {
+      setIsAuthLoading(false);
     }
   }, []);
 
@@ -145,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, register, loginWithGoogle, logout, refreshSession }}>
+    <AuthContext.Provider value={{ currentUser, isAuthLoading, login, register, loginWithGoogle, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );
