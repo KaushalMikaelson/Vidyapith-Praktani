@@ -147,6 +147,18 @@ export default function App() {
               shape: 'pill',
             });
           }
+
+          // Render button on Registration Step 1 form
+          const registerBtn = document.getElementById('google-signin-btn-register');
+          if (registerBtn) {
+            google.accounts.id.renderButton(registerBtn, {
+              theme: 'dark',
+              size: 'large',
+              width: 320,
+              text: 'signup_with',
+              shape: 'pill',
+            });
+          }
         }
       };
 
@@ -1477,6 +1489,12 @@ export default function App() {
                               <span>Continue to School Info</span>
                               <ArrowRight size={18} />
                             </button>
+                          </div>
+
+                          {/* Google Sign In/Up Container (Registration Step 1) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', gap: '12px' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>— OR —</div>
+                            <div id="google-signin-btn-register" style={{ minHeight: '40px' }}></div>
                           </div>
                         </div>
                       )}
