@@ -589,10 +589,20 @@
   color: var(--text-primary);
 }
 
+/* Hide number input spinners to avoid visual glitches with icons */
+.auth-input-field-wrap input[type=number]::-webkit-outer-spin-button,
+.auth-input-field-wrap input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.auth-input-field-wrap input[type=number] {
+  -moz-appearance: textfield;
+}
+
 /* Field Validation Success Checkmark */
 .auth-field-valid-check {
   position: absolute;
-  right: 42px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-success);

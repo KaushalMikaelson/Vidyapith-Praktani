@@ -208,7 +208,15 @@ export const MentorshipScreen: React.FC<MentorshipScreenProps> = ({ showToast, o
                     />
                     <div className="mentor-meta">
                       <h3 style={{ cursor: 'pointer', margin: 0 }} onClick={() => onViewProfile(m.id)}>{m.full_name}</h3>
-                      <span className="mentor-batch">Batch of {m.batch_year} • {m.house}</span>
+                      <span className="mentor-batch">
+                        Batch of {m.batch_year}
+                        {m.leaving_class && (
+                          <span style={{ marginLeft: '5px', fontSize: '0.68rem', background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '10px', padding: '0px 6px', fontWeight: 700 }}>
+                            Cls {m.leaving_class}
+                          </span>
+                        )}
+                        {' '}• {m.house}
+                      </span>
                       <span className="mentor-work">{m.profession}</span>
                     </div>
                   </div>

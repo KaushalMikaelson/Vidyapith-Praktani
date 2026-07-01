@@ -18,6 +18,7 @@ export const listPendingUsers = async (req: AuthenticatedRequest, res: Response)
         email: u.email,
         mobile: u.phone,
         batch_year: u.profile?.batch_year || 0,
+        leaving_class: u.profile?.leaving_class || "XII",
         house: u.profile?.house || "",
         role: u.role,
         verify_status: u.verify_status,

@@ -41,6 +41,7 @@ export interface User {
   department?: string;
   industry?: string;
   profession_category?: string;
+  leaving_class?: string;
   profile?: any;
 }
 

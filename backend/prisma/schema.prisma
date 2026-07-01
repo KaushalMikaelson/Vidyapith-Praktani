@@ -10,7 +10,7 @@ generator client {
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
-  phone         String   @unique
+  phone         String?  @unique
   password_hash String
   role          String   // "admin", "alumni", "student"
   verify_status String   // "approved", "pending", "rejected"
@@ -25,7 +25,8 @@ model AlumniProfile {
   full_name           String
   profile_photo       String?
   batch_year          Int
-  house               String   // "Vivekananda", "Brahmananda", etc.
+  leaving_class       String   @default("XII")
+  house               String?  // "Vivekananda", "Brahmananda", etc.
   bio                 String   @db.Text
   profession_category String
   company             String

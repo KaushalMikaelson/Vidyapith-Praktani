@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'vidyapith-connect-secret-key';
 
 export const register = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { email, password, full_name, mobile, batch_year, house, profession, company, city, certificate_name } = req.body;
+    const { email, password, full_name, mobile, batch_year, leaving_class, house, profession, company, city, certificate_name } = req.body;
 
     const existingEmail = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() }
@@ -22,13 +22,15 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
       return;
     }
 
-    const existingPhone = await prisma.user.findFirst({
-      where: { phone: mobile }
-    });
+    if (mobile) {
+      const existingPhone = await prisma.user.findFirst({
+        where: { phone: mobile }
+      });
 
-    if (existingPhone) {
-      res.status(400).json({ error: "An account with this mobile number already exists." });
-      return;
+      if (existingPhone) {
+        res.status(400).json({ error: "An account with this mobile number already exists." });
+        return;
+      }
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -44,7 +46,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     const newUser = await prisma.user.create({
       data: {
         email: email.trim().toLowerCase(),
-        phone: mobile,
+        phone: mobile || null,
         password_hash,
         role: resolvedRole,
         verify_status: resolvedVerifyStatus,
@@ -53,7 +55,8 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
             full_name: full_name || email.split('@')[0],
             profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
             batch_year: parseInt(batch_year),
-            house,
+            leaving_class: leaving_class || "XII",
+            house: house || null,
             bio: isFirstUser 
               ? "Platform Administrator. Dedicated to the Vidyapith Connect network."
               : "Joined the Vidyapith Connect network. Proud alumnus of RKMV Deoghar.",
@@ -76,7 +79,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
           data: {
             user_id: admin.id,
             title: "New Registration Request",
-            body: `${full_name} (Batch of ${batch_year}) requested verification.`,
+            body: `${full_name} (Batch of ${batch_year} - Class ${leaving_class || "XII"}) requested verification.`,
             type: "alert"
           }
         });
@@ -149,6 +152,7 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
         email: user.email,
         mobile: user.phone,
         batch_year: user.profile?.batch_year || 0,
+        leaving_class: user.profile?.leaving_class || "XII",
         house: user.profile?.house || "",
         role: user.role,
         verify_status: user.verify_status,
@@ -222,6 +226,7 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
         email: user.email,
         mobile: user.phone,
         batch_year: user.profile?.batch_year || 0,
+        leaving_class: user.profile?.leaving_class || "XII",
         house: user.profile?.house || "",
         role: user.role,
         verify_status: user.verify_status,
@@ -272,7 +277,7 @@ export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response):
     
     await sendMail(cleanEmail, subject, text, html);
 
-    res.status(200).json({ success: true, message: "OTP sent successfully." });
+    res.status(200).json({ success: true, message: "OTP sent successfully.", otp });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

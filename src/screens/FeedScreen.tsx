@@ -293,6 +293,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [editBio, setEditBio] = useState('');
   const [editMobile, setEditMobile] = useState('');
   const [editBatch, setEditBatch] = useState('');
+  const [editLeavingClass, setEditLeavingClass] = useState<'X' | 'XII'>('XII');
   const [editHouse, setEditHouse] = useState('');
   const [editProfession, setEditProfession] = useState('');
   const [editCompany, setEditCompany] = useState('');
@@ -866,6 +867,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     setEditBio(person.bio || currentUser?.profile?.bio || '');
     setEditMobile(person.mobile || currentUser?.mobile || '');
     setEditBatch(person.batch_year ? String(person.batch_year) : (currentUser?.profile?.batch_year ? String(currentUser.profile.batch_year) : ''));
+    setEditLeavingClass((person.leaving_class || currentUser?.leaving_class || currentUser?.profile?.leaving_class || 'XII') as 'X' | 'XII');
     setEditHouse(person.house || currentUser?.profile?.house || 'Vivekananda House');
     setEditProfession(person.profession_category || currentUser?.profile?.profession_category || '');
     setEditCompany(person.company || currentUser?.profile?.company || '');
@@ -1092,6 +1094,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           bio: editBio,
           mobile: editMobile,
           batch_year: parseInt(editBatch),
+          leaving_class: editLeavingClass,
           house: editHouse,
           profession_category: editProfession,
           company: editCompany,
@@ -2648,7 +2651,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         <aside>
           <section className="your-batch-card">
             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=300&fit=crop&q=80" alt="Your batch" />
-            <div><span>Your Batch</span><h2>Class of {currentUser.batch_year}</h2></div>
+            <div><span>Your Batch</span><h2>Class of {currentUser.batch_year}</h2><span style={{ fontSize: '0.75rem', background: 'rgba(255,150,0,0.15)', color: 'var(--accent-orange)', borderRadius: '20px', padding: '2px 10px', fontWeight: 700 }}>Class {currentUser.leaving_class || 'XII'}</span></div>
             <p><Users size={18} /> 186 members</p>
             <div><Calendar size={18} /><strong>20-Year Gala</strong><small>Dec 14, 2026 Â· Main Hall</small></div>
             <h3>Batchmates</h3>
@@ -3399,7 +3402,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     <img src={cUser.profile_photo} alt={cUser.full_name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
                     <div style={{ flex: 1 }}>
                       <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700 }}>{cUser.full_name}</h4>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '0.74rem', color: 'var(--text-muted)' }}>Class of {cUser.batch_year} · {cUser.profession}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.74rem', color: 'var(--text-muted)' }}>Class of {cUser.batch_year} (Cls {cUser.leaving_class || 'XII'}) · {cUser.profession}</p>
                     </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); showToast(`Opening chat with ${cUser.full_name}`, 'info'); }}
@@ -4083,16 +4086,63 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
                   {/* Vidyapith Details */}
                   <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Batch Year *</label>
-                      <input 
-                        type="number" 
-                        value={editBatch} 
-                        onChange={(e) => setEditBatch(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. 2012"
-                        required 
-                      />
+                    <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '8px' }}>
+                        Leaving / Pass Out Class & Year *
+                      </label>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
+                        {/* Class Selector */}
+                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                          {(['X', 'XII'] as const).map((cls) => (
+                            <button
+                              key={cls}
+                              type="button"
+                              onClick={() => setEditLeavingClass(cls)}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                border: editLeavingClass === cls
+                                  ? '2px solid #f97316'
+                                  : '1px solid #cbd5e1',
+                                background: editLeavingClass === cls
+                                  ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
+                                  : '#f8fafc',
+                                color: editLeavingClass === cls ? '#c2410c' : '#64748b',
+                                fontWeight: editLeavingClass === cls ? 800 : 500,
+                                fontSize: '0.88rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                boxShadow: editLeavingClass === cls ? '0 2px 8px rgba(249,115,22,0.2)' : 'none',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              <span>Class {cls}</span>
+                              <span style={{ fontSize: '0.65rem', opacity: 0.75, fontWeight: 500 }}>
+                                {cls === 'X' ? '10th' : '12th'}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                        {/* Year Input */}
+                        <div style={{ flex: 1 }}>
+                          <input 
+                            type="number" 
+                            value={editBatch} 
+                            onChange={(e) => setEditBatch(e.target.value)} 
+                            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '100%', boxSizing: 'border-box' }}
+                            placeholder={editLeavingClass === 'X' ? "Pass out year (e.g. 2008)" : "Pass out year (e.g. 2010)"}
+                            required 
+                          />
+                        </div>
+                      </div>
+                      {editBatch && parseInt(editBatch) >= 1950 && parseInt(editBatch) <= 2026 && (
+                        <p style={{ marginTop: '6px', fontSize: '0.74rem', color: '#f97316', fontWeight: 600 }}>
+                          🎓 Class {editLeavingClass} Pass Out: {editBatch}
+                        </p>
+                      )}
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Vidyapith House</label>
@@ -4837,7 +4887,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <div>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{profileUser.profile?.full_name || profileUser.full_name}</h2>
                     <p style={{ color: 'var(--accent-gold)', fontSize: '0.88rem', fontWeight: 600, marginTop: '4px' }}>
-                      Batch of {profileUser.profile?.batch_year || 2008} â€¢ {profileUser.profile?.house || "Vivekananda House"}
+                      Batch of {profileUser.profile?.batch_year || profileUser.batch_year || 2008}{' '}
+                      <span style={{ fontSize: '0.78rem', background: 'rgba(212,175,55,0.15)', borderRadius: '20px', padding: '1px 8px', marginLeft: '4px' }}>
+                        Class {profileUser.profile?.leaving_class || profileUser.leaving_class || 'XII'}
+                      </span>
+                      {' '}• {profileUser.profile?.house || profileUser.house || "Vivekananda House"}
                     </p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '2px' }}>
                       {profileUser.profile?.profession_category || profileUser.profession} at {profileUser.profile?.company || profileUser.company}
@@ -5141,7 +5195,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   <img src={currentUser.profile_photo} alt="Avatar" className="post-author-avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: 'linear-gradient(135deg, #FF7A1A 0%, #FFC72C 100%)', color: 'white', border: '1.5px solid #081A36', borderRadius: '10px', padding: '1px 5px', fontSize: '0.62rem', fontWeight: 800, whiteSpace: 'nowrap', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                  Class of {currentUser.batch_year}
+                  {currentUser.batch_year} · Cls {currentUser.leaving_class || 'XII'}
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>

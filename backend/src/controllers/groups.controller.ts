@@ -137,7 +137,8 @@ export const getGroupDetails = async (req: AuthenticatedRequest, res: Response):
         joinedAt: m.joined_at,
         full_name: u?.profile?.full_name ?? 'Vidyapith Alumnus',
         profile_photo: u?.profile?.profile_photo ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80',
-        batch_year: u?.profile?.batch_year ?? 0
+        batch_year: u?.profile?.batch_year ?? 0,
+        leaving_class: u?.profile?.leaving_class ?? "XII"
       };
     });
 

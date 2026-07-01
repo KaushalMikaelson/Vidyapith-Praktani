@@ -39,12 +39,14 @@ export const getLeaderboard = async (req: AuthenticatedRequest, res: Response): 
           id: donor.id,
           full_name: donor.profile?.full_name || "Vidyapith Alumnus",
           profile_photo: donor.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-          batch_year: donor.profile?.batch_year || 2008
+          batch_year: donor.profile?.batch_year || 2008,
+          leaving_class: donor.profile?.leaving_class || "XII"
         } : {
           id: 'usr-guest',
           full_name: "Anonymous Alumnus",
           profile_photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-          batch_year: 2000
+          batch_year: 2000,
+          leaving_class: "XII"
         }
       };
     });

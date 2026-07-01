@@ -94,6 +94,7 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
           full_name: author.profile?.full_name || "Vidyapith Alumnus",
           profile_photo: author.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
           batch_year: author.profile?.batch_year || 2008,
+          leaving_class: author.profile?.leaving_class || "XII",
           house: author.profile?.house || "Vivekananda House",
           profession: author.profile?.profession_category || "Alumnus",
           department: author.profile?.department || "Science"
@@ -151,19 +152,27 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       return;
     }
 
-    const result: any = await prisma.$queryRawUnsafe(
-      `UPDATE "Post" SET likes = CASE WHEN $1 = ANY(likes) THEN array_remove(likes, $1) ELSE array_append(likes, $1) END WHERE id = $2 RETURNING likes`,
-      userId,
-      id
-    );
+    const post = await prisma.post.findUnique({
+      where: { id }
+    });
 
-    if (!result || result.length === 0) {
+    if (!post) {
       res.status(404).json({ error: "Post not found." });
       return;
     }
 
+    const hasLiked = post.likes.includes(userId);
+    const updatedLikes = hasLiked
+      ? post.likes.filter((uid: string) => uid !== userId)
+      : [...post.likes, userId];
+
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: { likes: updatedLikes }
+    });
+
     postCache.clear(); // Clear cached posts to ensure update is reflected
-    res.status(200).json({ success: true, likes: result[0].likes });
+    res.status(200).json({ success: true, likes: updatedPost.likes });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

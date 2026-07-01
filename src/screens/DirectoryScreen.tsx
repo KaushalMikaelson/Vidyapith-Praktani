@@ -601,7 +601,13 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                           {req.full_name}
                         </span>
                         <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                          Class of {req.batch_year} • {req.house}
+                          Class of {req.batch_year}
+                          {req.leaving_class && (
+                            <span style={{ marginLeft: '5px', fontSize: '0.7rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '10px', padding: '0px 6px', fontWeight: 700 }}>
+                              Cls {req.leaving_class}
+                            </span>
+                          )}
+                          {' '}• {req.house}
                         </span>
                       </div>
                     </div>
@@ -768,7 +774,15 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       ) : alumnus.role === 'student' ? (
                         `Student · ${alumnus.department || 'Science'}`
                       ) : (
-                        `Class of ${alumnus.batch_year} · ${alumnus.department || 'Engineering'}`
+                        <>
+                          Class of {alumnus.batch_year}
+                          {alumnus.leaving_class && (
+                            <span style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '10px', padding: '1px 7px', fontWeight: 700, verticalAlign: 'middle' }}>
+                              Cls {alumnus.leaving_class}
+                            </span>
+                          )}
+                          {' '}· {alumnus.department || 'Engineering'}
+                        </>
                       )}
                     </div>
 

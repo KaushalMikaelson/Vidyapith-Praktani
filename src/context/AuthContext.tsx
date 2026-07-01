@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: fields.full_name,
           mobile: fields.mobile,
           batch_year: fields.batch_year,
+          leaving_class: fields.leaving_class,
           house: fields.house,
           certificate_name: fields.certificate_name
         })

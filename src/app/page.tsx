@@ -23,7 +23,7 @@ import {
   Mail, Lock, User as UserIcon, Calendar, Home, Phone, UploadCloud, 
   CheckCircle, ArrowRight, X, Eye, EyeOff, ArrowLeft, Check, Sparkles,
   Search, BookOpen, Award, Briefcase, GraduationCap, Compass, Heart, Menu, ShieldCheck, ChevronRight,
-  MapPin, UserPlus, UserMinus, MessageCircle, Globe, ChevronDown
+  MapPin, UserPlus, UserMinus, MessageCircle, Globe, ChevronDown, Loader2
 } from 'lucide-react';
 
 interface ToastMsg {
@@ -61,6 +61,7 @@ export default function App() {
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regBatch, setRegBatch] = useState('');
+  const [regLeavingClass, setRegLeavingClass] = useState<'X' | 'XII'>('XII');
   const [regHouse, setRegHouse] = useState('');
   const [regMobile, setRegMobile] = useState('');
   const [regPass, setRegPass] = useState('');
@@ -306,12 +307,8 @@ export default function App() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regBatch || !regHouse || !regPass || isSubmitting) {
+    if (!regName.trim() || !regEmail.trim() || !regBatch || !regPass || isSubmitting) {
       showToast("Please fill in all required fields.", "danger");
-      return;
-    }
-    if (!emailOtpVerified) {
-      showToast("Please verify your email address first using OTP.", "danger");
       return;
     }
     setAuthError(null);
@@ -336,6 +333,7 @@ export default function App() {
         full_name: regName.trim(),
         email: regEmail.trim(),
         batch_year: regBatch,
+        leaving_class: regLeavingClass,
         house: regHouse,
         mobile: regMobile.trim(),
         password: regPass,
@@ -347,6 +345,7 @@ export default function App() {
         setRegName('');
         setRegEmail('');
         setRegBatch('');
+        setRegLeavingClass('XII');
         setRegHouse('');
         setRegMobile('');
         setRegPass('');
@@ -1378,74 +1377,89 @@ export default function App() {
                       {/* Step 2 Contents: Vidyapith Identity */}
                       {regStep === 2 && (
                         <div className="auth-step-container">
-                          <div className="auth-form-row">
-                            {/* Batch Year */}
-                            <div className="auth-input-block">
-                              <label className="auth-input-label">Batch Year (Leaving Class X/XII)</label>
-                              <div className="auth-input-field-wrap">
-                                <Calendar className="auth-input-icon" size={18} />
-                                <input 
-                                  type="number" 
-                                  placeholder="2008" 
-                                  min="1950" 
-                                  max="2026" 
-                                  required 
-                                  value={regBatch}
-                                  onChange={(e) => setRegBatch(e.target.value)}
-                                />
-                                {parseInt(regBatch) >= 1950 && parseInt(regBatch) <= 2026 && (
-                                  <div className="auth-field-valid-check">
-                                    <Check size={16} />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* House Dropdown */}
-                            <div className="auth-input-block">
-                              <label className="auth-input-label">House (Hostel)</label>
-                              <div className="auth-input-field-wrap">
-                                <Home className="auth-input-icon" size={18} />
-                                <select 
-                                  required 
-                                  value={regHouse}
-                                  onChange={(e) => setRegHouse(e.target.value)}
+                          
+                          {/* Leaving Class Selector */}
+                          <div className="auth-input-block" style={{ marginBottom: '20px' }}>
+                            <label className="auth-input-label">Leaving / Pass Out Class</label>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                              {(['X', 'XII'] as const).map((cls) => (
+                                <button
+                                  key={cls}
+                                  type="button"
+                                  onClick={() => setRegLeavingClass(cls)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '13px 10px',
+                                    borderRadius: '10px',
+                                    border: regLeavingClass === cls
+                                      ? '2px solid var(--accent-orange)'
+                                      : '1.5px solid rgba(255,255,255,0.08)',
+                                    background: regLeavingClass === cls
+                                      ? 'linear-gradient(135deg, rgba(255,99,0,0.18) 0%, rgba(255,140,0,0.12) 100%)'
+                                      : 'rgba(4,10,18,0.5)',
+                                    color: regLeavingClass === cls ? 'var(--accent-orange)' : 'var(--text-muted)',
+                                    fontWeight: regLeavingClass === cls ? 700 : 500,
+                                    fontSize: '1rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    boxShadow: regLeavingClass === cls ? '0 0 18px rgba(255,99,0,0.18)' : 'none',
+                                  }}
                                 >
-                                  <option value="" disabled>Select House...</option>
-                                  <option value="Vivekananda House">Vivekananda House</option>
-                                  <option value="Brahmananda House">Brahmananda House</option>
-                                  <option value="Ramakrishnananda House">Ramakrishnananda House</option>
-                                  <option value="Shardananda House">Shardananda House</option>
-                                  <option value="Premananda House">Premananda House</option>
-                                  <option value="Yogananda House">Yogananda House</option>
-                                </select>
-                                {regHouse && (
-                                  <div className="auth-field-valid-check" style={{ right: '28px' }}>
-                                    <Check size={16} />
-                                  </div>
-                                )}
-                              </div>
+                                  <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                                    Class {cls}
+                                  </span>
+                                  <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>
+                                    {cls === 'X' ? '10th Standard' : '12th Standard / Intermediate'}
+                                  </span>
+                                  {regLeavingClass === cls && (
+                                    <span style={{ 
+                                      fontSize: '0.65rem', 
+                                      background: 'var(--accent-orange)', 
+                                      color: '#000', 
+                                      borderRadius: '20px', 
+                                      padding: '2px 8px', 
+                                      fontWeight: 700,
+                                      marginTop: '2px'
+                                    }}>
+                                      ✓ Selected
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
                             </div>
                           </div>
 
-                          {/* Mobile Number */}
-                          <div className="auth-input-block">
-                            <label className="auth-input-label">Mobile Number</label>
+                          {/* Pass Out Year */}
+                          <div className="auth-input-block" style={{ marginBottom: '24px' }}>
+                            <label className="auth-input-label">
+                              Pass Out Year — Class {regLeavingClass}
+                            </label>
                             <div className="auth-input-field-wrap">
-                              <Phone className="auth-input-icon" size={18} />
+                              <Calendar className="auth-input-icon" size={18} />
                               <input 
-                                type="tel" 
-                                placeholder="+91 9876543210" 
+                                type="number" 
+                                placeholder={regLeavingClass === 'X' ? "e.g. 2008" : "e.g. 2010"}
+                                min="1950" 
+                                max="2026" 
                                 required 
-                                value={regMobile}
-                                onChange={(e) => setRegMobile(e.target.value)}
+                                value={regBatch}
+                                onChange={(e) => setRegBatch(e.target.value)}
                               />
-                              {regMobile.trim().length >= 10 && (
+                              {parseInt(regBatch) >= 1950 && parseInt(regBatch) <= 2026 && (
                                 <div className="auth-field-valid-check">
                                   <Check size={16} />
                                 </div>
                               )}
                             </div>
+                            {parseInt(regBatch) >= 1950 && parseInt(regBatch) <= 2026 && (
+                              <p style={{ fontSize: '0.74rem', color: 'var(--accent-orange)', marginTop: '6px', fontWeight: 600 }}>
+                                🎓 Class {regLeavingClass} Pass Out: {regBatch}
+                              </p>
+                            )}
                           </div>
 
                           {/* Navigation */}
@@ -1463,7 +1477,7 @@ export default function App() {
                               type="button" 
                               className="btn btn-primary"
                               style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                              disabled={!regBatch || !regHouse || regMobile.trim().length < 10}
+                              disabled={!regBatch || parseInt(regBatch) < 1950 || parseInt(regBatch) > 2026}
                               onClick={() => setRegStep(3)}
                             >
                               <span>Verify Certificate</span>
@@ -1514,7 +1528,7 @@ export default function App() {
                               </button>
                               <button 
                                 type="submit" 
-                                disabled={isSubmitting || !emailOtpVerified}
+                                disabled={isSubmitting}
                                 className="btn btn-primary"
                                 style={{ 
                                   flexGrow: 1, 
@@ -1522,8 +1536,8 @@ export default function App() {
                                   alignItems: 'center', 
                                   justifyContent: 'center', 
                                   gap: '8px',
-                                  opacity: (isSubmitting || !emailOtpVerified) ? 0.6 : 1,
-                                  cursor: (isSubmitting || !emailOtpVerified) ? 'not-allowed' : 'pointer'
+                                  opacity: isSubmitting ? 0.6 : 1,
+                                  cursor: isSubmitting ? 'not-allowed' : 'pointer'
                                 }}
                               >
                                 <span>{isSubmitting ? "Submitting..." : "Submit Registration"}</span>

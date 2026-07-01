@@ -22,6 +22,7 @@ interface Conversation {
   partnerName: string;
   partnerPhoto: string;
   partnerBatch?: number;
+  partnerLeavingClass?: string;
   partnerProfession?: string;
   lastMessage: string;
   lastMessageAt: string | null;
@@ -41,6 +42,7 @@ interface Partner {
   full_name: string;
   profile_photo: string;
   batch_year?: number;
+  leaving_class?: string;
   profession_category?: string;
 }
 interface DirectoryUser {
@@ -48,6 +50,7 @@ interface DirectoryUser {
   full_name: string;
   profile_photo: string;
   batch_year: number;
+  leaving_class?: string;
   profession: string;
   company: string;
   city: string;
@@ -73,6 +76,7 @@ interface GroupMemberDetail {
   full_name: string;
   profile_photo: string;
   batch_year: number;
+  leaving_class?: string;
 }
 interface GroupDetail extends Omit<Group, 'lastMessage' | 'lastMessageAt' | 'lastSenderName' | 'memberCount'> {
   members: GroupMemberDetail[];
@@ -244,6 +248,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         full_name: convData.full_name,
         profile_photo: convData.profile_photo,
         batch_year: convData.batch_year,
+        leaving_class: convData.leaving_class,
         profession_category: convData.profession
       });
       setMessages(Array.isArray(messagesData) ? messagesData : []);
@@ -298,7 +303,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
       setActivePartnerId(user.id);
       setIsMobileConvOpen(true);
       setMessages([]);
-      setActivePartner({ id: user.id, full_name: user.full_name, profile_photo: user.profile_photo, batch_year: user.batch_year, profession_category: user.profession });
+      setActivePartner({ id: user.id, full_name: user.full_name, profile_photo: user.profile_photo, batch_year: user.batch_year, leaving_class: user.leaving_class, profession_category: user.profession });
     }
   };
 
@@ -648,7 +653,9 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
           </div>
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }} onClick={() => onViewProfile(activePartner.id)}>{activePartner.full_name}</h3>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>{activePartner.profession_category || (activePartner.batch_year ? `Batch of ${activePartner.batch_year}` : 'Active now')}</p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+              {activePartner.profession_category || (activePartner.batch_year ? `Batch of ${activePartner.batch_year}${activePartner.leaving_class ? ` · Cls ${activePartner.leaving_class}` : ''}` : 'Active now')}
+            </p>
           </div>
           {/* Three-dot menu */}
           <div style={{ position: 'relative' }}>
@@ -773,7 +780,14 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 <img src={member.profile_photo} alt={member.full_name} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#1e293b' }}>{member.full_name}</div>
-                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>Batch {member.batch_year || '—'}</div>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                    Batch {member.batch_year || '—'}
+                    {member.leaving_class && (
+                      <span style={{ marginLeft: '5px', fontSize: '0.65rem', background: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa', borderRadius: '8px', padding: '0px 5px', fontWeight: 700 }}>
+                        Cls {member.leaving_class}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {member.role === 'admin' && <span style={{ background: '#6366f1', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>Admin</span>}
                 {isAdmin && member.userId !== currentUser?.id && (
@@ -917,7 +931,14 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 <img src={user.profile_photo} alt={user.full_name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#1e293b' }}>{user.full_name}</div>
-                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{user.profession || `Batch ${user.batch_year}`}</div>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                    {user.profession || `Batch ${user.batch_year}`}
+                    {user.leaving_class && (
+                      <span style={{ marginLeft: '4px', fontSize: '0.65rem', background: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa', borderRadius: '8px', padding: '0px 5px', fontWeight: 700 }}>
+                        Cls {user.leaving_class}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${checked ? '#6366f1' : '#cbd5e1'}`, background: checked ? '#6366f1' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.12s' }}>
                   {checked && <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 900 }}>✓</span>}
@@ -998,7 +1019,19 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
               <img src={user.profile_photo} alt={user.full_name} style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>{user.full_name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.profession && <span>{user.profession}</span>}{user.company && <span> · {user.company}</span>}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  {user.profession && <span>{user.profession}</span>}{user.company && <span> · {user.company}</span>}
+                  {user.batch_year && (
+                    <span style={{ marginLeft: user.profession ? ' · ' : '' }}>
+                      {!user.profession && !user.company && `Batch ${user.batch_year}`}
+                      {user.leaving_class && (
+                        <span style={{ marginLeft: '4px', fontSize: '0.65rem', background: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa', borderRadius: '8px', padding: '0px 5px', fontWeight: 700 }}>
+                          Cls {user.leaving_class}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
               <ChevronRight size={16} style={{ color: '#94a3b8', flexShrink: 0 }} />
             </div>

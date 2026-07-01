@@ -219,6 +219,7 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
         email: showEmail ? u.email : "",
         mobile: showPhone ? u.phone : "",
         batch_year: u.profile?.batch_year || 0,
+        leaving_class: u.profile?.leaving_class || "XII",
         house: u.profile?.house || "",
         role: u.role,
         verify_status: u.verify_status,
@@ -458,6 +459,7 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
         full_name: s.profile?.full_name || "Vidyapith Alumnus",
         email: s.email,
         batch_year: s.profile?.batch_year || 0,
+        leaving_class: s.profile?.leaving_class || "XII",
         house: s.profile?.house || "",
         role: s.role,
         profile_photo: s.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
@@ -625,6 +627,7 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
       full_name: p.profile?.full_name || "Vidyapith Alumnus",
       email: p.email,
       batch_year: p.profile?.batch_year || 0,
+      leaving_class: p.profile?.leaving_class || "XII",
       house: p.profile?.house || "",
       role: p.role,
       profile_photo: p.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
@@ -693,6 +696,7 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       email: showEmail ? user.email : "",
       mobile: showPhone ? user.phone : "",
       batch_year: user.profile?.batch_year || 0,
+      leaving_class: user.profile?.leaving_class || "XII",
       house: user.profile?.house || "",
       role: user.role,
       verify_status: user.verify_status,
@@ -743,7 +747,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
     const { 
       bio, profession_category, company, city, country, profile_photo, 
-      show_email, show_mobile, show_social, full_name, batch_year, house, department, industry, mobile,
+      show_email, show_mobile, show_social, full_name, batch_year, leaving_class, house, department, industry, mobile,
       skills, help_categories, looking_for, github_url, portfolio_url, personal_url, mentorship_status, linkedin_url,
       designation, years_of_experience, education, open_for
     } = req.body;
@@ -773,22 +777,29 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     }
 
     if (mobile !== undefined) {
-      // Check if another user has this phone number
-      const existingUserWithPhone = await prisma.user.findFirst({
-        where: {
-          phone: mobile,
-          id: { not: userId }
+      if (mobile !== null && mobile.trim() !== "") {
+        // Check if another user has this phone number
+        const existingUserWithPhone = await prisma.user.findFirst({
+          where: {
+            phone: mobile.trim(),
+            id: { not: userId }
+          }
+        });
+        if (existingUserWithPhone) {
+          res.status(400).json({ error: "Mobile number is already in use by another account." });
+          return;
         }
-      });
-      if (existingUserWithPhone) {
-        res.status(400).json({ error: "Mobile number is already in use by another account." });
-        return;
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: { phone: mobile.trim() }
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { phone: null }
+        });
       }
-      
-      await prisma.user.update({
-        where: { id: userId },
-        data: { phone: mobile }
-      });
     }
 
     const profileData: any = {};
@@ -805,6 +816,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
     if (batch_year !== undefined && batch_year !== null && batch_year !== '') {
       profileData.batch_year = parseInt(batch_year);
     }
+    if (leaving_class !== undefined) profileData.leaving_class = leaving_class;
     if (house !== undefined) profileData.house = house;
     if (department !== undefined) profileData.department = department;
     if (industry !== undefined) profileData.industry = industry;
@@ -897,6 +909,7 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
       full_name: u.profile?.full_name || "Vidyapith Alumnus",
       email: u.email,
       batch_year: u.profile?.batch_year || 0,
+      leaving_class: u.profile?.leaving_class || "XII",
       house: u.profile?.house || "",
       role: u.role,
       profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
