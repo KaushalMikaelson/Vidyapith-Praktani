@@ -190,20 +190,20 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
             width: '44px',
             height: '44px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+            background: 'var(--primary-gradient)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)'
+            boxShadow: 'var(--shadow-glow)'
           }}>
             <Bell size={24} strokeWidth={2.5} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b', margin: 0, lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
               Notifications
             </h1>
-            <p style={{ margin: '2px 0 0', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
+            <p style={{ margin: '2px 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
               {unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : "You're all caught up!"}
             </p>
           </div>
@@ -220,12 +220,12 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
               padding: '10px 18px',
               borderRadius: '9999px',
               fontSize: '0.88rem',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              color: '#475569',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1.5px solid var(--border-color)',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               fontWeight: 700,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'all 0.2s'
             }}
           >
@@ -243,13 +243,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                 padding: '10px 20px',
                 borderRadius: '9999px',
                 fontSize: '0.88rem',
-                background: 'linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%)',
+                background: 'var(--primary-gradient)',
                 border: 'none',
                 color: 'white',
                 cursor: 'pointer',
                 fontWeight: 700,
                 opacity: markingAll ? 0.7 : 1,
-                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)'
+                boxShadow: 'var(--shadow-glow)'
               }}
             >
               <CheckCheck size={16} />
@@ -267,21 +267,17 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
           { label: 'Success', value: successCount, highlight: true },
           { label: 'Alerts', value: alertCount, highlight: false },
         ].map(s => (
-          <div key={s.label} className="sidebar-widget-card" style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
+          <div key={s.label} className="sidebar-widget-card glass-panel" style={{
             padding: '16px 20px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px'
           }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
             <span style={{
               fontSize: '2rem',
               fontWeight: 800,
-              color: s.highlight ? '#ec4899' : '#1e293b',
+              color: s.highlight ? 'var(--text-success)' : 'var(--text-primary)',
               lineHeight: 1.1
             }}>{s.value}</span>
           </div>
@@ -303,9 +299,9 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                 fontSize: '0.88rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: isActive ? 'none' : '1px solid #e2e8f0',
-                background: isActive ? '#1e293b' : '#ffffff',
-                color: isActive ? '#ffffff' : '#64748b',
+                border: isActive ? 'none' : '1.5px solid var(--border-color)',
+                background: isActive ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.05)',
+                color: 'white',
                 transition: 'all 0.2s'
               }}
             >
@@ -319,36 +315,30 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[1, 2].map(i => (
-            <div key={i} style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '16px',
+            <div key={i} className="glass-panel" style={{
               padding: '24px',
               display: 'flex',
               gap: '16px',
               animation: 'pulse 1.5s ease-in-out infinite'
             }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#f1f5f9', flexShrink: 0 }} />
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.04)', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ height: '14px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '8px', width: '30%' }} />
-                <div style={{ height: '12px', background: '#f8fafc', borderRadius: '4px', width: '70%' }} />
+                <div style={{ height: '14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '4px', marginBottom: '8px', width: '30%' }} />
+                <div style={{ height: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '4px', width: '70%' }} />
               </div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{
+        <div className="glass-panel" style={{
           textAlign: 'center',
-          padding: '60px 20px',
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '16px'
+          padding: '60px 20px'
         }}>
-          <BellOff size={44} style={{ color: '#94a3b8', marginBottom: '16px' }} />
-          <h3 style={{ color: '#1e293b', fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px' }}>
+          <BellOff size={44} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
+          <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px' }}>
             No Notifications Found
           </h3>
-          <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0 }}>
             {filter === 'unread' ? "You've read all your notifications." : "There are no notifications in this category."}
           </p>
         </div>
@@ -395,14 +385,14 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                     margin: 0,
                     fontSize: '0.95rem',
                     fontWeight: 700,
-                    color: '#1e293b'
+                    color: 'var(--text-primary)'
                   }}>
                     {notif.title}
                   </h4>
                   <p style={{
                     margin: '4px 0 0',
                     fontSize: '0.88rem',
-                    color: '#64748b',
+                    color: 'var(--text-secondary)',
                     lineHeight: 1.4
                   }}>
                     {notif.body}

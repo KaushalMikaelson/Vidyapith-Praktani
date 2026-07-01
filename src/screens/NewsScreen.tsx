@@ -339,27 +339,26 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setSelectedPhoto(null)}>
           <div 
             className="modal-card" 
-            style={{ maxWidth: '440px', padding: '16px', background: 'white', color: '#1a202c', fontFamily: 'serif' }}
+            style={{ maxWidth: '440px', padding: '16px', background: 'var(--bg-dark)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <img 
               src={selectedPhoto.media_url} 
               alt={selectedPhoto.title} 
-              style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '2px', border: '6px solid #f7fafc', boxShadow: 'inset 0 0 10px rgba(0,0,0,0.1)' }}
+              style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '4px', border: '6px solid var(--border-color)' }}
             />
             <div style={{ marginTop: '16px', padding: '0 8px 10px', textAlign: 'center' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0d233a', marginBottom: '6px' }}>{selectedPhoto.title}</h3>
-              <span className="badge" style={{ background: '#e2e8f0', color: '#4a5568', fontSize: '0.7rem', padding: '3px 10px', marginBottom: '10px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>{selectedPhoto.title}</h3>
+              <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--accent-gold)', border: '1px solid var(--border-color)', fontSize: '0.7rem', padding: '3px 10px', marginBottom: '10px' }}>
                 Decade: {selectedPhoto.decade} (Year {selectedPhoto.year})
               </span>
-              <p style={{ fontSize: '0.85rem', color: '#4a5568', lineHeight: 1.5, textAlign: 'justify', marginTop: '10px' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, textAlign: 'justify', marginTop: '10px' }}>
                 {selectedPhoto.description}
               </p>
             </div>
             
             <button 
               className="btn btn-secondary btn-block btn-sm" 
-              style={{ borderColor: '#cbd5e1', color: '#475569', marginTop: '10px' }}
               onClick={() => setSelectedPhoto(null)}
             >
               Close Archive

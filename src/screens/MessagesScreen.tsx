@@ -493,33 +493,33 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
   const activePanel: 'dm' | 'group' | null = activeGroupId ? 'group' : activePartnerId ? 'dm' : null;
 
   const inputBarStyle: React.CSSProperties = {
-    padding: '12px 16px', borderTop: '1px solid #f1f5f9',
-    display: 'flex', alignItems: 'center', gap: '8px', background: '#ffffff'
+    padding: '12px 16px', borderTop: '1px solid var(--border-color)',
+    display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-darker)'
   };
 
   // ─── Render: Left panel header ────────────────────────────────────────────────
   const renderLeftHeader = () => (
     <div style={{ padding: '20px 20px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Messages</h2>
+        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>Messages</h2>
         {/* + dropdown */}
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowPlusMenu(p => !p)}
             title="New message or group"
-            style={{ width: 36, height: 36, borderRadius: 10, background: showPlusMenu ? '#ede9fe' : '#f1f5f9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showPlusMenu ? '#6366f1' : '#475569', transition: 'all 0.15s' }}
+            style={{ width: 36, height: 36, borderRadius: 10, background: showPlusMenu ? 'rgba(243, 112, 33, 0.15)' : 'rgba(255, 255, 255, 0.05)', border: '1.5px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showPlusMenu ? 'var(--primary-color)' : 'var(--text-secondary)', transition: 'all 0.15s' }}
           >
             <Plus size={18} />
           </button>
           {showPlusMenu && (
             <>
               <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowPlusMenu(false)} />
-              <div style={{ position: 'absolute', top: 42, right: 0, zIndex: 100, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', minWidth: 190, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
-                <button onClick={() => { setShowNewChat(true); setShowPlusMenu(false); if (directory.length === 0) loadDirectory(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                  <MessageCircle size={15} style={{ color: '#6366f1' }} /> New Message
+              <div style={{ position: 'absolute', top: 42, right: 0, zIndex: 100, background: 'var(--bg-darker)', borderRadius: 12, border: '1px solid var(--border-color)', minWidth: 190, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
+                <button onClick={() => { setShowNewChat(true); setShowPlusMenu(false); if (directory.length === 0) loadDirectory(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <MessageCircle size={15} style={{ color: 'var(--primary-color)' }} /> New Message
                 </button>
-                <button onClick={() => { setShowCreateGroup(true); setShowPlusMenu(false); if (directory.length === 0) loadDirectory(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                  <Hash size={15} style={{ color: '#6366f1' }} /> Create Group
+                <button onClick={() => { setShowCreateGroup(true); setShowPlusMenu(false); if (directory.length === 0) loadDirectory(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <Hash size={15} style={{ color: 'var(--primary-color)' }} /> Create Group
                 </button>
               </div>
             </>
@@ -529,13 +529,13 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
 
       {/* Unified search */}
       <div style={{ position: 'relative' }}>
-        <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+        <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
         <input
           type="text"
           placeholder="Search messages & groups…"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          style={{ width: '100%', padding: '9px 12px 9px 32px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: '0.83rem', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '9px 12px 9px 32px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', borderRadius: 10, fontSize: '0.83rem', color: 'var(--text-primary)', boxSizing: 'border-box', outline: 'none' }}
         />
       </div>
     </div>
@@ -633,9 +633,9 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
   // ─── Render: DM chat view ─────────────────────────────────────────────────────
   const renderDMChat = () => {
     if (!activePartner) return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#94a3b8' }}>
-        <MessageCircle size={48} style={{ marginBottom: 12, opacity: 0.3 }} />
-        <p style={{ fontSize: '1rem', fontWeight: 600, color: '#334155', margin: 0 }}>Select a conversation</p>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark)', color: 'var(--text-muted)' }}>
+        <MessageCircle size={48} style={{ marginBottom: 12, opacity: 0.3, color: 'var(--primary-color)' }} />
+        <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Select a conversation</p>
         <p style={{ fontSize: '0.82rem', margin: '6px 0 0' }}>Choose from your contacts or start a new chat</p>
       </div>
     );
@@ -645,29 +645,29 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Header */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12, background: '#ffffff' }}>
-          <button onClick={() => { setActivePartnerId(null); setIsMobileConvOpen(false); }} className="messages-back-btn" style={{ display: 'none', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={20} /></button>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-dark)' }}>
+          <button onClick={() => { setActivePartnerId(null); setIsMobileConvOpen(false); }} className="messages-back-btn" style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={20} /></button>
           <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => onViewProfile(activePartner.id)}>
             <img src={activePartner.profile_photo} alt={activePartner.full_name} style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#48bb78', border: '2px solid #fff' }} />
+            <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: '#48bb78', border: '2px solid var(--bg-dark)' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }} onClick={() => onViewProfile(activePartner.id)}>{activePartner.full_name}</h3>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => onViewProfile(activePartner.id)}>{activePartner.full_name}</h3>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               {activePartner.profession_category || (activePartner.batch_year ? `Batch of ${activePartner.batch_year}${activePartner.leaving_class ? ` · Cls ${activePartner.leaving_class}` : ''}` : 'Active now')}
             </p>
           </div>
           {/* Three-dot menu */}
           <div style={{ position: 'relative' }}>
-            <button title="Options" onClick={() => setShowChatMenu(prev => !prev)} style={{ width: 36, height: 36, borderRadius: 10, background: showChatMenu ? '#f1f5f9' : '#fff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer', transition: 'all 0.15s' }}>
+            <button title="Options" onClick={() => setShowChatMenu(prev => !prev)} style={{ width: 36, height: 36, borderRadius: 10, background: showChatMenu ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s' }}>
               <MoreHorizontal size={16} />
             </button>
             {showChatMenu && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowChatMenu(false)} />
-                <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 100, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 100, background: 'var(--bg-darker)', borderRadius: 12, border: '1px solid var(--border-color)', minWidth: 180, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
                   {[{ label: 'View Profile', action: () => { onViewProfile(activePartner!.id); setShowChatMenu(false); } }, { label: 'Copy Name', action: () => { navigator.clipboard.writeText(activePartner!.full_name); showToast('Copied!', 'success'); setShowChatMenu(false); } }].map(({ label, action }) => (
-                    <button key={label} onClick={action} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 500, color: '#1e293b', cursor: 'pointer', transition: 'background 0.12s' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{label}</button>
+                    <button key={label} onClick={action} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-secondary)', cursor: 'pointer', transition: 'background 0.12s' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{label}</button>
                   ))}
                 </div>
               </>
@@ -676,18 +676,18 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 2, background: '#f8fafc' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 2, background: 'var(--bg-dark)' }}>
           {loadingMessages ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 size={24} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} /></div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 size={24} style={{ color: 'var(--text-muted)', animation: 'spin 1s linear infinite' }} /></div>
           ) : grouped.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               <MessageCircle size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
               <p style={{ margin: 0, fontSize: '0.85rem' }}>No messages yet. Say hello! 👋</p>
             </div>
           ) : grouped.map(group => (
             <div key={group.date}>
               <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                <span style={{ background: '#e2e8f0', color: '#64748b', fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>{group.date}</span>
+                <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>{group.date}</span>
               </div>
               {group.messages.map((msg) => {
                 const m = msg as Message;
@@ -695,10 +695,10 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                 return (
                   <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 4 }}>
                     <div style={{ maxWidth: '70%' }}>
-                      <div style={{ background: isMe ? '#6366f1' : '#ffffff', color: isMe ? '#fff' : '#1e293b', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', fontSize: '0.88rem', lineHeight: 1.5, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', wordBreak: 'break-word' }}>{m.content}</div>
+                      <div style={{ background: isMe ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)', border: isMe ? 'none' : '1px solid var(--border-color)', color: 'white', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', fontSize: '0.88rem', lineHeight: 1.5, boxShadow: 'var(--shadow-sm)', wordBreak: 'break-word' }}>{m.content}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: isMe ? 'flex-end' : 'flex-start', marginTop: 2 }}>
-                        <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{formatMessageTime(m.created_at)}</span>
-                        {isMe && (m.read ? <CheckCheck size={11} style={{ color: '#6366f1' }} /> : <Check size={11} style={{ color: '#94a3b8' }} />)}
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{formatMessageTime(m.created_at)}</span>
+                        {isMe && (m.read ? <CheckCheck size={11} style={{ color: 'var(--primary-color)' }} /> : <Check size={11} style={{ color: 'var(--text-muted)' }} />)}
                       </div>
                     </div>
                   </div>
@@ -773,14 +773,14 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
           </div>
 
           {/* Members list */}
-          <h4 style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#94a3b8' }}>Members</h4>
+          <h4 style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Members</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {activeGroupDetail.members.map(member => (
-              <div key={member.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: '#f8fafc' }}>
+              <div key={member.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
                 <img src={member.profile_photo} alt={member.full_name} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#1e293b' }}>{member.full_name}</div>
-                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.86rem', color: 'var(--text-primary)' }}>{member.full_name}</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     Batch {member.batch_year || '—'}
                     {member.leaving_class && (
                       <span style={{ marginLeft: '5px', fontSize: '0.65rem', background: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa', borderRadius: '8px', padding: '0px 5px', fontWeight: 700 }}>
@@ -789,7 +789,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                     )}
                   </div>
                 </div>
-                {member.role === 'admin' && <span style={{ background: '#6366f1', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>Admin</span>}
+                {member.role === 'admin' && <span style={{ background: 'var(--primary-color)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>Admin</span>}
                 {isAdmin && member.userId !== currentUser?.id && (
                   <button onClick={() => handleRemoveMember(member.userId, member.full_name)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 4 }} title="Remove"><X size={14} /></button>
                 )}
@@ -804,31 +804,31 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Header */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12, background: '#ffffff' }}>
-          <button onClick={() => { setActiveGroupId(null); setIsMobileGroupOpen(false); }} className="messages-back-btn" style={{ display: 'none', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={20} /></button>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-dark)' }}>
+          <button onClick={() => { setActiveGroupId(null); setIsMobileGroupOpen(false); }} className="messages-back-btn" style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}><ChevronLeft size={20} /></button>
           <div style={{ cursor: 'pointer' }} onClick={() => setShowGroupInfo(true)}>
             <GroupAvatar name={activeGroupDetail.name} size={42} />
           </div>
           <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setShowGroupInfo(true)}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{activeGroupDetail.name}</h3>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>{activeGroupDetail.members.length} members · Tap for info</p>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeGroupDetail.name}</h3>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{activeGroupDetail.members.length} members · Tap for info</p>
           </div>
           {/* Group three-dot menu */}
           <div style={{ position: 'relative' }}>
-            <button title="Options" onClick={() => setShowGroupMenu(prev => !prev)} style={{ width: 36, height: 36, borderRadius: 10, background: showGroupMenu ? '#f1f5f9' : '#fff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer' }}>
+            <button title="Options" onClick={() => setShowGroupMenu(prev => !prev)} style={{ width: 36, height: 36, borderRadius: 10, background: showGroupMenu ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer' }}>
               <MoreHorizontal size={16} />
             </button>
             {showGroupMenu && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowGroupMenu(false)} />
-                <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 100, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', minWidth: 190, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 100, background: 'var(--bg-darker)', borderRadius: 12, border: '1px solid var(--border-color)', minWidth: 190, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
                   {[
                     { label: 'Group Info', icon: <Settings size={14} />, action: () => { setShowGroupInfo(true); setShowGroupMenu(false); } },
                     ...(isAdmin ? [{ label: 'Add Members', icon: <UserPlus size={14} />, action: () => { setShowAddMembersModal(true); setShowGroupMenu(false); if (directory.length === 0) loadDirectory(); } }] : []),
                     { label: 'Leave Group', icon: <LogOut size={14} />, action: () => { setShowGroupMenu(false); handleLeaveGroup(); }, danger: true },
                     ...(isAdmin ? [{ label: 'Delete Group', icon: <Trash2 size={14} />, action: () => { setShowGroupMenu(false); handleDeleteGroup(); }, danger: true }] : [])
                   ].map(({ label, icon, action, danger }: any) => (
-                    <button key={label} onClick={action} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 500, color: danger ? '#ef4444' : '#1e293b', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{icon}{label}</button>
+                    <button key={label} onClick={action} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 16px', background: 'none', border: 'none', fontSize: '0.88rem', fontWeight: 500, color: danger ? '#ef4444' : 'var(--text-secondary)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{icon}{label}</button>
                   ))}
                 </div>
               </>
@@ -837,18 +837,18 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 2, background: '#f8fafc' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 2, background: 'var(--bg-dark)' }}>
           {loadingGroupMsgs ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 size={24} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} /></div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 size={24} style={{ color: 'var(--text-muted)', animation: 'spin 1s linear infinite' }} /></div>
           ) : grouped.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               <Hash size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
               <p style={{ margin: 0, fontSize: '0.85rem' }}>No messages yet. Start the conversation! 👋</p>
             </div>
           ) : grouped.map(group => (
             <div key={group.date}>
               <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                <span style={{ background: '#e2e8f0', color: '#64748b', fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>{group.date}</span>
+                <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>{group.date}</span>
               </div>
               {group.messages.map((msg) => {
                 const m = msg as GroupMessage;
@@ -857,9 +857,9 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
                   <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 6, gap: 8 }}>
                     {!isMe && <img src={m.senderPhoto || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40'} alt={m.senderName} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', alignSelf: 'flex-end', flexShrink: 0 }} />}
                     <div style={{ maxWidth: '68%' }}>
-                      {!isMe && <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6366f1', marginBottom: 2, paddingLeft: 4 }}>{m.senderName}</div>}
-                      <div style={{ background: isMe ? '#6366f1' : '#ffffff', color: isMe ? '#fff' : '#1e293b', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', fontSize: '0.88rem', lineHeight: 1.5, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', wordBreak: 'break-word' }}>{m.content}</div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 2, textAlign: isMe ? 'right' : 'left', paddingLeft: isMe ? 0 : 4 }}>{formatMessageTime(m.created_at)}</div>
+                      {!isMe && <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: 2, paddingLeft: 4 }}>{m.senderName}</div>}
+                      <div style={{ background: isMe ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)', border: isMe ? 'none' : '1px solid var(--border-color)', color: 'white', padding: '10px 14px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', fontSize: '0.88rem', lineHeight: 1.5, boxShadow: 'var(--shadow-sm)', wordBreak: 'break-word' }}>{m.content}</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2, textAlign: isMe ? 'right' : 'left', paddingLeft: isMe ? 0 : 4 }}>{formatMessageTime(m.created_at)}</div>
                     </div>
                   </div>
                 );
@@ -872,14 +872,14 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
         {/* Input */}
         <div style={inputBarStyle}>
           {showGroupEmojiPicker && (
-            <div style={{ position: 'absolute', bottom: 70, left: 20, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12, display: 'flex', flexWrap: 'wrap', gap: 8, width: 240, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', zIndex: 10 }}>
+            <div style={{ position: 'absolute', bottom: 70, left: 20, background: 'var(--bg-darker)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 12, display: 'flex', flexWrap: 'wrap', gap: 8, width: 240, boxShadow: 'var(--shadow-lg)', zIndex: 10 }}>
               {EMOJI_LIST.map(e => <button key={e} onClick={() => { setGroupMessageText(t => t + e); setShowGroupEmojiPicker(false); }} style={{ fontSize: '1.3rem', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '2px 4px' }}>{e}</button>)}
             </div>
           )}
-          <button onClick={() => setShowGroupEmojiPicker(p => !p)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', flexShrink: 0, padding: 4 }}><span style={{ fontSize: '1.25rem' }}>🙂</span></button>
-          <input ref={groupInputRef} type="text" placeholder="Type a message…" value={groupMessageText} onChange={e => setGroupMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); } }} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 20, padding: '10px 16px', fontSize: '0.88rem', color: '#1e293b', outline: 'none' }} />
-          <button onClick={sendGroupMessage} disabled={!groupMessageText.trim() || sendingGroupMsg} style={{ width: 38, height: 38, borderRadius: '50%', background: groupMessageText.trim() ? '#6366f1' : '#e2e8f0', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: groupMessageText.trim() ? 'pointer' : 'default', transition: 'all 0.15s', flexShrink: 0 }}>
-            <Send size={15} style={{ color: groupMessageText.trim() ? '#fff' : '#94a3b8', marginLeft: 2 }} />
+          <button onClick={() => setShowGroupEmojiPicker(p => !p)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0, padding: 4 }}><span style={{ fontSize: '1.25rem' }}>🙂</span></button>
+          <input ref={groupInputRef} type="text" placeholder="Type a message…" value={groupMessageText} onChange={e => setGroupMessageText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); } }} style={{ flex: 1, background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', borderRadius: 20, padding: '10px 16px', fontSize: '0.88rem', color: 'var(--text-primary)', outline: 'none' }} />
+          <button onClick={sendGroupMessage} disabled={!groupMessageText.trim() || sendingGroupMsg} style={{ width: 38, height: 38, borderRadius: '50%', background: groupMessageText.trim() ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.05)', border: '1.5px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: groupMessageText.trim() ? 'pointer' : 'default', transition: 'all 0.15s', flexShrink: 0 }}>
+            <Send size={15} style={{ color: groupMessageText.trim() ? '#fff' : 'var(--text-muted)', marginLeft: 2 }} />
           </button>
         </div>
       </div>
@@ -1043,9 +1043,9 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
 
   // ─── Main render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', height: '100%', background: '#f8fafc', overflow: 'hidden', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+    <div className="glass-panel" style={{ display: 'flex', height: '100%', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)', background: 'var(--card-bg)' }}>
       {/* Left sidebar */}
-      <div style={{ width: '320px', minWidth: '320px', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', background: '#ffffff', height: '100%' }}>
+      <div style={{ width: '320px', minWidth: '320px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-darker)', height: '100%' }}>
         {renderLeftHeader()}
         {renderUnifiedList()}
       </div>
