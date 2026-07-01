@@ -87,18 +87,21 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
       return {
         ...post,
         comments: postComments,
-        author: author ? {
-          id: author.id,
-          email: author.email,
-          role: author.role,
-          full_name: author.profile?.full_name || "Vidyapith Alumnus",
-          profile_photo: author.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-          batch_year: author.profile?.batch_year || 2008,
-          leaving_class: author.profile?.leaving_class || "XII",
-          house: author.profile?.house || "Vivekananda House",
-          profession: author.profile?.profession_category || "Alumnus",
-          department: author.profile?.department || "Science"
-        } : null
+        author: author ? (() => {
+            const p = author.profile as any;
+            return {
+              id: author.id,
+              email: author.email,
+              role: author.role,
+              full_name: p?.full_name || "Vidyapith Alumnus",
+              profile_photo: p?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+              batch_year: p?.batch_year || 2008,
+              leaving_class: p?.leaving_class || "XII",
+              house: p?.house || "Vivekananda House",
+              profession: p?.profession_category || "Alumnus",
+              department: p?.department || "Science"
+            };
+          })() : null
       };
     });
 
