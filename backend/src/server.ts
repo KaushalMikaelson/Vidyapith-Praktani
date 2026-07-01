@@ -12,7 +12,13 @@ console.log(`🔧 Environment: ${isProduction ? 'PRODUCTION' : 'LOCAL DEV'} (loa
 
 import { app } from './app.js';
 
-const PORT = process.env.PORT || 8000;
+let PORT = 8000;
+if (process.env.PORT) {
+  const parsed = parseInt(process.env.PORT, 10);
+  if (!isNaN(parsed) && parsed > 0) {
+    PORT = parsed;
+  }
+}
 
 app.listen(PORT, () => {
   console.log(`🏵️ Vidyapith Connect API Server running successfully on port ${PORT}`);
