@@ -35,6 +35,11 @@ interface ToastMsg {
 export default function App() {
   const { currentUser, login, register, loginWithGoogle, refreshSession } = useAuth();
   
+  const googleCallbackRef = useRef<any>(null);
+  useEffect(() => {
+    googleCallbackRef.current = handleGoogleCredentialResponse;
+  });
+  
   const [activeScreen, setActiveScreen] = useState('feed');
   const [visitedScreens, setVisitedScreens] = useState<string[]>(['feed']);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
@@ -119,10 +124,17 @@ export default function App() {
       const initGoogle = () => {
         const google = (window as any).google;
         if (google && google.accounts && google.accounts.id) {
-          google.accounts.id.initialize({
-            client_id: '137080614363-ciif7q937gbh6p2uet0uo12on4p2cln2.apps.googleusercontent.com',
-            callback: handleGoogleCredentialResponse,
-          });
+          if (!(window as any).__google_initialized) {
+            google.accounts.id.initialize({
+              client_id: '137080614363-ciif7q937gbh6p2uet0uo12on4p2cln2.apps.googleusercontent.com',
+              callback: (res: any) => {
+                if (googleCallbackRef.current) {
+                  googleCallbackRef.current(res);
+                }
+              },
+            });
+            (window as any).__google_initialized = true;
+          }
 
           // Render button on Role Selection screen
           const roleSelectorBtn = document.getElementById('google-signin-btn-role-selection');
