@@ -7,6 +7,7 @@ import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 import { rateLimiter } from '../middlewares/rateLimiter.js';
 import { getHomeFeed } from '../controllers/homepage.controller.js';
 import { getAnalyticsStats, getPublicStats } from '../controllers/analytics.controller.js';
+import { googleLogin } from '../controllers/oauth.controller.js';
 
 // Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment, deletePost, togglePinPost } from '../controllers/posts.controller.js';
@@ -34,6 +35,7 @@ apiRouter.post('/upload', requireAuth, uploadMiddleware.single('file'), uploadMe
 // ── Auth ──────────────────────────────────────────────────────────────────
 apiRouter.post('/auth/register', authLimiter, register);
 apiRouter.post('/auth/login', authLimiter, login);
+apiRouter.post('/auth/google', authLimiter, googleLogin);
 apiRouter.post('/auth/logout', requireAuth, logout);
 apiRouter.get('/auth/me', requireAuth, getMe);
 apiRouter.post('/auth/resolve-queue', requireAdmin, resolveVerificationQueue);

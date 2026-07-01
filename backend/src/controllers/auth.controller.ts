@@ -14,7 +14,7 @@ const JWT_EXPIRES_IN = '30d';
 const JWT_EXPIRES_SECONDS = 30 * 24 * 60 * 60; // 30 days in seconds
 
 /** Build full user response object (reused in login + getMe) */
-function formatUserResponse(user: any) {
+export function formatUserResponse(user: any) {
   return {
     id: user.id,
     full_name: user.profile?.full_name || 'Vidyapith Alumnus',

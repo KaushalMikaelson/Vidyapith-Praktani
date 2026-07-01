@@ -722,6 +722,20 @@
 .auth-demo-role.alumni { background: rgba(243, 112, 33, 0.15); color: var(--primary-color); }
 .auth-demo-role.student { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
+/* Google Sign-in button wrapper styling */
+#google-signin-btn-role-selection,
+#google-signin-btn-login {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+#google-signin-btn-role-selection:hover,
+#google-signin-btn-login:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 12px rgba(243, 112, 33, 0.4);
+}
+
 /* Grid Layout support inside forms */
 .auth-form-row {
   display: grid;

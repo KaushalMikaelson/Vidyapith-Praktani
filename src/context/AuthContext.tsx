@@ -8,6 +8,7 @@ interface AuthContextType {
   currentUser: User | null;
   login: (email: string, password_hash: string) => Promise<{ success: boolean; error?: string }>;
   register: (fields: any) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (token: string) => Promise<{ success: boolean; status?: string; email?: string; name?: string; picture?: string; error?: string }>;
   logout: () => void;
   refreshSession: () => void;
 }
@@ -39,6 +40,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await response.json();
       if (!response.ok) {
         return { success: false, error: data.error || "Login failed." };
+      }
+
+      // Save token in localStorage
+      localStorage.setItem('rkmv_auth_token', data.token);
+
+      const user = data.user;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      setCurrentUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Network error. Make sure API server is running." };
+    }
+  };
+
+  const loginWithGoogle = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.error || "Google login failed." };
+      }
+
+      if (data.status === 'needs_registration') {
+        return {
+          success: true,
+          status: 'needs_registration',
+          email: data.email,
+          name: data.name,
+          picture: data.picture
+        };
       }
 
       // Save token in localStorage
@@ -110,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, register, logout, refreshSession }}>
+    <AuthContext.Provider value={{ currentUser, login, register, loginWithGoogle, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

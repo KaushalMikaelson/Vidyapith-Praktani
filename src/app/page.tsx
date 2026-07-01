@@ -33,12 +33,137 @@ interface ToastMsg {
 }
 
 export default function App() {
-  const { currentUser, login, register, refreshSession } = useAuth();
+  const { currentUser, login, register, loginWithGoogle, refreshSession } = useAuth();
   
   const [activeScreen, setActiveScreen] = useState('feed');
   const [visitedScreens, setVisitedScreens] = useState<string[]>(['feed']);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+
+  // Auth & Stepper States
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regBatch, setRegBatch] = useState('');
+  const [regLeavingClass, setRegLeavingClass] = useState<'X' | 'XII'>('XII');
+  const [regHouse, setRegHouse] = useState('');
+  const [regMobile, setRegMobile] = useState('');
+  const [regPass, setRegPass] = useState('');
+  const [regFile, setRegFile] = useState<File | null>(null);
+  const [regStep, setRegStep] = useState<1 | 2 | 3>(1);
+  const [showLoginPass, setShowLoginPass] = useState(false);
+  const [showRegPass, setShowRegPass] = useState(false);
+  const [selectedLoginRole, setSelectedLoginRole] = useState<'alumni' | 'student' | 'admin' | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Email OTP states
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  useEffect(() => {
+    // Load Google Identity Services script dynamically
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up script on unmount
+      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existing) {
+        document.body.removeChild(existing);
+      }
+    };
+  }, []);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    const credential = response.credential;
+    setAuthError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await loginWithGoogle(credential);
+      if (res.success) {
+        if (res.status === 'needs_registration') {
+          setRegName(res.name || '');
+          setRegEmail(res.email || '');
+          // Generate a long random password for Google-based signup so standard validator passes
+          const randomPass = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+          setRegPass(randomPass);
+          setAuthTab('register');
+          setRegStep(1);
+          showToast("Google account verified! Complete registration details to join.", "info");
+        } else {
+          showToast("Signed in successfully with Google!", "success");
+          setShowAuthModal(false);
+        }
+      } else {
+        setAuthError(res.error || "Google login failed.");
+      }
+    } catch (err: any) {
+      setAuthError(err.message || "Google login failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showAuthModal && typeof window !== 'undefined') {
+      const initGoogle = () => {
+        const google = (window as any).google;
+        if (google && google.accounts && google.accounts.id) {
+          google.accounts.id.initialize({
+            client_id: '137080614363-ciif7q937gbh6p2uet0uo12on4p2cln2.apps.googleusercontent.com',
+            callback: handleGoogleCredentialResponse,
+          });
+
+          // Render button on Role Selection screen
+          const roleSelectorBtn = document.getElementById('google-signin-btn-role-selection');
+          if (roleSelectorBtn) {
+            google.accounts.id.renderButton(roleSelectorBtn, {
+              theme: 'dark',
+              size: 'large',
+              width: 320,
+              text: 'signin_with',
+              shape: 'pill',
+            });
+          }
+
+          // Render button on Portal Login forms
+          const loginBtn = document.getElementById('google-signin-btn-login');
+          if (loginBtn) {
+            google.accounts.id.renderButton(loginBtn, {
+              theme: 'dark',
+              size: 'large',
+              width: 320,
+              text: 'signin_with',
+              shape: 'pill',
+            });
+          }
+        }
+      };
+
+      // Try initializing immediately
+      initGoogle();
+
+      // Or poll briefly in case the script hasn't fully loaded yet
+      const timer = setInterval(() => {
+        if ((window as any).google) {
+          initGoogle();
+          clearInterval(timer);
+        }
+      }, 300);
+
+      return () => clearInterval(timer);
+    }
+  }, [showAuthModal, authTab, selectedLoginRole]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -50,35 +175,7 @@ export default function App() {
 
   const triggerFeedRefresh = () => setFeedRefreshKey(k => k + 1);
 
-  // Auth Modals Tabs
-  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
-  
-  // Login Form details
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPass, setLoginPass] = useState('');
-
-  // Register Form details
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regBatch, setRegBatch] = useState('');
-  const [regLeavingClass, setRegLeavingClass] = useState<'X' | 'XII'>('XII');
-  const [regHouse, setRegHouse] = useState('');
-  const [regMobile, setRegMobile] = useState('');
-  const [regPass, setRegPass] = useState('');
-  const [regFile, setRegFile] = useState<File | null>(null);
-
-  // Stepper & UI States
-  const [regStep, setRegStep] = useState<1 | 2 | 3>(1);
-  const [showLoginPass, setShowLoginPass] = useState(false);
-  const [showRegPass, setShowRegPass] = useState(false);
-  const [selectedLoginRole, setSelectedLoginRole] = useState<'alumni' | 'student' | 'admin' | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  // Email OTP registration verification states
-  const [emailOtp, setEmailOtp] = useState('');
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  // State declarations moved to top
 
   // Forgot password flow states
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -189,9 +286,7 @@ export default function App() {
   }, [currentUser]);
 
   // Landing Page & Auth Modal States
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Auth modal states moved to top
 
   useEffect(() => {
     setAuthError(null);
@@ -1140,6 +1235,12 @@ export default function App() {
                             </button>
                           </div>
                         </div>
+
+                        {/* Google Sign In Container (Role Selection) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px', gap: '12px' }}>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>— OR —</div>
+                          <div id="google-signin-btn-role-selection" style={{ minHeight: '40px' }}></div>
+                        </div>
                       </div>
                     ) : (
                       /* Role Specific Login Form */
@@ -1238,6 +1339,12 @@ export default function App() {
                           <ArrowLeft size={18} />
                           <span>Back to Portal Roles</span>
                         </button>
+
+                        {/* Google Sign In Container (Role Specific Form) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', gap: '12px' }}>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>— OR —</div>
+                          <div id="google-signin-btn-login" style={{ minHeight: '40px' }}></div>
+                        </div>
                       </form>
                     )
                   ) : (
