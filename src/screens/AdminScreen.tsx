@@ -424,32 +424,53 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
               </button>
             </div>
             
-            {/* Premium Simulated Leaving Certificate */}
-            <div id="certModalContent" style={{ background: '#fcfbf7', border: '12px double #0d233a', padding: '24px', borderRadius: '4px', color: '#0d233a', fontFamily: 'serif', textAlign: 'center' }}>
-              <div style={{ border: '2px solid #c59b27', padding: '16px', position: 'relative' }}>
-                <span style={{ fontSize: '1.1rem', letterSpacing: '0.1em', fontWeight: 700, color: '#0d233a', display: 'block', marginBottom: '4px' }}>RAMAKRISHNA MISSION VIDYAPITH</span>
-                <span style={{ fontSize: '0.75rem', display: 'block', textTransform: 'uppercase', fontFamily: 'sans-serif', color: '#718096', marginBottom: '12px' }}>DEOGHAR, JHARKHAND</span>
-                
-                <hr style={{ border: 0, borderTop: '1px solid #c59b27', margin: '8px 0' }} />
-                
-                <h4 style={{ fontStyle: 'italic', fontSize: '1rem', margin: '12px 0', color: '#0d233a' }}>Leaving Certificate & Character Memo</h4>
-                
-                <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: '#334155', textAlign: 'justify', margin: '14px 0' }}>
-                  This is to verify that <strong>{certPreviewUser.full_name}</strong>, resident of <strong>{certPreviewUser.house}</strong>, was a regular ex-student of this residential school. He successfully completed his secondary schooling in the <strong>Class of {certPreviewUser.batch_year}</strong>. 
-                  His character and moral conduct during his hostel residence were exemplary.
-                </p>
+            {/* Real Uploaded Document Preview or Simulated Fallback */}
+            {certPreviewUser.certificate_url && 
+             certPreviewUser.certificate_url !== 'Leaving_Certificate_Scan.pdf' && 
+             certPreviewUser.certificate_url !== 'Certificate_Scan.pdf' ? (
+              <div style={{ marginBottom: '16px', maxHeight: '420px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {certPreviewUser.certificate_url.toLowerCase().endsWith('.pdf') ? (
+                  <iframe 
+                    src={certPreviewUser.certificate_url} 
+                    style={{ width: '100%', height: '380px', border: 'none' }}
+                    title="Certificate PDF"
+                  />
+                ) : (
+                  <img 
+                    src={certPreviewUser.certificate_url} 
+                    alt="Uploaded Certificate" 
+                    style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain', borderRadius: '4px' }} 
+                  />
+                )}
+              </div>
+            ) : (
+              /* Premium Simulated Leaving Certificate Fallback */
+              <div id="certModalContent" style={{ background: '#fcfbf7', border: '12px double #0d233a', padding: '24px', borderRadius: '4px', color: '#0d233a', fontFamily: 'serif', textAlign: 'center' }}>
+                <div style={{ border: '2px solid #c59b27', padding: '16px', position: 'relative' }}>
+                  <span style={{ fontSize: '1.1rem', letterSpacing: '0.1em', fontWeight: 700, color: '#0d233a', display: 'block', marginBottom: '4px' }}>RAMAKRISHNA MISSION VIDYAPITH</span>
+                  <span style={{ fontSize: '0.75rem', display: 'block', textTransform: 'uppercase', fontFamily: 'sans-serif', color: '#718096', marginBottom: '12px' }}>DEOGHAR, JHARKHAND</span>
+                  
+                  <hr style={{ border: 0, borderTop: '1px solid #c59b27', margin: '8px 0' }} />
+                  
+                  <h4 style={{ fontStyle: 'italic', fontSize: '1rem', margin: '12px 0', color: '#0d233a' }}>Leaving Certificate & Character Memo</h4>
+                  
+                  <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: '#334155', textAlign: 'justify', margin: '14px 0' }}>
+                    This is to verify that <strong>{certPreviewUser.full_name}</strong>, resident of <strong>{certPreviewUser.house}</strong>, was a regular ex-student of this residential school. He successfully completed his secondary schooling in the <strong>Class of {certPreviewUser.batch_year}</strong>. 
+                    His character and moral conduct during his hostel residence were exemplary.
+                  </p>
 
-                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                  <div style={{ textAlign: 'left', fontSize: '0.75rem', color: '#475569' }}>
-                    <span>Date: 15-May-{certPreviewUser.batch_year}</span>
-                  </div>
-                  <div style={{ textAlign: 'center', fontFamily: 'sans-serif', fontSize: '0.75rem' }}>
-                    <div style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#0c1e36', fontWeight: 700 }}>Swami Brahmananda</div>
-                    <div style={{ borderTop: '1px solid #718096', paddingTop: '2px', fontSize: '0.65rem', textTransform: 'uppercase', color: '#718096' }}>Headmaster & Secretary</div>
+                  <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ textAlign: 'left', fontSize: '0.75rem', color: '#475569' }}>
+                      <span>Date: 15-May-{certPreviewUser.batch_year}</span>
+                    </div>
+                    <div style={{ textAlign: 'center', fontFamily: 'sans-serif', fontSize: '0.75rem' }}>
+                      <div style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#0c1e36', fontWeight: 700 }}>Swami Brahmananda</div>
+                      <div style={{ borderTop: '1px solid #718096', paddingTop: '2px', fontSize: '0.65rem', textTransform: 'uppercase', color: '#718096' }}>Headmaster & Secretary</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
             
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button className="btn btn-secondary" style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontWeight: 600, cursor: 'pointer' }} onClick={() => setCertPreviewUser(null)}>
