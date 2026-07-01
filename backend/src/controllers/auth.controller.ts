@@ -95,7 +95,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
             country: 'India',
             linkedin_url: '',
             certificate_url: certificate_name || 'Leaving_Certificate_Scan.pdf'
-          }
+          } as any
         }
       }
     });

@@ -220,46 +220,48 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     // Format list to match front-end User interface expectations
     const formattedUsers = users.map(u => {
       const isSelf = requesterId === u.id;
-      const showEmail = isSelf || isAdmin || (u.profile?.show_email ?? true);
-      const showPhone = isSelf || isAdmin || (u.profile?.show_phone ?? false);
-      const showSocial = isSelf || isAdmin || (u.profile?.show_social ?? true);
+      const isAdmin = req.user?.role === 'admin';
+      const p = u.profile as any;
+      const showEmail = isSelf || isAdmin || (p?.show_email ?? true);
+      const showPhone = isSelf || isAdmin || (p?.show_phone ?? false);
+      const showSocial = isSelf || isAdmin || (p?.show_social ?? true);
 
       return {
         id: u.id,
-        full_name: u.profile?.full_name || "Vidyapith Alumnus",
+        full_name: p?.full_name || "Vidyapith Alumnus",
         email: showEmail ? u.email : "",
         mobile: showPhone ? u.phone : "",
-        batch_year: u.profile?.batch_year || 0,
-        leaving_class: u.profile?.leaving_class || "XII",
-        house: u.profile?.house || "",
+        batch_year: p?.batch_year || 0,
+        leaving_class: p?.leaving_class || "XII",
+        house: p?.house || "",
         role: u.role,
         verify_status: u.verify_status,
-        profile_photo: u.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-        bio: u.profile?.bio || "",
-        profession: u.profile?.profession_category || "",
-        company: u.profile?.company || "",
-        city: u.profile?.city || "",
-        country: u.profile?.country || "India",
-        linkedin_url: showSocial ? (u.profile?.linkedin_url || "") : "",
-        github_url: showSocial ? (u.profile?.github_url || "") : "",
-        portfolio_url: showSocial ? (u.profile?.portfolio_url || "") : "",
-        personal_url: showSocial ? (u.profile?.personal_url || "") : "",
-        skills: u.profile?.skills || [],
-        help_categories: u.profile?.help_categories || [],
-        looking_for: u.profile?.looking_for || [],
-        mentorship_status: u.profile?.mentorship_status || "Not Available",
-        designation: u.profile?.designation || "",
-        years_of_experience: u.profile?.years_of_experience ?? 0,
-        education: u.profile?.education || "",
-        open_for: u.profile?.open_for || [],
+        profile_photo: p?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+        bio: p?.bio || "",
+        profession: p?.profession_category || "",
+        company: p?.company || "",
+        city: p?.city || "",
+        country: p?.country || "India",
+        linkedin_url: showSocial ? (p?.linkedin_url || "") : "",
+        github_url: showSocial ? (p?.github_url || "") : "",
+        portfolio_url: showSocial ? (p?.portfolio_url || "") : "",
+        personal_url: showSocial ? (p?.personal_url || "") : "",
+        skills: p?.skills || [],
+        help_categories: p?.help_categories || [],
+        looking_for: p?.looking_for || [],
+        mentorship_status: p?.mentorship_status || "Not Available",
+        designation: p?.designation || "",
+        years_of_experience: p?.years_of_experience ?? 0,
+        education: p?.education || "",
+        open_for: p?.open_for || [],
         privacy: {
-          show_email: u.profile?.show_email ?? true,
-          show_mobile: u.profile?.show_phone ?? false,
-          show_social: u.profile?.show_social ?? true
+          show_email: p?.show_email ?? true,
+          show_mobile: p?.show_phone ?? false,
+          show_social: p?.show_social ?? true
         },
         created_at: u.created_at,
-        department: u.profile?.department || "",
-        industry: u.profile?.industry || ""
+        department: p?.department || "",
+        industry: p?.industry || ""
       };
     });
 
@@ -462,21 +464,22 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
     });
 
     const formattedSenders = senders.map(s => {
+      const sp = s.profile as any;
       const conn = pending.find(p => p.sender_id === s.id);
       return {
         connectionId: conn?.id,
         id: s.id,
-        full_name: s.profile?.full_name || "Vidyapith Alumnus",
+        full_name: sp?.full_name || "Vidyapith Alumnus",
         email: s.email,
-        batch_year: s.profile?.batch_year || 0,
-        leaving_class: s.profile?.leaving_class || "XII",
-        house: s.profile?.house || "",
+        batch_year: sp?.batch_year || 0,
+        leaving_class: sp?.leaving_class || "XII",
+        house: sp?.house || "",
         role: s.role,
-        profile_photo: s.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-        profession: s.profile?.profession_category || "",
-        company: s.profile?.company || "",
-        city: s.profile?.city || "",
-        country: s.profile?.country || "India"
+        profile_photo: sp?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+        profession: sp?.profession_category || "",
+        company: sp?.company || "",
+        city: sp?.city || "",
+        country: sp?.country || "India"
       };
     });
 
@@ -632,20 +635,23 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
       include: { profile: true }
     });
 
-    const formattedPartners = partners.map(p => ({
-      id: p.id,
-      full_name: p.profile?.full_name || "Vidyapith Alumnus",
-      email: p.email,
-      batch_year: p.profile?.batch_year || 0,
-      leaving_class: p.profile?.leaving_class || "XII",
-      house: p.profile?.house || "",
-      role: p.role,
-      profile_photo: p.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-      profession: p.profile?.profession_category || "",
-      company: p.profile?.company || "",
-      city: p.profile?.city || "",
-      country: p.profile?.country || "India"
-    }));
+    const formattedPartners = partners.map(p => {
+      const pp = p.profile as any;
+      return {
+        id: p.id,
+        full_name: pp?.full_name || "Vidyapith Alumnus",
+        email: p.email,
+        batch_year: pp?.batch_year || 0,
+        leaving_class: pp?.leaving_class || "XII",
+        house: pp?.house || "",
+        role: p.role,
+        profile_photo: pp?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+        profession: pp?.profession_category || "",
+        company: pp?.company || "",
+        city: pp?.city || "",
+        country: pp?.country || "India"
+      };
+    });
 
     connectionsCache.set(cacheKey, formattedPartners, 60000); // 1 minute cache
     res.status(200).json(formattedPartners);
@@ -707,38 +713,39 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
     const requesterId = req.user?.id;
     const isSelf = requesterId === user.id;
     const isAdmin = req.user?.role === 'admin';
-    const showEmail = isSelf || isAdmin || (user.profile?.show_email ?? true);
-    const showPhone = isSelf || isAdmin || (user.profile?.show_phone ?? false);
-    const showSocial = isSelf || isAdmin || (user.profile?.show_social ?? true);
+    const up = user.profile as any;
+    const showEmail = isSelf || isAdmin || (up?.show_email ?? true);
+    const showPhone = isSelf || isAdmin || (up?.show_phone ?? false);
+    const showSocial = isSelf || isAdmin || (up?.show_social ?? true);
 
     const formattedUser = {
       id: user.id,
-      full_name: user.profile?.full_name || "Vidyapith Alumnus",
+      full_name: up?.full_name || "Vidyapith Alumnus",
       email: showEmail ? user.email : "",
       mobile: showPhone ? user.phone : "",
-      batch_year: user.profile?.batch_year || 0,
-      leaving_class: user.profile?.leaving_class || "XII",
-      house: user.profile?.house || "",
+      batch_year: up?.batch_year || 0,
+      leaving_class: up?.leaving_class || "XII",
+      house: up?.house || "",
       role: user.role,
       verify_status: user.verify_status,
-      profile_photo: user.profile?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
-      bio: user.profile?.bio || "",
-      profession: user.profile?.profession_category || "",
-      company: user.profile?.company || "",
-      city: user.profile?.city || "",
-      country: user.profile?.country || "India",
-      linkedin_url: showSocial ? (user.profile?.linkedin_url || "") : "",
-      github_url: showSocial ? (user.profile?.github_url || "") : "",
-      portfolio_url: showSocial ? (user.profile?.portfolio_url || "") : "",
-      personal_url: showSocial ? (user.profile?.personal_url || "") : "",
-      skills: user.profile?.skills || [],
-      help_categories: user.profile?.help_categories || [],
-      looking_for: user.profile?.looking_for || [],
-      mentorship_status: user.profile?.mentorship_status || "Not Available",
-      designation: user.profile?.designation || "",
-      years_of_experience: user.profile?.years_of_experience ?? 0,
-      education: user.profile?.education || "",
-      open_for: user.profile?.open_for || [],
+      profile_photo: up?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+      bio: up?.bio || "",
+      profession: up?.profession_category || "",
+      company: up?.company || "",
+      city: up?.city || "",
+      country: up?.country || "India",
+      linkedin_url: showSocial ? (up?.linkedin_url || "") : "",
+      github_url: showSocial ? (up?.github_url || "") : "",
+      portfolio_url: showSocial ? (up?.portfolio_url || "") : "",
+      personal_url: showSocial ? (up?.personal_url || "") : "",
+      skills: up?.skills || [],
+      help_categories: up?.help_categories || [],
+      looking_for: up?.looking_for || [],
+      mentorship_status: up?.mentorship_status || "Not Available",
+      designation: up?.designation || "",
+      years_of_experience: up?.years_of_experience ?? 0,
+      education: up?.education || "",
+      open_for: up?.open_for || [],
       posts_count: postsCount,
       connections_count: connectionsCount,
       mentorships_count: mentorshipsCount,
