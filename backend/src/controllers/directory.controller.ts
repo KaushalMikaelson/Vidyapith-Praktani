@@ -821,7 +821,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
       } else {
         await prisma.user.update({
           where: { id: userId },
-          data: { phone: null }
+          data: { phone: undefined }
         });
       }
     }

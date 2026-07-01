@@ -147,10 +147,10 @@ export const getGroupDetails = async (req: AuthenticatedRequest, res: Response):
         userId: m.user_id,
         role: m.role,
         joinedAt: m.joined_at,
-        full_name: u?.profile?.full_name ?? 'Vidyapith Alumnus',
-        profile_photo: u?.profile?.profile_photo ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80',
-        batch_year: u?.profile?.batch_year ?? 0,
-        leaving_class: u?.profile?.leaving_class ?? "XII"
+        full_name: (u?.profile as any)?.full_name ?? 'Vidyapith Alumnus',
+        profile_photo: (u?.profile as any)?.profile_photo ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80',
+        batch_year: (u?.profile as any)?.batch_year ?? 0,
+        leaving_class: (u?.profile as any)?.leaving_class ?? "XII"
       };
     });
 

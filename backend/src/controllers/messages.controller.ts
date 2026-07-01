@@ -57,11 +57,11 @@ export const listConversations = async (req: AuthenticatedRequest, res: Response
 
       return {
         partnerId: partner.id,
-        partnerName: partner.profile?.full_name || 'Vidyapith Alumnus',
-        partnerPhoto: partner.profile?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
-        partnerBatch: partner.profile?.batch_year || null,
-        partnerLeavingClass: partner.profile?.leaving_class || 'XII',
-        partnerProfession: partner.profile?.profession_category || '',
+        partnerName: (partner.profile as any)?.full_name || 'Vidyapith Alumnus',
+        partnerPhoto: (partner.profile as any)?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
+        partnerBatch: (partner.profile as any)?.batch_year || null,
+        partnerLeavingClass: (partner.profile as any)?.leaving_class || 'XII',
+        partnerProfession: (partner.profile as any)?.profession_category || '',
         lastMessage: lastMsg?.content || '',
         lastMessageAt: lastMsg?.created_at || null,
         unreadCount,
@@ -124,11 +124,11 @@ export const getConversation = async (req: AuthenticatedRequest, res: Response):
       messages,
       partner: partner ? {
         id: partner.id,
-        full_name: partner.profile?.full_name || 'Vidyapith Alumnus',
-        profile_photo: partner.profile?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
-        batch_year: partner.profile?.batch_year,
-        leaving_class: partner.profile?.leaving_class || 'XII',
-        profession_category: partner.profile?.profession_category
+        full_name: (partner.profile as any)?.full_name || 'Vidyapith Alumnus',
+        profile_photo: (partner.profile as any)?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80',
+        batch_year: (partner.profile as any)?.batch_year,
+        leaving_class: (partner.profile as any)?.leaving_class || 'XII',
+        profession_category: (partner.profile as any)?.profession_category
       } : null
     });
   } catch (err: any) {
