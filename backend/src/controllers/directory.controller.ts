@@ -972,10 +972,20 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
       }
     });
 
+    const mentorshipCount = await prisma.mentorship.count({
+      where: {
+        OR: [
+          { mentor_id: targetUserId, status: 'active' },
+          { mentee_id: targetUserId, status: 'active' }
+        ]
+      }
+    });
+
     res.status(200).json({
       followers,
       following,
-      connections: acceptedConnections
+      connections: acceptedConnections,
+      mentorships: mentorshipCount
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

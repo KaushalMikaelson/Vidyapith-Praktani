@@ -3060,11 +3060,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               style={{ cursor: 'pointer' }}
               onClick={() => setActiveRelationsTab('connections')}
             >
-              <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : (profileConnectionStatus === 'accepted' ? 46 : 45)}</span>
+              <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : 0}</span>
               <span className="profile-stat-label">Connections</span>
             </div>
             <div className="profile-stat-box">
-              <span className="profile-stat-number">{person.batch_year && person.batch_year <= 2005 ? 12 : 3}</span>
+              <span className="profile-stat-number">{profileRelations ? (profileRelations as any).mentorships ?? 0 : 0}</span>
               <span className="profile-stat-label">Mentorships</span>
             </div>
           </div>
