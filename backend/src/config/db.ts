@@ -8,7 +8,15 @@ if (isLocalDemo) {
 }
 
 // Real Prisma client — only used when DATABASE_URL is present.
-const _prisma = isLocalDemo ? null : new PrismaClient({ log: ['warn', 'error'] });
+// Suppress 'error' level logs to quiet Neon's normal idle-connection-closed messages.
+// Real errors are still surfaced via caught exceptions in controllers.
+const _prisma = isLocalDemo ? null : new PrismaClient({
+  log: [
+    { level: 'warn', emit: 'stdout' },
+    // Do NOT emit 'error' via stdout — Neon pgBouncer regularly closes idle
+    // connections (kind: Closed, cause: None) which is not an actual error.
+  ],
+});
 
 /**
  * In production: real PrismaClient connected to Postgres.
@@ -27,4 +35,3 @@ export const prisma = isLocalDemo
       }
     }))
   : _prisma!;
-
