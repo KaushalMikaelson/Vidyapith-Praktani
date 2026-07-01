@@ -1,4 +1,8 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+let rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+if (rawApiUrl && !rawApiUrl.endsWith('/api/v1') && !rawApiUrl.endsWith('/api/v1/')) {
+  rawApiUrl = rawApiUrl.replace(/\/$/, '') + '/api/v1';
+}
+export const API_BASE_URL = rawApiUrl;
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   // Retrieve the stored JWT token
