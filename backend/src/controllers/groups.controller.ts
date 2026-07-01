@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/db.js';
+import { groupsCache } from '../utils/cache.js';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
@@ -49,6 +48,8 @@ export const createGroup = async (req: AuthenticatedRequest, res: Response): Pro
 
     await prisma.groupMember.createMany({ data: membersToAdd, skipDuplicates: true });
 
+    // Invalidate user's group list cache
+    await groupsCache.invalidate(`mygroups:${userId}`);
     res.status(201).json({ success: true, group });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -60,6 +61,16 @@ export const listMyGroups = async (req: AuthenticatedRequest, res: Response): Pr
   try {
     const userId = req.user?.id;
     if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+
+    // Check cache first (1 min TTL)
+    const cacheKey = `mygroups:${userId}`;
+    const cached = await groupsCache.get<any[]>(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cached);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
 
     const memberships = await prisma.groupMember.findMany({
       where: { user_id: userId }
@@ -102,6 +113,7 @@ export const listMyGroups = async (req: AuthenticatedRequest, res: Response): Pr
       };
     }));
 
+    groupsCache.set(cacheKey, enriched, 60000);
     res.status(200).json(enriched);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -168,6 +180,10 @@ export const addMembers = async (req: AuthenticatedRequest, res: Response): Prom
       skipDuplicates: true
     });
 
+    // Invalidate group member caches
+    for (const mid of memberIds) {
+      await groupsCache.invalidate(`mygroups:${mid}`);
+    }
     res.status(200).json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -202,6 +218,7 @@ export const removeMember = async (req: AuthenticatedRequest, res: Response): Pr
       await prisma.group.delete({ where: { id: groupId } });
     }
 
+    await groupsCache.invalidate(`mygroups:${targetUserId}`);
     res.status(200).json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -250,6 +267,8 @@ export const deleteGroup = async (req: AuthenticatedRequest, res: Response): Pro
     await prisma.groupMember.deleteMany({ where: { group_id: groupId } });
     await prisma.group.delete({ where: { id: groupId } });
 
+    // Invalidate all groups cache (we don't know all members easily)
+    await groupsCache.clear();
     res.status(200).json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

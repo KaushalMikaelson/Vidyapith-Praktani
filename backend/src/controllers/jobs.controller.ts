@@ -10,7 +10,7 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
     const skip = (page - 1) * limit;
 
     const cacheKey = `jobs:all:page:${page}:limit:${limit}`;
-    const cachedJobs = jobsCache.get<any[]>(cacheKey);
+    const cachedJobs = await jobsCache.get<any[]>(cacheKey);
     if (cachedJobs) {
       res.status(200).json(cachedJobs);
       return;
@@ -124,7 +124,7 @@ export const createJob = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
-    jobsCache.invalidate("jobs:");
+    await jobsCache.invalidate("jobs:");
     res.status(201).json({ success: true, job: newJob });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -185,7 +185,7 @@ export const applyJob = async (req: AuthenticatedRequest, res: Response): Promis
         }
       });
 
-      jobsCache.invalidate("jobs:");
+      await jobsCache.invalidate("jobs:");
     }
 
     res.status(200).json({ success: true, message: "Application filed successfully." });
@@ -260,7 +260,7 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
       }
     });
 
-    jobsCache.invalidate("jobs:");
+    await jobsCache.invalidate("jobs:");
     res.status(200).json({ success: true, message: `Applicant status updated to ${status}.` });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

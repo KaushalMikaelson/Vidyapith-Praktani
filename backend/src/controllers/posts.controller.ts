@@ -21,7 +21,7 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
     const cacheKey = `posts:${filterGroup}:page:${page}:limit:${limit}`;
 
     // Try to get from cache first
-    const cachedData = postCache.get<any[]>(cacheKey);
+    const cachedData = await postCache.get<any[]>(cacheKey);
     if (cachedData) {
       res.status(200).json(cachedData);
       return;
@@ -134,7 +134,7 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
-    postCache.invalidate('posts:');
+    await postCache.invalidate('posts:');
     res.status(201).json({ success: true, post: newPost });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -171,7 +171,7 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       data: { likes: updatedLikes }
     });
 
-    postCache.clear(); // Clear cached posts to ensure update is reflected
+    await postCache.clear(); // Clear cached posts to ensure update is reflected
     res.status(200).json({ success: true, likes: updatedPost.likes });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -241,7 +241,7 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
-    postCache.invalidate('posts:');
+    await postCache.invalidate('posts:');
     res.status(201).json({ success: true, comment: newComment });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -284,7 +284,7 @@ export const deletePost = async (req: AuthenticatedRequest, res: Response): Prom
       where: { id }
     });
 
-    postCache.clear();
+    await postCache.clear();
     res.status(200).json({ success: true, message: "Post deleted successfully." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -323,7 +323,7 @@ export const togglePinPost = async (req: AuthenticatedRequest, res: Response): P
       data: { is_pinned: !post.is_pinned }
     });
 
-    postCache.clear();
+    await postCache.clear();
     res.status(200).json({ success: true, is_pinned: updatedPost.is_pinned });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

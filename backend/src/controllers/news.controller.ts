@@ -6,7 +6,7 @@ import { newsCache } from '../utils/cache.js';
 export const listNews = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const cacheKey = "news:all";
-    const cachedNews = newsCache.get<any[]>(cacheKey);
+    const cachedNews = await newsCache.get<any[]>(cacheKey);
     if (cachedNews) {
       res.status(200).json(cachedNews);
       return;
@@ -49,7 +49,7 @@ export const createNews = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
-    newsCache.invalidate("news:");
+    await newsCache.invalidate("news:");
     res.status(201).json({ success: true, news: newPost });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -59,7 +59,7 @@ export const createNews = async (req: AuthenticatedRequest, res: Response): Prom
 export const listHeritage = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const cacheKey = "heritage:all";
-    const cachedHeritage = newsCache.get<any[]>(cacheKey);
+    const cachedHeritage = await newsCache.get<any[]>(cacheKey);
     if (cachedHeritage) {
       res.status(200).json(cachedHeritage);
       return;

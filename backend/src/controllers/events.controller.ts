@@ -11,7 +11,7 @@ export const listEvents = async (req: AuthenticatedRequest, res: Response): Prom
     const skip = (page - 1) * limit;
 
     const cacheKey = `events:all:page:${page}:limit:${limit}`;
-    const cachedEvents = eventsCache.get<any[]>(cacheKey);
+    const cachedEvents = await eventsCache.get<any[]>(cacheKey);
     if (cachedEvents) {
       res.status(200).json(cachedEvents);
       return;
@@ -67,7 +67,7 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response): Pro
       }
     });
 
-    eventsCache.invalidate("events:");
+    await eventsCache.invalidate("events:");
     res.status(201).json({ success: true, event: newEvent });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -121,7 +121,7 @@ export const rsvpEvent = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
-    eventsCache.invalidate("events:");
+    await eventsCache.invalidate("events:");
     res.status(200).json({ success: true, rsvp });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

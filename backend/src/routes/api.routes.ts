@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { register, login, resolveVerificationQueue, getMe, requestEmailOTP, verifyEmailOTP, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
+import { register, login, logout, resolveVerificationQueue, getMe, requestEmailOTP, verifyEmailOTP, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { getLeaderboard, createCheckoutSession } from '../controllers/donations.controller.js';
 import { listJobs, createJob, applyJob, updateApplicationStatus } from '../controllers/jobs.controller.js';
 import { listNews, createNews, listHeritage } from '../controllers/news.controller.js';
 import { requireAuth, requireAdmin } from '../middlewares/auth.js';
 import { rateLimiter } from '../middlewares/rateLimiter.js';
+import { getHomeFeed } from '../controllers/homepage.controller.js';
+import { getAnalyticsStats, getPublicStats } from '../controllers/analytics.controller.js';
 
 // Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment, deletePost, togglePinPost } from '../controllers/posts.controller.js';
@@ -32,6 +34,7 @@ apiRouter.post('/upload', requireAuth, uploadMiddleware.single('file'), uploadMe
 // ── Auth ──────────────────────────────────────────────────────────────────
 apiRouter.post('/auth/register', authLimiter, register);
 apiRouter.post('/auth/login', authLimiter, login);
+apiRouter.post('/auth/logout', requireAuth, logout);
 apiRouter.get('/auth/me', requireAuth, getMe);
 apiRouter.post('/auth/resolve-queue', requireAdmin, resolveVerificationQueue);
 apiRouter.post('/auth/request-otp', authLimiter, requestEmailOTP);
@@ -94,6 +97,13 @@ apiRouter.post('/notifications/:id/read', requireAuth, markRead);
 
 // Admin Endpoints
 apiRouter.get('/admin/pending-users', requireAdmin, listPendingUsers);
+
+// Homepage Endpoint
+apiRouter.get('/home/feed', requireAuth, getHomeFeed);
+
+// Analytics Endpoints
+apiRouter.get('/analytics/stats', requireAdmin, getAnalyticsStats);
+apiRouter.get('/analytics/public', requireAuth, getPublicStats);
 
 // Messages Endpoints
 apiRouter.get('/messages/conversations', requireAuth, listConversations);

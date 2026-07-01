@@ -10,7 +10,7 @@ export const listMentors = async (req: AuthenticatedRequest, res: Response): Pro
     const field = (expertiseField as string || "").toLowerCase();
     const cacheKey = `mentors:field:${field || 'all'}`;
 
-    const cachedMentors = mentorsCache.get<any[]>(cacheKey);
+    const cachedMentors = await mentorsCache.get<any[]>(cacheKey);
     if (cachedMentors) {
       res.status(200).json(cachedMentors);
       return;

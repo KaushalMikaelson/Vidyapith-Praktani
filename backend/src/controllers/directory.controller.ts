@@ -1,20 +1,31 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
-import { directoryCache, connectionsCache } from '../utils/cache.js';
+import { directoryCache, connectionsCache, profileCache } from '../utils/cache.js';
+import crypto from 'crypto';
+
+/** Build a stable, order-insensitive SHA-256 cache key from query params */
+function buildSearchKey(query: Record<string, any>): string {
+  const sorted = Object.keys(query)
+    .sort()
+    .reduce((acc: Record<string, any>, k) => { acc[k] = query[k]; return acc; }, {});
+  return crypto.createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
+}
 
 // Search and filter approved alumni/student directory profiles
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { search, batchYear, house, city, role, profession, company, sortBy, department, industry, skills, mentorshipStatus, helpCategories, lookingFor, openFor } = req.query;
-    const cacheKey = `directory:${JSON.stringify(req.query)}`;
+    const cacheKey = buildSearchKey(req.query as Record<string, any>);
 
-    // Try to get from cache first
-    const cachedData = directoryCache.get<any[]>(cacheKey);
+    // Try cache first (Redis or memory fallback)
+    const cachedData = await directoryCache.get<any[]>(cacheKey);
     if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedData);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     // Build Prisma query condition
     const whereCondition: any = {
@@ -252,9 +263,8 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       };
     });
 
-    // Save to cache
-    directoryCache.set(cacheKey, formattedUsers);
-
+    // Save to cache (5 min TTL)
+    directoryCache.set(cacheKey, formattedUsers, 300_000);
     res.status(200).json(formattedUsers);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -384,7 +394,7 @@ export const getConnectionStatuses = async (req: AuthenticatedRequest, res: Resp
     }
 
     const cacheKey = `connections:status:${userId}`;
-    const cachedData = connectionsCache.get<Record<string, string>>(cacheKey);
+    const cachedData = await connectionsCache.get<Record<string, string>>(cacheKey);
     if (cachedData) {
       res.status(200).json(cachedData);
       return;
@@ -426,7 +436,7 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
     }
 
     const cacheKey = `connections:pending:${userId}`;
-    const cachedData = connectionsCache.get<any[]>(cacheKey);
+    const cachedData = await connectionsCache.get<any[]>(cacheKey);
     if (cachedData) {
       res.status(200).json(cachedData);
       return;
@@ -594,7 +604,7 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
     }
 
     const cacheKey = `connections:list:${userId}`;
-    const cachedData = connectionsCache.get<any[]>(cacheKey);
+    const cachedData = await connectionsCache.get<any[]>(cacheKey);
     if (cachedData && cachedData.length > 0) {
       res.status(200).json(cachedData);
       return;
@@ -648,6 +658,17 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
 export const getProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+
+    // Check profile cache first (2 min TTL)
+    const profileCacheKey = `user:${id}`;
+    const cachedProfile = await profileCache.get<any>(profileCacheKey);
+    if (cachedProfile) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedProfile);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const user = await prisma.user.findUnique({
       where: { id },
       include: { profile: true }
@@ -730,6 +751,9 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
       department: user.profile?.department || "",
       industry: user.profile?.industry || ""
     };
+
+    // Cache profile for 2 minutes
+    profileCache.set(`user:${id}`, formattedUser, 120_000);
 
     res.status(200).json(formattedUser);
   } catch (err: any) {
@@ -867,7 +891,9 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
-    directoryCache.clear();
+    // Invalidate profile cache + directory search cache
+    await profileCache.invalidate(`user:${userId}`);
+    await directoryCache.clear();
     res.status(200).json({ success: true, message: "Profile updated successfully." });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
