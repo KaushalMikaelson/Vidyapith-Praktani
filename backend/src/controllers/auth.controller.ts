@@ -115,6 +115,11 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
       }
     }
 
+    await Promise.all([
+      directoryCache.clear(),
+      mentorsCache.clear()
+    ]);
+
     const responseMsg = isFirstUser
       ? 'First account registered and approved as Administrator.'
       : 'Registration submitted for verification review.';
@@ -230,8 +235,10 @@ export const resolveVerificationQueue = async (req: AuthenticatedRequest, res: R
     });
 
     // Invalidate directory + mentor caches since user status changed
-    await directoryCache.invalidate('');
-    await mentorsCache.invalidate('');
+    await Promise.all([
+      directoryCache.clear(),
+      mentorsCache.clear()
+    ]);
 
     res.status(200).json({ success: true, message: `Applicant successfully ${status}` });
   } catch (err: any) {

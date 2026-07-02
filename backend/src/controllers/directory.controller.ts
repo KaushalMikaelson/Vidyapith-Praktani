@@ -17,7 +17,13 @@ function buildSearchKey(query: Record<string, any>): string {
 export const listDirectory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { search, batchYear, house, city, role, profession, company, sortBy, department, industry, skills, mentorshipStatus, helpCategories, lookingFor, openFor } = req.query;
-    const cacheKey = buildSearchKey(req.query as Record<string, any>);
+    const requesterId = req.user?.id;
+    const isAdmin = req.user?.role === 'admin';
+    const cacheKey = buildSearchKey({
+      ...(req.query as Record<string, any>),
+      viewerId: requesterId || 'anonymous',
+      viewerRole: req.user?.role || 'anonymous'
+    });
 
     // Try cache first (Redis or memory fallback)
     const cachedData = await directoryCache.get<any[]>(cacheKey);
@@ -213,13 +219,9 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       skip: skip
     });
 
-    const requesterId = req.user?.id;
-    const isAdmin = req.user?.role === 'admin';
-
     // Format list to match front-end User interface expectations
     const formattedUsers = users.map(u => {
       const isSelf = requesterId === u.id;
-      const isAdmin = req.user?.role === 'admin';
       const p = u.profile as any;
       const showEmail = isSelf || isAdmin || (p?.show_email ?? true);
       const showPhone = isSelf || isAdmin || (p?.show_phone ?? false);
