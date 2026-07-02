@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { directoryCache, connectionsCache, profileCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 import crypto from 'crypto';
 
 /** Build a stable, order-insensitive SHA-256 cache key from query params */
@@ -332,13 +333,12 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
           });
           const senderName = sender?.profile?.full_name || "An alumnus";
 
-          await prisma.notification.create({
-            data: {
-              user_id: targetId,
-              title: "Connection Request Accepted",
-              body: `${senderName} accepted your connection request.`,
-              type: "success"
-            }
+          await createNotification({
+            userId: targetId,
+            title: "Connection Request Accepted",
+            body: `${senderName} accepted your connection request.`,
+            type: "success",
+            actionUrl: '/directory'
           });
 
           // Invalidate cache
@@ -367,13 +367,12 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
     const senderName = sender?.profile?.full_name || "An alumnus";
 
     // Create notification for target user
-    await prisma.notification.create({
-      data: {
-        user_id: targetId,
-        title: "New Connection Request",
-        body: `${senderName} wants to connect with you.`,
-        type: "info"
-      }
+    await createNotification({
+      userId: targetId,
+      title: "New Connection Request",
+      body: `${senderName} wants to connect with you.`,
+      type: "info",
+      actionUrl: '/notifications'
     });
 
     // Invalidate cache
@@ -530,13 +529,12 @@ export const respondConnectionRequest = async (req: AuthenticatedRequest, res: R
       const responderName = responder?.profile?.full_name || "An alumnus";
 
       // Notify the requester
-      await prisma.notification.create({
-        data: {
-          user_id: connection.sender_id,
-          title: "Connection Request Accepted",
-          body: `${responderName} accepted your connection request.`,
-          type: "success"
-        }
+      await createNotification({
+        userId: connection.sender_id,
+        title: "Connection Request Accepted",
+        body: `${responderName} accepted your connection request.`,
+        type: "success",
+        actionUrl: '/directory'
       });
 
       connectionsCache.invalidate(`connections:`);
@@ -992,5 +990,4 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
     res.status(500).json({ error: err.message });
   }
 };
-
 

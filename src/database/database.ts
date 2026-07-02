@@ -117,6 +117,8 @@ export interface Notification {
   body: string;
   type: 'info' | 'success' | 'alert';
   read: boolean;
+  crucial?: boolean;
+  action_url?: string | null;
   created_at: string;
 }
 

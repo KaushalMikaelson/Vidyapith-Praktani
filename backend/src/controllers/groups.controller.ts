@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/db.js';
 import { groupsCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
@@ -47,6 +48,17 @@ export const createGroup = async (req: AuthenticatedRequest, res: Response): Pro
     }
 
     await prisma.groupMember.createMany({ data: membersToAdd, skipDuplicates: true });
+
+    await Promise.all(membersToAdd
+      .filter(member => member.user_id !== userId)
+      .map(member => createNotification({
+        userId: member.user_id,
+        title: 'Added to Group',
+        body: `You were added to "${group.name}".`,
+        type: 'info',
+        actionUrl: '/messages',
+        sendEmail: false
+      })));
 
     // Invalidate user's group list cache
     await groupsCache.invalidate(`mygroups:${userId}`);
@@ -179,6 +191,16 @@ export const addMembers = async (req: AuthenticatedRequest, res: Response): Prom
       data: memberIds.map(mid => ({ group_id: groupId, user_id: mid, role: 'member' })),
       skipDuplicates: true
     });
+
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    await Promise.all(memberIds.map(mid => createNotification({
+      userId: mid,
+      title: 'Added to Group',
+      body: `You were added to "${group?.name || 'a group'}".`,
+      type: 'info',
+      actionUrl: '/messages',
+      sendEmail: false
+    })));
 
     // Invalidate group member caches
     for (const mid of memberIds) {
@@ -343,6 +365,20 @@ export const sendGroupMessage = async (req: AuthenticatedRequest, res: Response)
       where: { id: userId },
       include: { profile: true }
     });
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const recipients = await prisma.groupMember.findMany({
+      where: { group_id: groupId, user_id: { not: userId } },
+      select: { user_id: true }
+    });
+
+    await Promise.all(recipients.map(recipient => createNotification({
+      userId: recipient.user_id,
+      title: group?.name ? `New message in ${group.name}` : 'New Group Message',
+      body: `${sender?.profile?.full_name ?? 'A group member'} sent a message.`,
+      type: 'info',
+      actionUrl: '/messages',
+      sendEmail: false
+    })));
 
     res.status(201).json({
       ...message,

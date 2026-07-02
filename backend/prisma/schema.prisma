@@ -16,6 +16,8 @@ model User {
   verify_status String   // "approved", "pending", "rejected"
   created_at    DateTime @default(now())
   profile       AlumniProfile?
+  push_subscriptions PushSubscription[]
+  notification_preference NotificationPreference?
 }
 
 model AlumniProfile {
@@ -180,9 +182,37 @@ model Notification {
   body       String
   type       String   // "info", "success", "alert"
   read       Boolean  @default(false)
+  crucial    Boolean  @default(false)
+  action_url String?
   created_at DateTime @default(now())
 
   @@index([user_id])
+  @@index([user_id, read])
+}
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  endpoint   String   @unique @db.Text
+  p256dh      String
+  auth       String
+  user_agent String?
+  enabled    Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([user_id])
+}
+
+model NotificationPreference {
+  id                    String   @id @default(uuid())
+  user_id               String   @unique
+  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  browser_enabled       Boolean  @default(true)
+  email_crucial_enabled Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
 }
 
 model Message {

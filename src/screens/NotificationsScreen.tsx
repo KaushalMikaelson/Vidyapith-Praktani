@@ -2,10 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Bell, CheckCheck, RefreshCw, CheckCircle2, AlertTriangle, Info, BellOff, Sparkles
+  Bell, CheckCheck, RefreshCw, CheckCircle2, AlertTriangle, Info, BellOff, Sparkles, Mail, MonitorCheck
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import {
+  disableBrowserNotifications,
+  enableBrowserNotifications,
+  fetchNotificationSettings,
+  getBrowserNotificationPermission,
+  NotificationSettings,
+  updateNotificationSettings
+} from '../utils/notifications';
 
 interface NotificationsScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -19,11 +27,42 @@ interface Notification {
   body: string;
   type: 'info' | 'success' | 'alert';
   read: boolean;
+  crucial?: boolean;
+  action_url?: string | null;
   created_at: string;
 }
 
-const getRouteForNotification = (title: string, body: string): string | null => {
-  const t = title.toLowerCase();
+const knownNotificationRoutes = new Set([
+  'admin',
+  'directory',
+  'donations',
+  'events',
+  'feed',
+  'jobs',
+  'mentorship',
+  'messages',
+  'notifications',
+  'profile'
+]);
+
+const getRouteFromActionUrl = (actionUrl?: string | null): string | null => {
+  if (!actionUrl) return null;
+
+  try {
+    const url = new URL(actionUrl, 'https://vidyapith.local');
+    const screen = url.searchParams.get('screen');
+    if (screen && knownNotificationRoutes.has(screen)) return screen;
+  } catch {}
+
+  const route = actionUrl.replace(/^\//, '').trim();
+  return knownNotificationRoutes.has(route) ? route : null;
+};
+
+const getRouteForNotification = (notification: Notification): string | null => {
+  const actionRoute = getRouteFromActionUrl(notification.action_url);
+  if (actionRoute) return actionRoute;
+
+  const t = `${notification.title} ${notification.body}`.toLowerCase();
   if (t.includes('message') || t.includes('dm') || t.includes('chat')) return 'messages';
   if (t.includes('mentorship') || t.includes('mentee') || t.includes('mentor')) return 'mentorship';
   if (t.includes('job') || t.includes('career') || t.includes('application')) return 'jobs';
@@ -68,6 +107,10 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [processedRequests, setProcessedRequests] = useState<Record<string, 'accepted' | 'declined'>>({});
   const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [updatingBrowser, setUpdatingBrowser] = useState(false);
+  const [updatingEmail, setUpdatingEmail] = useState(false);
 
   const loadPendingRequests = useCallback(async () => {
     try {
@@ -91,6 +134,16 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
     }
   }, [showToast, loadPendingRequests]);
 
+  const loadNotificationSettings = useCallback(async () => {
+    setBrowserPermission(getBrowserNotificationPermission());
+    try {
+      const settings = await fetchNotificationSettings();
+      setNotificationSettings(settings);
+    } catch (err) {
+      console.error("Error loading notification settings:", err);
+    }
+  }, []);
+
   const handleRespond = async (notificationId: string, targetUserId: string, action: 'accept' | 'decline') => {
     setProcessedRequests(prev => ({ ...prev, [notificationId]: action === 'accept' ? 'accepted' : 'declined' }));
     setPendingRequests(prev => prev.filter(req => req.id !== targetUserId));
@@ -107,7 +160,53 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
     }
   };
 
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
+  useEffect(() => {
+    loadNotifications();
+    loadNotificationSettings();
+  }, [loadNotifications, loadNotificationSettings]);
+
+  const handleEnableBrowserNotifications = async () => {
+    setUpdatingBrowser(true);
+    try {
+      await enableBrowserNotifications();
+      await loadNotificationSettings();
+      showToast('Browser notifications enabled.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to enable browser notifications.', 'danger');
+      setBrowserPermission(getBrowserNotificationPermission());
+    } finally {
+      setUpdatingBrowser(false);
+    }
+  };
+
+  const handleDisableBrowserNotifications = async () => {
+    setUpdatingBrowser(true);
+    try {
+      await disableBrowserNotifications();
+      await updateNotificationSettings({ browser_enabled: false });
+      await loadNotificationSettings();
+      showToast('Browser notifications disabled.', 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to disable browser notifications.', 'danger');
+    } finally {
+      setUpdatingBrowser(false);
+    }
+  };
+
+  const handleToggleCrucialEmail = async () => {
+    if (!notificationSettings) return;
+    setUpdatingEmail(true);
+    try {
+      const nextValue = !notificationSettings.email_crucial_enabled;
+      await updateNotificationSettings({ email_crucial_enabled: nextValue });
+      setNotificationSettings(prev => prev ? { ...prev, email_crucial_enabled: nextValue } : prev);
+      showToast(nextValue ? 'Crucial email notifications enabled.' : 'Crucial email notifications disabled.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update email preference.', 'danger');
+    } finally {
+      setUpdatingEmail(false);
+    }
+  };
 
   const markOneRead = async (id: string) => {
     try {
@@ -147,6 +246,20 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
     { id: 'alert',   label: 'Alerts',  count: alertCount },
     { id: 'info',    label: 'Info',    count: infoCount },
   ];
+
+  const browserSupported = browserPermission !== 'unsupported';
+  const browserEnabled = Boolean(
+    notificationSettings?.browser_enabled &&
+    notificationSettings?.has_browser_subscription &&
+    browserPermission === 'granted'
+  );
+  const browserStatusLabel = !browserSupported
+    ? 'Not supported'
+    : browserPermission === 'denied'
+      ? 'Blocked in browser'
+      : browserEnabled
+        ? 'Enabled'
+        : 'Off';
 
   if (!currentUser) return null;
 
@@ -212,6 +325,160 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
               Mark All Read
             </button>
           )}
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '14px',
+        marginBottom: '28px'
+      }}>
+        <div style={{
+          background: 'var(--heritage-card)',
+          border: '1px solid var(--heritage-line)',
+          borderRadius: '14px',
+          padding: '18px',
+          boxShadow: 'var(--heritage-shadow)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: browserEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
+            color: browserEnabled ? '#10b981' : '#3b82f6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <MonitorCheck size={20} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
+                Browser Notifications
+              </h3>
+              <span style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: browserEnabled ? '#10b981' : 'var(--heritage-muted)',
+                background: browserEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.1)',
+                padding: '3px 8px',
+                borderRadius: '9999px'
+              }}>
+                {browserStatusLabel}
+              </span>
+            </div>
+            <p style={{ margin: '5px 0 0', color: 'var(--heritage-muted)', fontSize: '0.82rem', lineHeight: 1.45 }}>
+              Get messages, requests, approvals, and important actions while this tab is in the background.
+            </p>
+          </div>
+          {browserEnabled ? (
+            <button
+              onClick={handleDisableBrowserNotifications}
+              disabled={updatingBrowser}
+              style={{
+                padding: '9px 14px',
+                borderRadius: '10px',
+                border: '1.5px solid var(--heritage-line)',
+                background: 'var(--heritage-card)',
+                color: 'var(--heritage-ink)',
+                cursor: updatingBrowser ? 'default' : 'pointer',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                opacity: updatingBrowser ? 0.65 : 1
+              }}
+            >
+              Disable
+            </button>
+          ) : (
+            <button
+              onClick={handleEnableBrowserNotifications}
+              disabled={updatingBrowser || !browserSupported || browserPermission === 'denied' || notificationSettings?.browser_configured === false}
+              style={{
+                padding: '9px 14px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'var(--primary-gradient)',
+                color: 'white',
+                cursor: updatingBrowser ? 'default' : 'pointer',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                opacity: updatingBrowser || !browserSupported || browserPermission === 'denied' || notificationSettings?.browser_configured === false ? 0.65 : 1,
+                boxShadow: '0 4px 12px rgba(243,112,33,0.22)'
+              }}
+            >
+              Allow
+            </button>
+          )}
+        </div>
+
+        <div style={{
+          background: 'var(--heritage-card)',
+          border: '1px solid var(--heritage-line)',
+          borderRadius: '14px',
+          padding: '18px',
+          boxShadow: 'var(--heritage-shadow)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: 'rgba(245,158,11,0.1)',
+            color: '#f59e0b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Mail size={20} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
+              Crucial Email Alerts
+            </h3>
+            <p style={{ margin: '5px 0 0', color: 'var(--heritage-muted)', fontSize: '0.82rem', lineHeight: 1.45 }}>
+              Email is reserved for approvals, job updates, donations, mentorship, and other crucial notices.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notificationSettings?.email_crucial_enabled ?? true}
+            onClick={handleToggleCrucialEmail}
+            disabled={updatingEmail || !notificationSettings}
+            style={{
+              width: '48px',
+              height: '28px',
+              borderRadius: '9999px',
+              border: 'none',
+              background: notificationSettings?.email_crucial_enabled ?? true ? '#10b981' : '#cbd5e1',
+              cursor: updatingEmail ? 'default' : 'pointer',
+              position: 'relative',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+              opacity: updatingEmail || !notificationSettings ? 0.65 : 1
+            }}
+          >
+            <span style={{
+              position: 'absolute',
+              top: '4px',
+              left: notificationSettings?.email_crucial_enabled ?? true ? '24px' : '4px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              background: '#fff',
+              transition: 'left 0.2s',
+              boxShadow: '0 1px 4px rgba(15,23,42,0.25)'
+            }} />
+          </button>
         </div>
       </div>
 
@@ -323,7 +590,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                 key={notif.id}
                 onClick={async () => {
                   if (!notif.read) await markOneRead(notif.id);
-                  const route = getRouteForNotification(notif.title, notif.body);
+                  const route = getRouteForNotification(notif);
                   if (route && onNavigate) onNavigate(route);
                 }}
                 style={{

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { postCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 
 const sanitizeContent = (text: string): string => {
   if (!text) return '';
@@ -174,6 +175,22 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
       data: { likes: updatedLikes }
     });
 
+    if (!hasLiked && post.author_id !== userId) {
+      const liker = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+
+      await createNotification({
+        userId: post.author_id,
+        title: 'New Post Like',
+        body: `${liker?.profile?.full_name || 'A fellow alumnus'} liked your post.`,
+        type: 'info',
+        actionUrl: '/feed',
+        sendEmail: false
+      });
+    }
+
     await postCache.clear(); // Clear cached posts to ensure update is reflected
     res.status(200).json({ success: true, likes: updatedPost.likes });
   } catch (err: any) {
@@ -243,6 +260,22 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
         content: sanitizeContent(content)
       }
     });
+
+    const post = await prisma.post.findUnique({ where: { id } });
+    if (post && post.author_id !== userId) {
+      const commenter = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+
+      await createNotification({
+        userId: post.author_id,
+        title: 'New Comment',
+        body: `${commenter?.profile?.full_name || 'A fellow alumnus'} commented on your post.`,
+        type: 'info',
+        actionUrl: '/feed'
+      });
+    }
 
     await postCache.invalidate('posts:');
     res.status(201).json({ success: true, comment: newComment });
@@ -332,4 +365,3 @@ export const togglePinPost = async (req: AuthenticatedRequest, res: Response): P
     res.status(500).json({ error: err.message });
   }
 };
-

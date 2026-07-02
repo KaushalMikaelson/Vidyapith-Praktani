@@ -14,7 +14,16 @@ import { listPosts, createPost, likePost, listComments, createComment, deletePos
 import { listEvents, createEvent, rsvpEvent } from '../controllers/events.controller.js';
 import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile, getUserRelations } from '../controllers/directory.controller.js';
 import { listMentors, listPairings, requestMentorship } from '../controllers/mentorship.controller.js';
-import { listNotifications, markRead, readAllNotifications } from '../controllers/notifications.controller.js';
+import {
+  getBrowserPushConfig,
+  getNotificationSettings,
+  listNotifications,
+  markRead,
+  readAllNotifications,
+  subscribeBrowserPush,
+  unsubscribeBrowserPush,
+  updateNotificationSettings
+} from '../controllers/notifications.controller.js';
 import { listPendingUsers } from '../controllers/admin.controller.js';
 import { uploadMedia } from '../controllers/upload.controller.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
@@ -23,8 +32,8 @@ import { createGroup, listMyGroups, getGroupDetails, addMembers, removeMember, u
 
 export const apiRouter = Router();
 
-const generalLimiter = rateLimiter(100, 60 * 1000); // Max 100 requests per minute
-const authLimiter = rateLimiter(10, 60 * 1000); // Max 10 requests per minute
+const generalLimiter = rateLimiter(300, 60 * 1000, 'general'); // Max 300 requests per minute
+const authLimiter = rateLimiter(30, 60 * 1000, 'auth'); // Max 30 auth requests per minute
 
 // Apply general rate limiting to all api routes
 apiRouter.use(generalLimiter);
@@ -94,6 +103,11 @@ apiRouter.post('/mentorship/request', requireAuth, requestMentorship);
 
 // Notifications Endpoints
 apiRouter.get('/notifications', requireAuth, listNotifications);
+apiRouter.get('/notifications/settings', requireAuth, getNotificationSettings);
+apiRouter.patch('/notifications/settings', requireAuth, updateNotificationSettings);
+apiRouter.get('/notifications/push/config', requireAuth, getBrowserPushConfig);
+apiRouter.post('/notifications/push/subscribe', requireAuth, subscribeBrowserPush);
+apiRouter.post('/notifications/push/unsubscribe', requireAuth, unsubscribeBrowserPush);
 apiRouter.post('/notifications/read-all', requireAuth, readAllNotifications);
 apiRouter.post('/notifications/:id/read', requireAuth, markRead);
 

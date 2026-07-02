@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { jobsCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 
 export const listJobs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -124,6 +125,22 @@ export const createJob = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
+    const recipients = await prisma.user.findMany({
+      where: { verify_status: 'approved', id: { not: userId } },
+      select: { id: true }
+    });
+
+    await Promise.all(recipients.map(recipient =>
+      createNotification({
+        userId: recipient.id,
+        title: 'New Career Opportunity',
+        body: `${title} at ${company} is now open for applications.`,
+        type: 'info',
+        actionUrl: '/jobs',
+        sendEmail: false
+      })
+    ));
+
     await jobsCache.invalidate("jobs:");
     res.status(201).json({ success: true, job: newJob });
   } catch (err: any) {
@@ -176,13 +193,13 @@ export const applyJob = async (req: AuthenticatedRequest, res: Response): Promis
       });
 
       // Alert sponsor
-      await prisma.notification.create({
-        data: {
-          user_id: job.posted_by,
-          title: "New Job Application",
-          body: `An alumnus applied for your ${job.title} opening at ${job.company}.`,
-          type: "success"
-        }
+      await createNotification({
+        userId: job.posted_by,
+        title: "New Job Application",
+        body: `An alumnus applied for your ${job.title} opening at ${job.company}.`,
+        type: "success",
+        crucial: true,
+        actionUrl: '/jobs'
       });
 
       await jobsCache.invalidate("jobs:");
@@ -251,13 +268,13 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
     });
 
     // Alert the applicant
-    await prisma.notification.create({
-      data: {
-        user_id: userId as string,
-        title: "Job Status Updated",
-        body: `Your application stage for ${job.title} at ${job.company} has been updated to "${status}".`,
-        type: "info"
-      }
+    await createNotification({
+      userId: userId as string,
+      title: "Job Status Updated",
+      body: `Your application stage for ${job.title} at ${job.company} has been updated to "${status}".`,
+      type: "info",
+      crucial: true,
+      actionUrl: '/jobs'
     });
 
     await jobsCache.invalidate("jobs:");

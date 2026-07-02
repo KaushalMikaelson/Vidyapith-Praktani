@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { mentorsCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 
 // List approved alumni mentors
 export const listMentors = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -147,13 +148,13 @@ export const requestMentorship = async (req: AuthenticatedRequest, res: Response
     });
 
     // Notify mentor
-    await prisma.notification.create({
-      data: {
-        user_id: mentorId,
-        title: "New Mentee Paired",
-        body: `${studentName} has requested your mentorship guidance.`,
-        type: "success"
-      }
+    await createNotification({
+      userId: mentorId,
+      title: "New Mentee Paired",
+      body: `${studentName} has requested your mentorship guidance.`,
+      type: "success",
+      crucial: true,
+      actionUrl: '/mentorship'
     });
 
     res.status(201).json({ success: true, mentorship: newPair });

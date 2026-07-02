@@ -16,6 +16,37 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Notifications
+
+The app supports in-app notifications, browser push notifications, and crucial email alerts.
+
+Backend environment variables required for delivery:
+
+```bash
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=no-reply@vidyapithconnect.in
+
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:no-reply@vidyapithconnect.in
+```
+
+Generate Web Push VAPID keys from the backend folder:
+
+```bash
+npx web-push generate-vapid-keys --json
+```
+
+Apply database migrations before deploying backend code:
+
+```bash
+cd backend
+npx prisma migrate deploy
+```
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

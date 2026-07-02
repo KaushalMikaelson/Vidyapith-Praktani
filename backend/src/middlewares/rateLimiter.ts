@@ -14,12 +14,13 @@ function isRedisReady(): boolean {
  *
  * @param limit     - Max requests allowed per window
  * @param windowMs  - Window duration in milliseconds
+ * @param scope     - Namespace for independent buckets, e.g. "general" or "auth"
  */
-export const rateLimiter = (limit: number, windowMs: number) => {
+export const rateLimiter = (limit: number, windowMs: number, scope = 'general') => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const windowKey = Math.floor(Date.now() / windowMs); // Bucket ID
-    const key = `${KEY_PREFIX}:rl:${ip}:${windowKey}`;
+    const key = `${KEY_PREFIX}:rl:${scope}:${ip}:${windowKey}`;
 
     if (isRedisReady()) {
       try {
@@ -53,10 +54,11 @@ export const rateLimiter = (limit: number, windowMs: number) => {
 
     // ── Fallback: in-memory Map ───────────────────────────────
     const now = Date.now();
-    const rateData = memoryMap.get(ip);
+    const memoryKey = `${scope}:${ip}`;
+    const rateData = memoryMap.get(memoryKey);
 
     if (!rateData || now > rateData.resetTime) {
-      memoryMap.set(ip, { count: 1, resetTime: now + windowMs });
+      memoryMap.set(memoryKey, { count: 1, resetTime: now + windowMs });
       return next();
     }
 

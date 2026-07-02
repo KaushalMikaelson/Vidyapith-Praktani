@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { directoryCache, mentorsCache } from '../utils/cache.js';
 import { sendMail } from '../services/mail.service.js';
+import { createNotification } from '../services/notification.service.js';
 import { setOTP, getOTP, deleteOTP, setResetToken, getResetToken, deleteResetToken } from '../utils/otpStore.js';
 import { blockToken } from '../utils/tokenBlocklist.js';
 
@@ -103,13 +104,13 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     if (!isFirstUser) {
       const admins = await prisma.user.findMany({ where: { role: 'admin' } });
       for (const admin of admins) {
-        await prisma.notification.create({
-          data: {
-            user_id: admin.id,
-            title: 'New Registration Request',
-            body: `${full_name} (Batch of ${batch_year} - Class ${leaving_class || 'XII'}) requested verification.`,
-            type: 'alert'
-          }
+        await createNotification({
+          userId: admin.id,
+          title: 'New Registration Request',
+          body: `${full_name} (Batch of ${batch_year} - Class ${leaving_class || 'XII'}) requested verification.`,
+          type: 'alert',
+          crucial: true,
+          actionUrl: '/admin'
         });
       }
     }
@@ -202,20 +203,20 @@ export const resolveVerificationQueue = async (req: AuthenticatedRequest, res: R
   try {
     const { id, status } = req.body;
 
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { id },
       data: { verify_status: status }
     });
 
-    await prisma.notification.create({
-      data: {
-        user_id: id,
-        title: status === 'approved' ? 'Verification Approved!' : 'Registration Declined',
-        body: status === 'approved'
-          ? 'Welcome! The administrative committee has approved your alumni status.'
-          : 'The committee declined your uploaded certificate. Contact support.',
-        type: status === 'approved' ? 'success' : 'alert'
-      }
+    await createNotification({
+      userId: id,
+      title: status === 'approved' ? 'Verification Approved!' : 'Registration Declined',
+      body: status === 'approved'
+        ? 'Welcome! The administrative committee has approved your alumni status.'
+        : 'The committee declined your uploaded certificate. Contact support.',
+      type: status === 'approved' ? 'success' : 'alert',
+      crucial: true,
+      actionUrl: status === 'approved' ? '/profile' : undefined
     });
 
     // Invalidate directory + mentor caches since user status changed

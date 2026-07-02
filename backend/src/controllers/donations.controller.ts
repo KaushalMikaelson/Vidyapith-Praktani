@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { donationsCache } from '../utils/cache.js';
+import { createNotification } from '../services/notification.service.js';
 
 export const getLeaderboard = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -76,13 +77,13 @@ export const createCheckoutSession = async (req: AuthenticatedRequest, res: Resp
     });
 
     // Notify user
-    await prisma.notification.create({
-      data: {
-        user_id: userId,
-        title: "Donation Successful",
-        body: `Donated ₹${amount} to ${cause}. 80G tax receipt ready.`,
-        type: "success"
-      }
+    await createNotification({
+      userId,
+      title: "Donation Successful",
+      body: `Donated INR ${amount} to ${cause}. 80G tax receipt ready.`,
+      type: "success",
+      crucial: true,
+      actionUrl: '/donations'
     });
 
     await donationsCache.invalidate("donations:");
