@@ -12,6 +12,7 @@ import {
   fetchNotificationSettings,
   getBrowserNotificationPermission,
   NotificationSettings,
+  sendTestBrowserNotification,
   updateNotificationSettings
 } from '../utils/notifications';
 
@@ -56,6 +57,42 @@ const getRouteFromActionUrl = (actionUrl?: string | null): string | null => {
 
   const route = actionUrl.replace(/^\//, '').trim();
   return knownNotificationRoutes.has(route) ? route : null;
+};
+
+const getActionUrlParam = (actionUrl: string | null | undefined, key: string): string | null => {
+  if (!actionUrl) return null;
+  try {
+    return new URL(actionUrl, 'https://vidyapith.local').searchParams.get(key);
+  } catch {
+    return null;
+  }
+};
+
+const normalizeName = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const findPendingConnectionRequest = (notification: Notification, pendingRequests: any[]) => {
+  const connectionId = getActionUrlParam(notification.action_url, 'connectionId');
+  const senderId = getActionUrlParam(notification.action_url, 'senderId');
+
+  if (connectionId) {
+    const byConnection = pendingRequests.find(req => req.connectionId === connectionId);
+    if (byConnection) return byConnection;
+  }
+
+  if (senderId) {
+    const bySender = pendingRequests.find(req => req.id === senderId);
+    if (bySender) return bySender;
+  }
+
+  const body = normalizeName(notification.body);
+  const byName = pendingRequests.find(req => {
+    const fullName = normalizeName(req.full_name || '');
+    return fullName && (body.includes(fullName) || fullName.includes(body.split(' wants to connect')[0]));
+  });
+
+  if (byName) return byName;
+  return pendingRequests.length === 1 ? pendingRequests[0] : null;
 };
 
 const getRouteForNotification = (notification: Notification): string | null => {
@@ -111,6 +148,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [updatingBrowser, setUpdatingBrowser] = useState(false);
   const [updatingEmail, setUpdatingEmail] = useState(false);
+  const [sendingTestPush, setSendingTestPush] = useState(false);
 
   const loadPendingRequests = useCallback(async () => {
     try {
@@ -128,6 +166,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       setNotifications(data);
       await loadPendingRequests();
     } catch (err: any) {
+      if (err?.status === 401) return;
       showToast(err.message || 'Failed to load notifications', 'danger');
     } finally {
       setLoading(false);
@@ -144,7 +183,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
     }
   }, []);
 
-  const handleRespond = async (notificationId: string, targetUserId: string, action: 'accept' | 'decline') => {
+  const handleRespond = async (notificationId: string, request: any, action: 'accept' | 'decline') => {
+    const targetUserId = request.id;
     setProcessedRequests(prev => ({ ...prev, [notificationId]: action === 'accept' ? 'accepted' : 'declined' }));
     setPendingRequests(prev => prev.filter(req => req.id !== targetUserId));
     setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
@@ -152,7 +192,10 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
     else showToast("Connection request declined.", "info");
     try {
       await Promise.all([
-        apiFetch('/directory/connections/respond', { method: 'POST', body: JSON.stringify({ targetId: targetUserId, action }) }),
+        apiFetch('/directory/connections/respond', {
+          method: 'POST',
+          body: JSON.stringify({ targetId: targetUserId, connectionId: request.connectionId, action })
+        }),
         apiFetch(`/notifications/${notificationId}/read`, { method: 'POST' })
       ]);
     } catch (err: any) {
@@ -190,6 +233,19 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       showToast(err.message || 'Failed to disable browser notifications.', 'danger');
     } finally {
       setUpdatingBrowser(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setSendingTestPush(true);
+    try {
+      await sendTestBrowserNotification();
+      await loadNotifications();
+      showToast('Test browser notification sent.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to send test notification.', 'danger');
+    } finally {
+      setSendingTestPush(false);
     }
   };
 
@@ -378,23 +434,43 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
             </p>
           </div>
           {browserEnabled ? (
-            <button
-              onClick={handleDisableBrowserNotifications}
-              disabled={updatingBrowser}
-              style={{
-                padding: '9px 14px',
-                borderRadius: '10px',
-                border: '1.5px solid var(--heritage-line)',
-                background: 'var(--heritage-card)',
-                color: 'var(--heritage-ink)',
-                cursor: updatingBrowser ? 'default' : 'pointer',
-                fontWeight: 800,
-                fontSize: '0.82rem',
-                opacity: updatingBrowser ? 0.65 : 1
-              }}
-            >
-              Disable
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleSendTestPush}
+                disabled={sendingTestPush}
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'var(--primary-gradient)',
+                  color: 'white',
+                  cursor: sendingTestPush ? 'default' : 'pointer',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  opacity: sendingTestPush ? 0.65 : 1,
+                  boxShadow: '0 4px 12px rgba(243,112,33,0.2)'
+                }}
+              >
+                Test
+              </button>
+              <button
+                onClick={handleDisableBrowserNotifications}
+                disabled={updatingBrowser}
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '10px',
+                  border: '1.5px solid var(--heritage-line)',
+                  background: 'var(--heritage-card)',
+                  color: 'var(--heritage-ink)',
+                  cursor: updatingBrowser ? 'default' : 'pointer',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  opacity: updatingBrowser ? 0.65 : 1
+                }}
+              >
+                Disable
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleEnableBrowserNotifications}
@@ -672,7 +748,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                             </span>
                           );
                         }
-                        const matchedRequest = pendingRequests.find(req => notif.body.includes(req.full_name));
+                        const matchedRequest = findPendingConnectionRequest(notif, pendingRequests);
                         if (!matchedRequest) {
                           return (
                             <span style={{
@@ -689,7 +765,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                           <>
                             <button
                               disabled={!!isProcessing}
-                              onClick={async (e) => { e.stopPropagation(); await handleRespond(notif.id, matchedRequest.id, 'accept'); }}
+                              onClick={async (e) => { e.stopPropagation(); await handleRespond(notif.id, matchedRequest, 'accept'); }}
                               style={{
                                 padding: '7px 18px', fontSize: '0.82rem', borderRadius: '9999px', border: 'none',
                                 color: 'white', cursor: 'pointer', fontWeight: 700,
@@ -704,7 +780,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                             </button>
                             <button
                               disabled={!!isProcessing}
-                              onClick={async (e) => { e.stopPropagation(); await handleRespond(notif.id, matchedRequest.id, 'decline'); }}
+                              onClick={async (e) => { e.stopPropagation(); await handleRespond(notif.id, matchedRequest, 'decline'); }}
                               style={{
                                 padding: '7px 18px', fontSize: '0.82rem', borderRadius: '9999px',
                                 border: '1.5px solid var(--heritage-line)', background: 'var(--heritage-card)',

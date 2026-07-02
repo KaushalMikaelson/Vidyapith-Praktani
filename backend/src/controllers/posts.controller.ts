@@ -138,6 +138,27 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
+    if (newPost.group_id !== 'grp-all') {
+      const author = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+      const group = await prisma.group.findUnique({ where: { id: newPost.group_id } });
+      const recipients = await prisma.groupMember.findMany({
+        where: { group_id: newPost.group_id, user_id: { not: userId } },
+        select: { user_id: true }
+      });
+
+      await Promise.all(recipients.map(recipient => createNotification({
+        userId: recipient.user_id,
+        title: group?.name ? `New post in ${group.name}` : 'New Group Post',
+        body: `${author?.profile?.full_name || 'A group member'} published a post.`,
+        type: 'info',
+        actionUrl: '/feed',
+        sendEmail: false
+      })));
+    }
+
     await postCache.invalidate('posts:');
     res.status(201).json({ success: true, post: newPost });
   } catch (err: any) {
@@ -320,6 +341,17 @@ export const deletePost = async (req: AuthenticatedRequest, res: Response): Prom
       where: { id }
     });
 
+    if (post.author_id !== userId) {
+      await createNotification({
+        userId: post.author_id,
+        title: 'Post Removed',
+        body: 'An administrator removed one of your posts.',
+        type: 'alert',
+        actionUrl: '/feed',
+        sendEmail: false
+      });
+    }
+
     await postCache.clear();
     res.status(200).json({ success: true, message: "Post deleted successfully." });
   } catch (err: any) {
@@ -358,6 +390,19 @@ export const togglePinPost = async (req: AuthenticatedRequest, res: Response): P
       where: { id },
       data: { is_pinned: !post.is_pinned }
     });
+
+    if (post.author_id !== userId) {
+      await createNotification({
+        userId: post.author_id,
+        title: updatedPost.is_pinned ? 'Post Pinned' : 'Post Unpinned',
+        body: updatedPost.is_pinned
+          ? 'An administrator pinned your post.'
+          : 'An administrator unpinned your post.',
+        type: 'info',
+        actionUrl: '/feed',
+        sendEmail: false
+      });
+    }
 
     await postCache.clear();
     res.status(200).json({ success: true, is_pinned: updatedPost.is_pinned });

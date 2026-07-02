@@ -3,6 +3,7 @@ import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { notificationsCache } from '../utils/cache.js';
 import {
+  createNotification,
   disablePushSubscription,
   getBrowserNotificationPublicKey,
   getNotificationPreferences,
@@ -175,6 +176,29 @@ export const unsubscribeBrowserPush = async (req: AuthenticatedRequest, res: Res
 
     await disablePushSubscription(userId, req.body?.endpoint);
     res.status(200).json({ success: true, message: 'Browser notifications disabled.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const sendTestBrowserPush = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized access.' });
+      return;
+    }
+
+    const notification = await createNotification({
+      userId,
+      title: 'Browser Notifications Are On',
+      body: 'This is a test push notification from Vidyapith Connect.',
+      type: 'success',
+      actionUrl: '/notifications',
+      sendEmail: false
+    });
+
+    res.status(201).json({ success: true, notification });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

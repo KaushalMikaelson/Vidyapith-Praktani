@@ -15,6 +15,17 @@ async function getMemberRole(groupId: string, userId: string): Promise<string | 
   return member?.role ?? null;
 }
 
+async function listGroupMemberIds(groupId: string, excludeUserId?: string): Promise<string[]> {
+  const members = await prisma.groupMember.findMany({
+    where: {
+      group_id: groupId,
+      ...(excludeUserId ? { user_id: { not: excludeUserId } } : {})
+    },
+    select: { user_id: true }
+  });
+  return members.map(member => member.user_id);
+}
+
 // POST /groups — create a new group
 export const createGroup = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -222,6 +233,7 @@ export const removeMember = async (req: AuthenticatedRequest, res: Response): Pr
     const targetUserId = req.params.userId as string;
 
     const callerRole = await getMemberRole(groupId, callerId);
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
 
     // Only admin can remove others; anyone can remove themselves
     if (callerId !== targetUserId && callerRole !== 'admin') {
@@ -232,6 +244,17 @@ export const removeMember = async (req: AuthenticatedRequest, res: Response): Pr
     await prisma.groupMember.deleteMany({
       where: { group_id: groupId, user_id: targetUserId }
     });
+
+    if (callerId !== targetUserId) {
+      await createNotification({
+        userId: targetUserId,
+        title: 'Removed from Group',
+        body: `You were removed from "${group?.name || 'a group'}".`,
+        type: 'alert',
+        actionUrl: '/messages',
+        sendEmail: false
+      });
+    }
 
     // If no members left, delete the group
     const remaining = await prisma.groupMember.count({ where: { group_id: groupId } });
@@ -258,6 +281,7 @@ export const updateGroup = async (req: AuthenticatedRequest, res: Response): Pro
     if (role !== 'admin') { res.status(403).json({ error: 'Only group admins can edit group details.' }); return; }
 
     const { name, description } = req.body;
+    const existingGroup = await prisma.group.findUnique({ where: { id: groupId } });
     const updated = await prisma.group.update({
       where: { id: groupId },
       data: {
@@ -265,6 +289,18 @@ export const updateGroup = async (req: AuthenticatedRequest, res: Response): Pro
         ...(description !== undefined ? { description: description.trim() } : {})
       }
     });
+
+    const recipients = await listGroupMemberIds(groupId, userId);
+    if (recipients.length > 0) {
+      await Promise.all(recipients.map(recipientId => createNotification({
+        userId: recipientId,
+        title: 'Group Updated',
+        body: `"${existingGroup?.name || updated.name}" group details were updated.`,
+        type: 'info',
+        actionUrl: '/messages',
+        sendEmail: false
+      })));
+    }
 
     res.status(200).json({ success: true, group: updated });
   } catch (err: any) {
@@ -285,9 +321,21 @@ export const deleteGroup = async (req: AuthenticatedRequest, res: Response): Pro
       res.status(403).json({ error: 'Only group admins can delete the group.' }); return;
     }
 
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const memberIds = await listGroupMemberIds(groupId, userId);
+
     await prisma.groupMessage.deleteMany({ where: { group_id: groupId } });
     await prisma.groupMember.deleteMany({ where: { group_id: groupId } });
     await prisma.group.delete({ where: { id: groupId } });
+
+    await Promise.all(memberIds.map(memberId => createNotification({
+      userId: memberId,
+      title: 'Group Deleted',
+      body: `"${group?.name || 'A group'}" was deleted by an administrator.`,
+      type: 'alert',
+      actionUrl: '/messages',
+      sendEmail: false
+    })));
 
     // Invalidate all groups cache (we don't know all members easily)
     await groupsCache.clear();

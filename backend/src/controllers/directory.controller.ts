@@ -352,7 +352,7 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Create pending connection
-    await prisma.connection.create({
+    const connection = await prisma.connection.create({
       data: {
         sender_id: senderId,
         receiver_id: targetId,
@@ -372,7 +372,7 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
       title: "New Connection Request",
       body: `${senderName} wants to connect with you.`,
       type: "info",
-      actionUrl: '/notifications'
+      actionUrl: `/?screen=notifications&connectionId=${connection.id}&senderId=${senderId}`
     });
 
     // Invalidate cache
@@ -436,13 +436,6 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
       return;
     }
 
-    const cacheKey = `connections:pending:${userId}`;
-    const cachedData = await connectionsCache.get<any[]>(cacheKey);
-    if (cachedData) {
-      res.status(200).json(cachedData);
-      return;
-    }
-
     const pending = await prisma.connection.findMany({
       where: {
         receiver_id: userId,
@@ -451,7 +444,6 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
     });
 
     if (pending.length === 0) {
-      connectionsCache.set(cacheKey, []);
       res.status(200).json([]);
       return;
     }
@@ -482,7 +474,6 @@ export const listPendingConnections = async (req: AuthenticatedRequest, res: Res
       };
     });
 
-    connectionsCache.set(cacheKey, formattedSenders, 60000); // 1 minute cache
     res.status(200).json(formattedSenders);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -990,4 +981,3 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
     res.status(500).json({ error: err.message });
   }
 };
-

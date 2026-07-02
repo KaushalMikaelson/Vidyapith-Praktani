@@ -58,7 +58,11 @@ export const enableBrowserNotifications = async (): Promise<void> => {
 
   const registration = await navigator.serviceWorker.register('/sw.js');
   const existingSubscription = await registration.pushManager.getSubscription();
-  const subscription = existingSubscription || await registration.pushManager.subscribe({
+  if (existingSubscription) {
+    await existingSubscription.unsubscribe();
+  }
+
+  const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(config.publicKey)
   });
@@ -84,3 +88,6 @@ export const disableBrowserNotifications = async (): Promise<void> => {
     body: JSON.stringify({ endpoint })
   });
 };
+
+export const sendTestBrowserNotification = async () =>
+  apiFetch('/notifications/push/test', { method: 'POST' });

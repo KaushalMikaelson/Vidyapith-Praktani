@@ -54,6 +54,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem('rkmv_auth_token');
+      setCurrentUser(null);
+    };
+
+    window.addEventListener('rkmv:auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('rkmv:auth-expired', handleAuthExpired);
+  }, []);
+
   const login = async (email: string, password_hash: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {

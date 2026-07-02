@@ -4,6 +4,23 @@ if (rawApiUrl && !rawApiUrl.endsWith('/api/v1') && !rawApiUrl.endsWith('/api/v1/
 }
 export const API_BASE_URL = rawApiUrl;
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+const handleAuthFailure = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('rkmv_auth_token');
+  localStorage.removeItem('rkmv_active_session');
+  window.dispatchEvent(new CustomEvent('rkmv:auth-expired'));
+};
+
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   // Retrieve the stored JWT token
   const token = typeof window !== 'undefined' ? localStorage.getItem('rkmv_auth_token') : null;
@@ -21,7 +38,10 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Request failed with status ${response.status}`);
+    if (response.status === 401) {
+      handleAuthFailure();
+    }
+    throw new ApiError(errorData.error || `Request failed with status ${response.status}`, response.status);
   }
 
   return response.json();
@@ -46,7 +66,10 @@ export const apiUploadFetch = async (endpoint: string, formData: FormData) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+    if (response.status === 401) {
+      handleAuthFailure();
+    }
+    throw new ApiError(errorData.error || `Upload failed with status ${response.status}`, response.status);
   }
 
   return response.json();

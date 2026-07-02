@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User } from '../database/database';
 import { Layout } from '../components/Layout';
@@ -32,6 +32,22 @@ interface ToastMsg {
   type: 'success' | 'danger' | 'info';
 }
 
+const protectedScreens = new Set([
+  'admin',
+  'create',
+  'directory',
+  'donations',
+  'events',
+  'feed',
+  'jobs',
+  'mentorship',
+  'messages',
+  'news',
+  'notifications',
+  'profile',
+  'search'
+]);
+
 export default function App() {
   const { currentUser, isAuthLoading, login, register, loginWithGoogle, refreshSession } = useAuth();
   
@@ -43,6 +59,8 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState('feed');
   const [visitedScreens, setVisitedScreens] = useState<string[]>(['feed']);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
+  const recentToastRef = useRef<Record<string, number>>({});
+  const protectedRoutePromptedRef = useRef(false);
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);
 
   // Auth & Stepper States
@@ -63,6 +81,7 @@ export default function App() {
   const [selectedLoginRole, setSelectedLoginRole] = useState<'alumni' | 'student' | 'admin' | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [requestedProtectedScreen, setRequestedProtectedScreen] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -356,14 +375,44 @@ export default function App() {
     };
   }, [currentUser]);
 
-  const showToast = (message: string, type: 'success' | 'danger' | 'info' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'danger' | 'info' = 'info') => {
+    const key = `${type}:${message}`;
+    const now = Date.now();
+    const lastShown = recentToastRef.current[key] || 0;
+    if (now - lastShown < 2500) return;
+
+    recentToastRef.current[key] = now;
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
 
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 4000);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isAuthLoading || currentUser) {
+      protectedRoutePromptedRef.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedScreen = params.get('screen');
+    if (!requestedScreen || !protectedScreens.has(requestedScreen)) {
+      setRequestedProtectedScreen(null);
+      return;
+    }
+
+    setRequestedProtectedScreen(requestedScreen);
+    setAuthTab('login');
+    setSelectedLoginRole(null);
+    setShowAuthModal(true);
+
+    if (!protectedRoutePromptedRef.current) {
+      protectedRoutePromptedRef.current = true;
+      showToast('Please sign in to continue.', 'info');
+    }
+  }, [currentUser, isAuthLoading, showToast]);
 
   const loadRelations = (profileId: string) => {
     apiFetch(`/directory/relations/${profileId}`)
@@ -710,6 +759,27 @@ export default function App() {
           <div className="landing-background-glow glow-left"></div>
           <div className="landing-background-glow glow-right"></div>
           <div className="landing-background-glow glow-center"></div>
+
+          {requestedProtectedScreen && (
+            <div style={{
+              position: 'fixed',
+              top: '88px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1200,
+              background: 'rgba(15, 23, 42, 0.92)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.14)',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              boxShadow: '0 12px 30px rgba(0,0,0,0.28)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              textAlign: 'center'
+            }}>
+              Sign in to open {requestedProtectedScreen.charAt(0).toUpperCase() + requestedProtectedScreen.slice(1)}.
+            </div>
+          )}
 
           {/* Sticky Navbar */}
           <nav className="landing-nav anim-fade-in-down">
