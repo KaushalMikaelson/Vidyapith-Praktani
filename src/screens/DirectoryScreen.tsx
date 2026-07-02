@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { User } from '../database/database';
 import { 
   Briefcase, ChevronLeft, ChevronRight, Search, 
-  Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter
+  Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter,
+  UserMinus, ShieldCheck
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -31,7 +32,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [filterMentorship, setFilterMentorship] = useState('');
   const [filterOpenFor, setFilterOpenFor] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
-  const [filterRole, setFilterRole] = useState<'all' | 'alumni' | 'student' | 'faculty'>('all');
+  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'alumni' | 'student' | 'faculty'>('all');
   const [sortBy] = useState('seed_order');
   
   // List & Status State
@@ -48,6 +49,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   // Advanced Connection Pipeline States
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [connectionStatuses, setConnectionStatuses] = useState<Record<string, 'accepted' | 'pending_sent' | 'pending_received'>>({});
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   const loadConnectionDetails = async () => {
     try {
@@ -240,6 +242,30 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }
   };
 
+  const handleRemoveMember = async (id: string, name: string) => {
+    if (!window.confirm(`Remove ${name} from the site? This will delete their account and related site activity.`)) {
+      return;
+    }
+
+    setRemovingMemberId(id);
+    try {
+      await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+      directoryClientCache.clear();
+      setAlumniList(prev => prev.filter(user => user.id !== id));
+      setPendingRequests(prev => prev.filter(request => request.id !== id));
+      setConnectionStatuses(prev => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
+      showToast(`${name} has been removed from the site.`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to remove member.', 'danger');
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
+
   // Compute alphabet index counts dynamically from matching users
   const alphabetIndexCounts = useMemo(() => {
     const counts = { AD: 0, EH: 0, IL: 0, MP: 0, QT: 0, UZ: 0 };
@@ -385,7 +411,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               <input 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)} 
-                placeholder="Search alumni, students, faculty..." 
+                placeholder="Search alumni, students, faculty, admins..." 
                 style={{ fontSize: '0.92rem', border: 'none', outline: 'none', flexGrow: 1, width: '100%' }}
               />
               {searchQuery && (
@@ -651,6 +677,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
                 { id: 'all', label: 'All Connections' },
+                { id: 'admin', label: 'Admins' },
                 { id: 'alumni', label: 'Alumni' },
                 { id: 'student', label: 'Students' },
                 { id: 'faculty', label: 'Faculty' }

@@ -35,8 +35,6 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
 
     if (role && role !== 'all') {
       whereCondition.role = role as string;
-    } else {
-      whereCondition.role = { not: 'admin' };
     }
 
     const profileConditions: any = {};

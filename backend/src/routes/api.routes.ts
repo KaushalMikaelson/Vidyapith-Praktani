@@ -24,7 +24,7 @@ import {
   unsubscribeBrowserPush,
   updateNotificationSettings
 } from '../controllers/notifications.controller.js';
-import { listPendingUsers } from '../controllers/admin.controller.js';
+import { listPendingUsers, removeUserFromSite } from '../controllers/admin.controller.js';
 import { uploadMedia } from '../controllers/upload.controller.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 import { listConversations, getConversation, sendMessage } from '../controllers/messages.controller.js';
@@ -113,6 +113,7 @@ apiRouter.post('/notifications/:id/read', requireAuth, markRead);
 
 // Admin Endpoints
 apiRouter.get('/admin/pending-users', requireAdmin, listPendingUsers);
+apiRouter.delete('/admin/users/:id', requireAdmin, removeUserFromSite);
 
 // Homepage Endpoint
 apiRouter.get('/home/feed', requireAuth, getHomeFeed);
