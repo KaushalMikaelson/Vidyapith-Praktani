@@ -12,7 +12,6 @@ import {
   fetchNotificationSettings,
   getBrowserNotificationPermission,
   NotificationSettings,
-  sendTestBrowserNotification,
   updateNotificationSettings
 } from '../utils/notifications';
 
@@ -148,7 +147,6 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [updatingBrowser, setUpdatingBrowser] = useState(false);
   const [updatingEmail, setUpdatingEmail] = useState(false);
-  const [sendingTestPush, setSendingTestPush] = useState(false);
 
   const loadPendingRequests = useCallback(async () => {
     try {
@@ -233,19 +231,6 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       showToast(err.message || 'Failed to disable browser notifications.', 'danger');
     } finally {
       setUpdatingBrowser(false);
-    }
-  };
-
-  const handleSendTestPush = async () => {
-    setSendingTestPush(true);
-    try {
-      await sendTestBrowserNotification();
-      await loadNotifications();
-      showToast('Test browser notification sent.', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to send test notification.', 'danger');
-    } finally {
-      setSendingTestPush(false);
     }
   };
 
@@ -435,24 +420,6 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
           </div>
           {browserEnabled ? (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleSendTestPush}
-                disabled={sendingTestPush}
-                style={{
-                  padding: '9px 14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'var(--primary-gradient)',
-                  color: 'white',
-                  cursor: sendingTestPush ? 'default' : 'pointer',
-                  fontWeight: 800,
-                  fontSize: '0.82rem',
-                  opacity: sendingTestPush ? 0.65 : 1,
-                  boxShadow: '0 4px 12px rgba(243,112,33,0.2)'
-                }}
-              >
-                Test
-              </button>
               <button
                 onClick={handleDisableBrowserNotifications}
                 disabled={updatingBrowser}

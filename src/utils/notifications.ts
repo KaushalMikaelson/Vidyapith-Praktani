@@ -88,6 +88,3 @@ export const disableBrowserNotifications = async (): Promise<void> => {
     body: JSON.stringify({ endpoint })
   });
 };
-
-export const sendTestBrowserNotification = async () =>
-  apiFetch('/notifications/push/test', { method: 'POST' });

@@ -20,7 +20,6 @@ import {
   listNotifications,
   markRead,
   readAllNotifications,
-  sendTestBrowserPush,
   subscribeBrowserPush,
   unsubscribeBrowserPush,
   updateNotificationSettings
@@ -109,7 +108,6 @@ apiRouter.patch('/notifications/settings', requireAuth, updateNotificationSettin
 apiRouter.get('/notifications/push/config', requireAuth, getBrowserPushConfig);
 apiRouter.post('/notifications/push/subscribe', requireAuth, subscribeBrowserPush);
 apiRouter.post('/notifications/push/unsubscribe', requireAuth, unsubscribeBrowserPush);
-apiRouter.post('/notifications/push/test', requireAuth, sendTestBrowserPush);
 apiRouter.post('/notifications/read-all', requireAuth, readAllNotifications);
 apiRouter.post('/notifications/:id/read', requireAuth, markRead);
 
