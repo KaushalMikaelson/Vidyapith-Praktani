@@ -121,6 +121,7 @@ class RedisCache {
 //  Named Cache Instances (one per domain)
 // ─────────────────────────────────────────────────────────────
 export const postCache          = new RedisCache('posts');
+export const adminCache         = new RedisCache('admin');
 export const directoryCache     = new RedisCache('dir');
 export const profileCache       = new RedisCache('profile');
 export const jobsCache          = new RedisCache('jobs');

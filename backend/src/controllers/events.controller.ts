@@ -14,9 +14,11 @@ export const listEvents = async (req: AuthenticatedRequest, res: Response): Prom
     const cacheKey = `events:all:page:${page}:limit:${limit}`;
     const cachedEvents = await eventsCache.get<any[]>(cacheKey);
     if (cachedEvents) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedEvents);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const events = await prisma.event.findMany({
       orderBy: { event_date: 'asc' },

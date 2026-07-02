@@ -397,9 +397,11 @@ export const getConnectionStatuses = async (req: AuthenticatedRequest, res: Resp
     const cacheKey = `connections:status:${userId}`;
     const cachedData = await connectionsCache.get<Record<string, string>>(cacheKey);
     if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedData);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const connections = await prisma.connection.findMany({
       where: {
@@ -598,9 +600,11 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
     const cacheKey = `connections:list:${userId}`;
     const cachedData = await connectionsCache.get<any[]>(cacheKey);
     if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedData);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const connections = await prisma.connection.findMany({
       where: {

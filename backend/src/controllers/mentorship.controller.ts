@@ -13,9 +13,11 @@ export const listMentors = async (req: AuthenticatedRequest, res: Response): Pro
 
     const cachedMentors = await mentorsCache.get<any[]>(cacheKey);
     if (cachedMentors) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedMentors);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const whereCondition: any = {
       verify_status: 'approved',

@@ -54,7 +54,7 @@ export const Layout: React.FC<LayoutProps> = ({
     const interval = setInterval(() => {
       loadNotifications();
       loadPendingCount();
-    }, 5000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [currentUser]);
 

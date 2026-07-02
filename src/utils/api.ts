@@ -32,6 +32,7 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    cache: 'no-store',
     ...options,
     headers,
   });
@@ -57,6 +58,7 @@ export const apiUploadFetch = async (endpoint: string, formData: FormData) => {
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
+    cache: 'no-store',
     headers: {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       // NOTE: Do NOT set Content-Type here — browser handles multipart boundary

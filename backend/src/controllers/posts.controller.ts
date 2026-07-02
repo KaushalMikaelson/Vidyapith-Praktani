@@ -24,9 +24,11 @@ export const listPosts = async (req: AuthenticatedRequest, res: Response): Promi
     // Try to get from cache first
     const cachedData = await postCache.get<any[]>(cacheKey);
     if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedData);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const posts = await prisma.post.findMany({
       where: filterGroup === 'grp-all' ? {} : { group_id: filterGroup },

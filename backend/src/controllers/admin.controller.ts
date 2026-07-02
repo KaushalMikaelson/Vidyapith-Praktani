@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import {
+  adminCache,
   analyticsCache,
   connectionsCache,
   directoryCache,
@@ -51,6 +52,15 @@ const revokeUserTransactionOptions = {
 // Retrieve all users with a verify_status of 'pending'
 export const listPendingUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const cacheKey = 'pending-users';
+    const cachedUsers = await adminCache.get<any[]>(cacheKey);
+    if (cachedUsers) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedUsers);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const pendingUsers = await prisma.user.findMany({
       where: { verify_status: 'pending' },
       include: { profile: true },
@@ -81,6 +91,7 @@ export const listPendingUsers = async (req: AuthenticatedRequest, res: Response)
       };
     });
 
+    adminCache.set(cacheKey, formattedUsers, 30_000);
     res.status(200).json(formattedUsers);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -113,6 +124,15 @@ const formatAdminUser = (u: any) => {
 
 export const listAdminUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const cacheKey = 'users';
+    const cachedUsers = await adminCache.get<any[]>(cacheKey);
+    if (cachedUsers) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedUsers);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const users = await prisma.user.findMany({
       include: { profile: true },
       orderBy: [
@@ -121,7 +141,9 @@ export const listAdminUsers = async (req: AuthenticatedRequest, res: Response): 
       ]
     });
 
-    res.status(200).json(users.map(formatAdminUser));
+    const formattedUsers = users.map(formatAdminUser);
+    adminCache.set(cacheKey, formattedUsers, 30_000);
+    res.status(200).json(formattedUsers);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -146,6 +168,7 @@ export const makeUserAdmin = async (req: AuthenticatedRequest, res: Response): P
     });
 
     await Promise.all([
+      adminCache.clear(),
       analyticsCache.clear(),
       directoryCache.clear(),
       homepageCache.clear(),
@@ -319,6 +342,7 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
     }, revokeUserTransactionOptions);
 
     await Promise.all([
+      adminCache.clear(),
       analyticsCache.clear(),
       connectionsCache.clear(),
       directoryCache.clear(),

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
-import { directoryCache, mentorsCache } from '../utils/cache.js';
+import { adminCache, directoryCache, mentorsCache } from '../utils/cache.js';
 import { sendMail } from '../services/mail.service.js';
 import { createNotification } from '../services/notification.service.js';
 import { setOTP, getOTP, deleteOTP, setResetToken, getResetToken, deleteResetToken } from '../utils/otpStore.js';
@@ -116,6 +116,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     }
 
     await Promise.all([
+      adminCache.clear(),
       directoryCache.clear(),
       mentorsCache.clear()
     ]);
@@ -236,6 +237,7 @@ export const resolveVerificationQueue = async (req: AuthenticatedRequest, res: R
 
     // Invalidate directory + mentor caches since user status changed
     await Promise.all([
+      adminCache.clear(),
       directoryCache.clear(),
       mentorsCache.clear()
     ]);

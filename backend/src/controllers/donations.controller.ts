@@ -9,9 +9,11 @@ export const getLeaderboard = async (req: AuthenticatedRequest, res: Response): 
     const cacheKey = "donations:leaderboard";
     const cachedData = await donationsCache.get<any[]>(cacheKey);
     if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedData);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const list = await prisma.donation.findMany({
       where: { payment_status: 'approved', show_on_leaderboard: true },

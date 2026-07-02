@@ -9,9 +9,11 @@ export const listNews = async (req: AuthenticatedRequest, res: Response): Promis
     const cacheKey = "news:all";
     const cachedNews = await newsCache.get<any[]>(cacheKey);
     if (cachedNews) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedNews);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const list = await prisma.news.findMany({
       orderBy: { published_at: 'desc' }
@@ -78,9 +80,11 @@ export const listHeritage = async (req: AuthenticatedRequest, res: Response): Pr
     const cacheKey = "heritage:all";
     const cachedHeritage = await newsCache.get<any[]>(cacheKey);
     if (cachedHeritage) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedHeritage);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const list = await prisma.heritage.findMany({
       orderBy: { year: 'asc' }

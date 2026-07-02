@@ -13,9 +13,11 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
     const cacheKey = `jobs:all:page:${page}:limit:${limit}`;
     const cachedJobs = await jobsCache.get<any[]>(cacheKey);
     if (cachedJobs) {
+      res.setHeader('X-Cache', 'HIT');
       res.status(200).json(cachedJobs);
       return;
     }
+    res.setHeader('X-Cache', 'MISS');
 
     const list = await prisma.job.findMany({
       orderBy: { created_at: 'desc' },
