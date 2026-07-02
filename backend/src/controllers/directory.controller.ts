@@ -608,7 +608,7 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
 
     const cacheKey = `connections:list:${userId}`;
     const cachedData = await connectionsCache.get<any[]>(cacheKey);
-    if (cachedData && cachedData.length > 0) {
+    if (cachedData) {
       res.status(200).json(cachedData);
       return;
     }
@@ -624,7 +624,8 @@ export const listConnections = async (req: AuthenticatedRequest, res: Response):
     });
 
     if (connections.length === 0) {
-      // Don't cache empty — new connections could be accepted at any time
+      // Cache empty array to avoid query storming (invalidated when connections change)
+      connectionsCache.set(cacheKey, [], 60000);
       res.status(200).json([]);
       return;
     }

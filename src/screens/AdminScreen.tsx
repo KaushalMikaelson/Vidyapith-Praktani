@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert, Activity, Landmark } from 'lucide-react';
+import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert, Activity, Landmark, Search } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 interface AdminScreenProps {
@@ -18,6 +18,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
   const [totalCount, setTotalCount] = useState(0);
   const [donationTotal, setDonationTotal] = useState(0);
   const [certPreviewUser, setCertPreviewUser] = useState<any | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadAdminData = async () => {
     try {
@@ -49,206 +50,289 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
       showToast(`Applicant ${name} has been successfully ${status}!`, status === 'approved' ? 'success' : 'danger');
       loadAdminData();
       refreshSession();
+      if (certPreviewUser && certPreviewUser.id === id) {
+        setCertPreviewUser(null);
+      }
     } catch (err: any) {
       showToast(err.message, 'danger');
     }
   };
 
+  // Filter application list by name, email, batch, or house
+  const filteredPendingList = pendingList.filter(u => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      (u.full_name || "").toLowerCase().includes(query) ||
+      (u.email || "").toLowerCase().includes(query) ||
+      (u.batch_year || "").toString().includes(query) ||
+      (u.house || "").toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div className="admin-layout" style={{ maxWidth: '1200px', margin: '0 auto', padding: '12px 0 36px' }}>
-      {/* Page Title Card */}
+    <div className="admin-layout" style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px 48px', animation: 'fadeIn 0.4s ease-out' }}>
+      
+      {/* Premium Header Banner */}
       <div 
-        className="admin-header-card glass-panel" 
         style={{ 
-          padding: '24px', 
+          background: 'var(--heritage-card)', 
+          border: '1px solid var(--heritage-line)', 
+          borderLeft: '5px solid var(--primary-color)',
+          borderRadius: '16px',
+          padding: '28px 32px', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          marginBottom: '24px'
+          marginBottom: '32px',
+          boxShadow: 'var(--heritage-shadow)',
+          transition: 'all 0.3s ease'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* Purple Icon with Shield Check */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <div 
             style={{ 
               background: 'var(--primary-gradient)', 
               color: 'white', 
-              borderRadius: '12px', 
-              width: '48px', 
-              height: '48px', 
+              borderRadius: '14px', 
+              width: '54px', 
+              height: '54px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              boxShadow: 'var(--shadow-glow)'
+              boxShadow: '0 8px 20px rgba(243, 112, 33, 0.25)'
             }}
           >
-            <ShieldCheck size={26} />
+            <ShieldCheck size={28} />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#09152c', letterSpacing: '-0.02em', fontFamily: 'var(--font-title)' }}>
               Administrative Control Center
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              Verify registration credentials, approve ex-student status, and monitor platform performance from a centralized dashboard.
+            <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: 'var(--heritage-muted)', lineHeight: 1.5, maxWidth: '750px' }}>
+              Verify registration credentials, approve ex-student status, and monitor alumni platform performance from this secure administrative panel.
             </p>
           </div>
         </div>
         
-        {/* Admin Overview Button */}
+        {/* Refresh / Overview Button */}
         <button 
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
             gap: '8px', 
-            background: 'rgba(255, 255, 255, 0.05)', 
-            border: '1.5px solid var(--border-color)', 
+            background: 'transparent', 
+            border: '1.5px solid var(--primary-color)', 
             borderRadius: '9999px', 
-            padding: '8px 16px', 
-            color: 'var(--text-primary)', 
-            fontWeight: 600, 
-            fontSize: '0.82rem',
+            padding: '10px 20px', 
+            color: 'var(--primary-color)', 
+            fontWeight: 700, 
+            fontSize: '0.85rem',
             cursor: 'pointer',
-            transition: 'background-color 0.2s'
+            transition: 'all 0.25s ease',
+            boxShadow: '0 2px 5px rgba(243, 112, 33, 0.05)'
           }}
           onClick={loadAdminData}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(243, 112, 33, 0.06)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
         >
-          <Activity size={16} style={{ color: 'var(--primary-color)' }} />
-          <span>Admin Overview</span>
+          <Activity size={16} />
+          <span>Refresh Dashboard</span>
         </button>
       </div>
 
       {/* Analytical Stats strip */}
-      <div className="admin-stats-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
         
         {/* Card 1: Total Registered */}
         <div 
-          className="admin-stat-card glass-panel" 
           style={{ 
-            padding: '20px', 
+            padding: '24px 20px', 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '16px',
-            boxShadow: 'var(--shadow-sm)'
+            gap: '18px',
+            background: 'var(--heritage-card)',
+            border: '1px solid var(--heritage-line)',
+            borderRadius: '16px',
+            boxShadow: 'var(--heritage-shadow)',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.borderColor = 'var(--primary-color)';
+            e.currentTarget.style.boxShadow = '0 12px 24px rgba(243, 112, 33, 0.08)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.borderColor = 'var(--heritage-line)';
+            e.currentTarget.style.boxShadow = 'var(--heritage-shadow)';
           }}
         >
           <div 
             style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
+              background: 'rgba(243, 112, 33, 0.08)', 
               color: 'var(--primary-color)', 
-              borderRadius: '50%', 
-              width: '48px', 
-              height: '48px', 
+              borderRadius: '12px', 
+              width: '50px', 
+              height: '50px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               flexShrink: 0
             }}
           >
-            <Users size={22} />
+            <Users size={24} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{totalCount}</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>Total Registered</span>
+            <span style={{ fontSize: '1.8rem', fontWeight: 850, color: '#09152c', lineHeight: 1.1 }}>{totalCount}</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Total Registered</span>
           </div>
         </div>
 
         {/* Card 2: Verified Alumni */}
         <div 
-          className="admin-stat-card glass-panel" 
           style={{ 
-            padding: '20px', 
+            padding: '24px 20px', 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '16px',
-            boxShadow: 'var(--shadow-sm)'
+            gap: '18px',
+            background: 'var(--heritage-card)',
+            border: '1px solid var(--heritage-line)',
+            borderRadius: '16px',
+            boxShadow: 'var(--heritage-shadow)',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.borderColor = '#10b981';
+            e.currentTarget.style.boxShadow = '0 12px 24px rgba(16, 185, 129, 0.08)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.borderColor = 'var(--heritage-line)';
+            e.currentTarget.style.boxShadow = 'var(--heritage-shadow)';
           }}
         >
           <div 
             style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              color: 'var(--text-success)', 
-              borderRadius: '50%', 
-              width: '48px', 
-              height: '48px', 
+              background: 'rgba(16, 185, 129, 0.08)', 
+              color: '#10b981', 
+              borderRadius: '12px', 
+              width: '50px', 
+              height: '50px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               flexShrink: 0
             }}
           >
-            <ShieldCheck size={22} />
+            <ShieldCheck size={24} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{verifiedCount}</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>Verified Alumni</span>
+            <span style={{ fontSize: '1.8rem', fontWeight: 850, color: '#09152c', lineHeight: 1.1 }}>{verifiedCount}</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Verified Alumni</span>
           </div>
         </div>
 
         {/* Card 3: Pending Verification */}
         <div 
-          className="admin-stat-card glass-panel" 
           style={{ 
-            padding: '20px', 
+            padding: '24px 20px', 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '16px',
-            boxShadow: 'var(--shadow-sm)'
+            gap: '18px',
+            background: 'var(--heritage-card)',
+            border: '1px solid var(--heritage-line)',
+            borderRadius: '16px',
+            boxShadow: 'var(--heritage-shadow)',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.borderColor = '#f59e0b';
+            e.currentTarget.style.boxShadow = '0 12px 24px rgba(245, 158, 11, 0.08)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.borderColor = 'var(--heritage-line)';
+            e.currentTarget.style.boxShadow = 'var(--heritage-shadow)';
           }}
         >
           <div 
             style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              color: 'var(--accent-gold)', 
-              borderRadius: '50%', 
-              width: '48px', 
-              height: '48px', 
+              background: 'rgba(245, 158, 11, 0.08)', 
+              color: '#f59e0b', 
+              borderRadius: '12px', 
+              width: '50px', 
+              height: '50px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               flexShrink: 0
             }}
           >
-            <Clock size={22} />
+            <Clock size={24} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>{pendingList.length}</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>Pending Verification</span>
+            <span style={{ fontSize: '1.8rem', fontWeight: 850, color: '#09152c', lineHeight: 1.1 }}>{pendingList.length}</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Pending Queue</span>
           </div>
         </div>
 
         {/* Card 4: Total Contributions */}
         <div 
-          className="admin-stat-card glass-panel" 
           style={{ 
-            padding: '20px', 
+            padding: '24px 20px', 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '16px',
-            boxShadow: 'var(--shadow-sm)'
+            gap: '18px',
+            background: 'var(--heritage-card)',
+            border: '1px solid var(--heritage-line)',
+            borderRadius: '16px',
+            boxShadow: 'var(--heritage-shadow)',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.borderColor = '#0e6b8a';
+            e.currentTarget.style.boxShadow = '0 12px 24px rgba(14, 107, 138, 0.08)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.borderColor = 'var(--heritage-line)';
+            e.currentTarget.style.boxShadow = 'var(--heritage-shadow)';
           }}
         >
           <div 
             style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              color: 'var(--emblem-teal)', 
-              borderRadius: '50%', 
-              width: '48px', 
-              height: '48px', 
+              background: 'rgba(14, 107, 138, 0.08)', 
+              color: '#0e6b8a', 
+              borderRadius: '12px', 
+              width: '50px', 
+              height: '50px', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               flexShrink: 0
             }}
           >
-            <Landmark size={22} />
+            <Landmark size={24} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+            <span style={{ fontSize: '1.6rem', fontWeight: 850, color: '#09152c', lineHeight: 1.1 }}>
               {donationTotal === 0 ? "0" : `₹${donationTotal.toLocaleString('en-IN')}`}
             </span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>Total Contributions</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Contributions</span>
           </div>
         </div>
 
@@ -256,131 +340,255 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
 
       {/* Verification Queue Table Widget */}
       <div 
-        className="admin-table-widget glass-panel" 
         style={{ 
-          padding: '24px',
-          boxShadow: 'var(--shadow-sm)'
+          background: 'var(--heritage-card)',
+          border: '1px solid var(--heritage-line)',
+          borderRadius: '16px',
+          padding: '28px',
+          boxShadow: 'var(--heritage-shadow)'
         }}
       >
-        <div className="table-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Pending Alumni Verification Queue
-          </h3>
-          <span 
-            style={{ 
-              fontSize: '0.72rem', 
-              fontWeight: 700, 
-              color: 'var(--text-primary)', 
-              background: 'rgba(255, 255, 255, 0.08)', 
-              border: '1px solid var(--border-color)',
-              padding: '5px 12px', 
-              borderRadius: '9999px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em'
-            }}
-          >
-            {pendingList.length} Pending {pendingList.length === 1 ? 'Application' : 'Applications'}
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09152c', margin: 0, fontFamily: 'var(--font-title)' }}>
+              Pending Alumni Verification Queue
+            </h3>
+            <span 
+              style={{ 
+                fontSize: '0.72rem', 
+                fontWeight: 800, 
+                color: 'var(--primary-color)', 
+                background: 'rgba(243, 112, 33, 0.08)', 
+                border: '1px solid rgba(243, 112, 33, 0.2)',
+                padding: '4px 12px', 
+                borderRadius: '9999px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}
+            >
+              {pendingList.length} Pending Application{pendingList.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Premium Filter Search Field */}
+          <div style={{ position: 'relative', width: '280px' }}>
+            <input 
+              type="text" 
+              placeholder="Filter by name, email, batch, or house..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px 10px 38px',
+                background: '#ffffff',
+                border: '1.5px solid var(--heritage-line)',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                color: 'var(--heritage-ink)',
+                outline: 'none',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(243, 112, 33, 0.12)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--heritage-line)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--heritage-muted)' }} />
+          </div>
         </div>
 
-        <div className="admin-table-container" style={{ overflowX: 'auto' }}>
-          <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr 
                 style={{ 
-                  background: 'rgba(0, 0, 0, 0.2)', 
-                  color: 'var(--text-secondary)', 
-                  fontSize: '0.72rem', 
-                  fontWeight: 700, 
+                  background: '#fcfbfa', 
+                  color: 'var(--heritage-muted)', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 750, 
                   textTransform: 'uppercase',
-                  borderBottom: '1px solid var(--border-color)',
-                  letterSpacing: '0.05em'
+                  borderBottom: '2px solid var(--heritage-line)',
+                  letterSpacing: '0.06em'
                 }}
               >
-                <th style={{ padding: '12px 16px', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', color: 'var(--text-secondary)' }}>Applicant Details</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Batch / House</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Verification Doc</th>
-                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Registered On</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right', borderTopRightRadius: '8px', borderBottomRightRadius: '8px', color: 'var(--text-secondary)' }}>Actions</th>
+                <th style={{ padding: '14px 16px', borderTopLeftRadius: '10px', borderBottomLeftRadius: '10px', color: 'var(--heritage-muted)' }}>Applicant Details</th>
+                <th style={{ padding: '14px 16px', color: 'var(--heritage-muted)' }}>Batch & House</th>
+                <th style={{ padding: '14px 16px', color: 'var(--heritage-muted)' }}>Verification Doc</th>
+                <th style={{ padding: '14px 16px', color: 'var(--heritage-muted)' }}>Registered On</th>
+                <th style={{ padding: '14px 16px', textAlign: 'right', borderTopRightRadius: '10px', borderBottomRightRadius: '10px', color: 'var(--heritage-muted)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {pendingList.length === 0 ? (
+              {filteredPendingList.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '80px 20px', textAlign: 'center' }}>
+                  <td colSpan={5} style={{ padding: '96px 20px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                       <div 
                         style={{ 
-                          background: 'rgba(255, 255, 255, 0.03)', 
-                          color: 'var(--text-secondary)', 
+                          background: 'rgba(16, 185, 129, 0.06)', 
+                          color: '#10b981', 
                           borderRadius: '50%', 
-                          width: '56px', 
-                          height: '56px', 
+                          width: '64px', 
+                          height: '64px', 
                           display: 'flex', 
                           alignItems: 'center', 
                           justifyContent: 'center',
-                          marginBottom: '16px' 
+                          marginBottom: '18px' 
                         }}
                       >
-                        <ShieldCheck size={28} style={{ color: 'var(--text-success)' }} />
+                        <ShieldCheck size={32} />
                       </div>
-                      <h4 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-                        Verification queue is empty
+                      <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09152c', margin: '0 0 8px 0', fontFamily: 'var(--font-title)' }}>
+                        {searchQuery ? "No matching records found" : "Verification queue is clean"}
                       </h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, maxWidth: '420px', lineHeight: 1.5 }}>
-                        All alumni applications have been resolved. New submissions will appear here for review and approval.
+                      <p style={{ fontSize: '0.9rem', color: 'var(--heritage-muted)', margin: 0, maxWidth: '460px', lineHeight: 1.6 }}>
+                        {searchQuery 
+                          ? "Adjust your search parameters or check spelling to find specific pending alumni registrations."
+                          : "All pending ex-student verification requests have been resolved. New registrants will pop up here for vetting."
+                        }
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                pendingList.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    <td style={{ padding: '16px' }}>
-                      <div className="table-user-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                filteredPendingList.map(u => (
+                  <tr 
+                    key={u.id} 
+                    style={{ 
+                      borderBottom: '1px solid var(--heritage-line)', 
+                      fontSize: '0.9rem', 
+                      color: 'var(--heritage-ink)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#faf9f6'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <td style={{ padding: '18px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <img 
-                          src={u.profile_photo} 
+                          src={u.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80"} 
                           alt={u.full_name} 
-                          className="table-photo" 
-                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid var(--border-color)' }}
+                          style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid var(--heritage-line)', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
                           onClick={() => onViewProfile(u.id)}
                         />
-                        <div className="table-user-details" style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span className="table-user-name" onClick={() => onViewProfile(u.id)} style={{ fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>{u.full_name}</span>
-                          <span className="table-user-email" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{u.email}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span onClick={() => onViewProfile(u.id)} style={{ fontWeight: 700, color: '#09152c', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-color)'} onMouseOut={(e) => e.currentTarget.style.color = '#09152c'}>{u.full_name}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--heritage-muted)', marginTop: '2px' }}>{u.email}</span>
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Batch of {u.batch_year}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{u.house}</div>
+                    <td style={{ padding: '18px 16px' }}>
+                      <div style={{ fontWeight: 700, color: '#09152c' }}>Class of {u.batch_year}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--heritage-muted)', marginTop: '2px' }}>{u.house || "N/A"} House</div>
                     </td>
-                    <td style={{ padding: '16px' }}>
-                      <a href="#" className="doc-link-btn" onClick={(e) => { e.preventDefault(); setCertPreviewUser(u); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-gold)', fontWeight: 500, textDecoration: 'none' }}>
+                    <td style={{ padding: '18px 16px' }}>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); setCertPreviewUser(u); }} 
+                        style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '6px', 
+                          background: 'rgba(212, 175, 55, 0.08)', 
+                          border: '1px solid rgba(212, 175, 55, 0.3)', 
+                          borderRadius: '8px', 
+                          padding: '8px 14px', 
+                          color: '#a17a02', 
+                          fontWeight: 700, 
+                          fontSize: '0.8rem',
+                          cursor: 'pointer', 
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(212, 175, 55, 0.16)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(212, 175, 55, 0.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
+                      >
                         <FileText size={14} />
-                        <span style={{ textDecoration: 'underline' }}>{u.certificate_url}</span>
-                      </a>
+                        <span>Review Document</span>
+                      </button>
                     </td>
-                    <td style={{ padding: '16px', color: 'var(--text-muted)' }}>
-                      {new Date(u.created_at).toLocaleDateString('en-IN')}
+                    <td style={{ padding: '18px 16px', color: 'var(--heritage-muted)' }}>
+                      {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
-                    <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <div className="admin-actions-cell" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <td style={{ padding: '18px 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                        
+                        {/* Approve Button */}
                         <button 
-                          className="btn-icon approve" 
-                          title="Approve Registration" 
+                          title="Approve Alumnus Status" 
                           onClick={() => handleResolveVerification(u.id, u.full_name, 'approved')}
-                          style={{ background: 'rgba(74, 222, 128, 0.1)', color: 'var(--text-success)', border: '1px solid rgba(74, 222, 128, 0.3)', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px' }}
+                          style={{ 
+                            background: 'rgba(16, 185, 129, 0.08)', 
+                            color: '#10b981', 
+                            border: '1px solid rgba(16, 185, 129, 0.3)', 
+                            padding: '8px', 
+                            borderRadius: '8px', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            width: '34px', 
+                            height: '34px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = '#10b981';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'scale(1.08)';
+                            e.currentTarget.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.2)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                            e.currentTarget.style.color = '#10b981';
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         >
-                          <Check size={14} />
+                          <Check size={18} strokeWidth={2.5} />
                         </button>
+
+                        {/* Reject Button */}
                         <button 
-                          className="btn-icon reject" 
-                          title="Reject Application" 
+                          title="Reject Registration" 
                           onClick={() => handleResolveVerification(u.id, u.full_name, 'rejected')}
-                          style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--text-danger)', border: '1px solid rgba(248, 113, 113, 0.3)', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px' }}
+                          style={{ 
+                            background: 'rgba(239, 68, 68, 0.08)', 
+                            color: '#ef4444', 
+                            border: '1px solid rgba(239, 68, 68, 0.3)', 
+                            padding: '8px', 
+                            borderRadius: '8px', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            width: '34px', 
+                            height: '34px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = '#ef4444';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'scale(1.08)';
+                            e.currentTarget.style.boxShadow = '0 4px 10px rgba(239, 68, 68, 0.2)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                            e.currentTarget.style.color = '#ef4444';
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         >
-                          <X size={14} />
+                          <X size={18} strokeWidth={2.5} />
                         </button>
                       </div>
                     </td>
@@ -394,15 +602,43 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
 
       {/* Document verification preview modal */}
       {certPreviewUser && (
-        <div className="modal-overlay" style={{ display: 'flex' }}>
-          <div className="modal-card" style={{ maxWidth: '500px', padding: '24px', textAlign: 'center', background: 'var(--bg-dark)', border: '1px solid var(--border-color)' }}>
-            <div className="page-title-box" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
-                <ShieldAlert size={18} style={{ color: 'var(--accent-gold)' }} />
-                <span>School Document Verification</span>
+        <div className="modal-overlay" style={{ display: 'flex', background: 'rgba(9, 21, 44, 0.65)', backdropFilter: 'blur(8px)' }}>
+          <div 
+            className="modal-card" 
+            style={{ 
+              maxWidth: '600px', 
+              padding: '28px', 
+              textAlign: 'center', 
+              background: 'var(--heritage-card)', 
+              border: '1px solid var(--heritage-line)', 
+              borderRadius: '20px',
+              boxShadow: 'var(--shadow-lg)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.3rem', fontWeight: 800, color: '#09152c', margin: 0, fontFamily: 'var(--font-title)' }}>
+                <ShieldAlert size={22} style={{ color: '#d4af37' }} />
+                <span>Certificate Vetting Process</span>
               </h3>
-              <button className="icon-btn" onClick={() => setCertPreviewUser(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                <X size={16} />
+              <button 
+                onClick={() => setCertPreviewUser(null)} 
+                style={{ 
+                  background: 'rgba(0, 0, 0, 0.04)', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  color: 'var(--heritage-muted)',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)'; e.currentTarget.style.color = 'var(--heritage-muted)'; }}
+              >
+                <X size={18} />
               </button>
             </div>
             
@@ -410,60 +646,96 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
             {certPreviewUser.certificate_url && 
              certPreviewUser.certificate_url !== 'Leaving_Certificate_Scan.pdf' && 
              certPreviewUser.certificate_url !== 'Certificate_Scan.pdf' ? (
-              <div style={{ marginBottom: '16px', maxHeight: '420px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px', background: 'var(--bg-darker)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ marginBottom: '20px', maxHeight: '420px', overflowY: 'auto', border: '1px solid var(--heritage-line)', borderRadius: '12px', padding: '10px', background: '#faf9f6', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {certPreviewUser.certificate_url.toLowerCase().endsWith('.pdf') ? (
                   <iframe 
                     src={certPreviewUser.certificate_url} 
-                    style={{ width: '100%', height: '380px', border: 'none' }}
+                    style={{ width: '100%', height: '380px', border: 'none', borderRadius: '8px' }}
                     title="Certificate PDF"
                   />
                 ) : (
                   <img 
                     src={certPreviewUser.certificate_url} 
                     alt="Uploaded Certificate" 
-                    style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain', borderRadius: '4px' }} 
+                    style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }} 
                   />
                 )}
               </div>
             ) : (
               /* Premium Simulated Leaving Certificate Fallback */
-              <div id="certModalContent" style={{ background: '#fcfbf7', border: '12px double #0d233a', padding: '24px', borderRadius: '4px', color: '#0d233a', fontFamily: 'serif', textAlign: 'center' }}>
-                <div style={{ border: '2px solid #c59b27', padding: '16px', position: 'relative' }}>
-                  <span style={{ fontSize: '1.1rem', letterSpacing: '0.1em', fontWeight: 700, color: '#0d233a', display: 'block', marginBottom: '4px' }}>RAMAKRISHOM MISSION VIDYAPITH</span>
-                  <span style={{ fontSize: '0.75rem', display: 'block', textTransform: 'uppercase', fontFamily: 'sans-serif', color: '#718096', marginBottom: '12px' }}>DEOGHAR, JHARKHAND</span>
+              <div style={{ background: '#fdfbf7', border: '10px double #c59b27', padding: '24px', borderRadius: '8px', color: '#0c1e36', fontFamily: 'Georgia, serif', textAlign: 'center', boxShadow: 'inset 0 0 20px rgba(197, 155, 39, 0.05)', marginBottom: '20px' }}>
+                <div style={{ border: '1px solid rgba(197, 155, 39, 0.3)', padding: '18px', position: 'relative' }}>
+                  <span style={{ fontSize: '1.25rem', letterSpacing: '0.08em', fontWeight: 800, color: '#9a2a2a', display: 'block', marginBottom: '4px', fontFamily: 'var(--font-title)' }}>RAMAKRISHNA MISSION VIDYAPITH</span>
+                  <span style={{ fontSize: '0.75rem', display: 'block', textTransform: 'uppercase', fontFamily: 'var(--font-body)', fontWeight: 700, color: '#77797d', marginBottom: '16px' }}>DEOGHAR, JHARKHAND</span>
                   
-                  <hr style={{ border: 0, borderTop: '1px solid #c59b27', margin: '8px 0' }} />
+                  <hr style={{ border: 0, borderTop: '1px solid rgba(197, 155, 39, 0.3)', margin: '10px 0' }} />
                   
-                  <h4 style={{ fontStyle: 'italic', fontSize: '1rem', margin: '12px 0', color: '#0d233a' }}>Leaving Certificate & Character Memo</h4>
+                  <h4 style={{ fontStyle: 'italic', fontSize: '1.1rem', margin: '14px 0', color: '#0c1e36', fontWeight: 600 }}>Leaving Certificate & Character Memo</h4>
                   
-                  <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: '#334155', textAlign: 'justify', margin: '14px 0' }}>
-                    This is to verify that <strong>{certPreviewUser.full_name}</strong>, resident of <strong>{certPreviewUser.house}</strong>, was a regular ex-student of this residential school. He successfully completed his secondary schooling in the <strong>Class of {certPreviewUser.batch_year}</strong>. 
-                    His character and moral conduct during his hostel residence were exemplary.
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: '#334155', textAlign: 'justify', margin: '16px 0', textIndent: '24px' }}>
+                    This is to certify that <strong>{certPreviewUser.full_name}</strong>, resident of <strong>{certPreviewUser.house || "Vivekananda"} House</strong>, was a regular ex-student of this residential school. He successfully completed his secondary schooling in the <strong>Class of {certPreviewUser.batch_year}</strong>. 
+                    His character, moral conduct, and hostel discipline during his residence were exemplary.
                   </p>
 
-                  <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div style={{ textAlign: 'left', fontSize: '0.75rem', color: '#475569' }}>
-                      <span>Date: 15-May-{certPreviewUser.batch_year}</span>
+                  <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ textAlign: 'left', fontSize: '0.75rem', color: '#77797d', fontFamily: 'var(--font-body)' }}>
+                      <span>Issue Date: 15-May-{certPreviewUser.batch_year}</span>
                     </div>
-                    <div style={{ textAlign: 'center', fontFamily: 'sans-serif', fontSize: '0.75rem' }}>
-                      <div style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#0c1e36', fontWeight: 700 }}>Swami Brahmananda</div>
-                      <div style={{ borderTop: '1px solid #718096', paddingTop: '2px', fontSize: '0.65rem', textTransform: 'uppercase', color: '#718096' }}>Headmaster & Secretary</div>
+                    <div style={{ textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.75rem' }}>
+                      <div style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', color: '#9a2a2a', fontWeight: 700, fontSize: '0.85rem' }}>Swami Brahmananda</div>
+                      <div style={{ borderTop: '1px solid #a0aec0', paddingTop: '4px', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: '#77797d', marginTop: '2px' }}>Headmaster & Secretary</div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
             
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button className="btn btn-secondary" style={{ flex: 1, padding: '10px', borderRadius: '6px' }} onClick={() => setCertPreviewUser(null)}>
-                <span>Close Document</span>
+            {/* Modal Footer Buttons */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button 
+                style={{ 
+                  flex: 1, 
+                  padding: '12px 18px', 
+                  borderRadius: '10px',
+                  background: 'transparent',
+                  border: '1.5px solid var(--heritage-line)',
+                  color: 'var(--heritage-ink)',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }} 
+                onClick={() => setCertPreviewUser(null)}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.03)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <span>Close Preview</span>
               </button>
               <button 
-                className="btn btn-primary" 
-                style={{ flex: 1, padding: '10px', borderRadius: '6px' }}
+                style={{ 
+                  flex: 1, 
+                  padding: '12px 18px', 
+                  borderRadius: '10px',
+                  background: 'var(--primary-gradient)',
+                  border: 'none',
+                  color: 'white',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(243, 112, 33, 0.25)',
+                  transition: 'all 0.2s'
+                }}
                 onClick={() => {
                   handleResolveVerification(certPreviewUser.id, certPreviewUser.full_name, 'approved');
                   setCertPreviewUser(null);
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(243, 112, 33, 0.35)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(243, 112, 33, 0.25)';
                 }}
               >
                 <span>Approve Applicant</span>
@@ -475,4 +747,3 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
     </div>
   );
 };
-

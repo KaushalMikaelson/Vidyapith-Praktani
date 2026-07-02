@@ -7177,11 +7177,11 @@ button:disabled {
 }
 
 .sidebar-widget-card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--heritage-card);
+  border: 1px solid var(--heritage-line);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--heritage-shadow);
 }
 
 .sidebar-widget-title-row {
@@ -7194,7 +7194,7 @@ button:disabled {
 .sidebar-widget-title-row h3 {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--heritage-ink);
   margin: 0;
 }
 
@@ -7218,33 +7218,33 @@ button:disabled {
 
 /* Interactive Clickable Notifications Styles */
 .notification-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--heritage-card);
+  border: 1px solid var(--heritage-line);
   border-radius: 16px;
   padding: 20px 24px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+  box-shadow: var(--heritage-shadow);
   position: relative;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-card:hover {
   transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  background: #fafafc;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  border-color: #d0d0d0;
 }
 
 .notification-card.unread {
-  background: #f8fafc;
-  border-left: 4px solid #8b5cf6;
+  background: #fffcf9;
+  border-left: 4px solid var(--primary-color);
+  border-color: rgba(243, 112, 33, 0.18);
 }
 
 .notification-card.unread:hover {
-  background: #f1f5f9;
+  background: #fff9f3;
 }
 
 .sidebar-notification-item {
@@ -7256,7 +7256,7 @@ button:disabled {
 }
 
 .sidebar-notification-item:hover {
-  background-color: #f1f5f9;
+  background-color: rgba(243, 112, 33, 0.06);
   transform: translateX(4px);
 }
 
