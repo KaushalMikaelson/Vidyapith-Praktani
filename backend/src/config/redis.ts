@@ -4,55 +4,73 @@ const REDIS_URL = process.env.REDIS_URL?.trim() || '';
 export const KEY_PREFIX = process.env.REDIS_KEY_PREFIX?.trim() || 'vp';
 
 let redisClient: Redis | null = null;
+let redisDisabled = false;
+
+function disableRedis(reason: string) {
+  if (redisDisabled) return;
+  redisDisabled = true;
+  console.warn(`[Redis] ${reason}. Redis disabled for this process; using fallback storage.`);
+
+  if (redisClient) {
+    redisClient.disconnect();
+    redisClient = null;
+  }
+}
 
 if (REDIS_URL) {
-  // Detect TLS (Upstash uses rediss:// scheme)
   const isTLS = REDIS_URL.startsWith('rediss://');
 
   redisClient = new Redis(REDIS_URL, {
     lazyConnect: true,
     maxRetriesPerRequest: 1,
     enableReadyCheck: false,
-    connectTimeout: 10_000,
+    connectTimeout: 5_000,
     commandTimeout: 5_000,
-    // Required for Upstash TLS connections
-    ...(isTLS ? {
-      tls: {
-        rejectUnauthorized: false,  // Upstash uses wildcard cert
-      }
-    } : {}),
-    reconnectOnError: (err: any) => {
+    ...(isTLS
+      ? {
+          tls: {
+            rejectUnauthorized: false,
+          },
+        }
+      : {}),
+    reconnectOnError: (err: Error) => {
       const retryErrors = ['READONLY', 'ECONNREFUSED', 'ECONNRESET'];
-      return retryErrors.some(e => err.message?.includes(e));
+      return retryErrors.some((e) => err.message?.includes(e));
     },
     retryStrategy: (times: number) => {
-      if (times > 3) return null;  // Give up after 3 attempts, fall back to memory
-      return Math.min(times * 200, 1000);
+      if (redisDisabled || times > 1) return null;
+      return 500;
     },
   });
 
   redisClient.on('connect', () => {
-    console.log('✅ [Redis] Connected to Upstash Redis successfully.');
+    console.log('[Redis] Connected to Upstash Redis successfully.');
   });
 
   redisClient.on('ready', () => {
-    console.log('✅ [Redis] Ready to serve cached responses.');
+    console.log('[Redis] Ready to serve cached responses.');
   });
 
   redisClient.on('error', (err: Error) => {
-    console.warn(`⚠️  [Redis] Error: ${err.message}. Falling back to in-memory cache.`);
+    if (/EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(err.message)) {
+      disableRedis(`Connection failed (${err.message})`);
+      return;
+    }
+
+    console.warn(`[Redis] Error: ${err.message}. Falling back to in-memory cache.`);
   });
 
   redisClient.on('close', () => {
-    console.warn('⚠️  [Redis] Connection closed. Will attempt reconnect...');
+    if (!redisDisabled) {
+      console.warn('[Redis] Connection closed. Using fallback cache until reconnect succeeds.');
+    }
   });
 
-  // Initiate connection eagerly
   redisClient.connect().catch(() => {
-    // Error already handled by the 'error' listener above
+    // Error details are handled by the 'error' listener above.
   });
 } else {
-  console.warn('⚠️  [Redis] REDIS_URL not set — using in-process memory cache. Set REDIS_URL in .env to enable Redis.');
+  console.warn('[Redis] REDIS_URL not set - using in-process memory cache. Set REDIS_URL in .env to enable Redis.');
 }
 
 export { redisClient };

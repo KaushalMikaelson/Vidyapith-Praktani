@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { prisma } from '../config/db.js';
+import { getDatabaseUnavailableMessage, isDatabaseConnectivityError, prisma } from '../config/db.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -121,6 +121,11 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
 
     res.status(201).json({ success: true, message: responseMsg });
   } catch (err: any) {
+    if (isDatabaseConnectivityError(err)) {
+      res.status(503).json({ error: getDatabaseUnavailableMessage() });
+      return;
+    }
+
     console.error('Registration Critical Error: ', err);
     if (err.code === 'P2002') {
       const target = err.meta?.target || [];
@@ -181,6 +186,11 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
       user: formatUserResponse(user)
     });
   } catch (err: any) {
+    if (isDatabaseConnectivityError(err)) {
+      res.status(503).json({ error: getDatabaseUnavailableMessage() });
+      return;
+    }
+
     res.status(500).json({ error: err.message });
   }
 };

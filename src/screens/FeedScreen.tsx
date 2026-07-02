@@ -2646,31 +2646,86 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   }
 
   if (screenMode === 'batch' || screenMode === 'memories') {
+    const isAdminBatchView = currentUser.role === 'admin';
+    const featuredBatches = isAdminBatchView
+      ? [
+          {
+            year: 'all',
+            title: 'All-Batch Command',
+            members: '2,480 members',
+            image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=420&h=210&fit=crop&q=80',
+            action: 'Open oversight'
+          },
+          {
+            year: '2026',
+            title: 'Current Student Bridge',
+            members: '312 students',
+            image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=420&h=210&fit=crop&q=80',
+            action: 'Review bridge'
+          },
+          {
+            year: '2000',
+            title: 'Silver Jubilee Batch',
+            members: '205 alumni',
+            image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=420&h=210&fit=crop&q=80',
+            action: 'Feature batch'
+          },
+          {
+            year: '1980',
+            title: 'Legacy Circle',
+            members: '94 alumni',
+            image: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=420&h=210&fit=crop&q=80',
+            action: 'Honor batch'
+          }
+        ]
+      : [1980, 1990, 2000, 2005].map((year, index) => ({
+          year: String(year),
+          title: `Class of ${year}`,
+          members: `${[94, 138, 205, 186][index]} members`,
+          image: ['https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=420&h=210&fit=crop&q=80'][index],
+          action: 'Join / View'
+        }));
+
     return (
-      <div className="heritage-page batch-redesign">
+      <div className={`heritage-page batch-redesign ${isAdminBatchView ? 'admin-batch-redesign' : ''}`}>
         <aside>
-          <section className="your-batch-card">
+          <section className={`your-batch-card ${isAdminBatchView ? 'admin-batch-card' : ''}`}>
             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=520&h=300&fit=crop&q=80" alt="Your batch" />
-            <div><span>Your Batch</span><h2>Class of {currentUser.batch_year}</h2><span style={{ fontSize: '0.75rem', background: 'rgba(255,150,0,0.15)', color: 'var(--accent-orange)', borderRadius: '20px', padding: '2px 10px', fontWeight: 700 }}>Class {currentUser.leaving_class || 'XII'}</span></div>
-            <p><Users size={18} /> 186 members</p>
-            <div><Calendar size={18} /><strong>20-Year Gala</strong><small>Dec 14, 2026 Â· Main Hall</small></div>
-            <h3>Batchmates</h3>
-            {['Arjun Mehta', 'Priya Sharma', 'Rohan Das'].map((name, index) => <p key={name}><img src={`https://images.unsplash.com/photo-${index === 0 ? '1500648767791-00dcc994a43e' : index === 1 ? '1494790108377-be9c29b29330' : '1506794778202-cad84cf45f1d'}?w=60&h=60&fit=crop&q=80`} alt={name} /> {name}</p>)}
+            <div>
+              <span>{isAdminBatchView ? 'Admin Batch' : 'Your Batch'}</span>
+              <h2>{isAdminBatchView ? 'All Classes' : `Class of ${currentUser.batch_year}`}</h2>
+              <span style={{ fontSize: '0.75rem', background: isAdminBatchView ? 'rgba(212,175,55,0.2)' : 'rgba(255,150,0,0.15)', color: isAdminBatchView ? '#f6d56b' : 'var(--accent-orange)', borderRadius: '20px', padding: '2px 10px', fontWeight: 700 }}>
+                {isAdminBatchView ? 'Verified Admin Access' : `Class ${currentUser.leaving_class || 'XII'}`}
+              </span>
+            </div>
+            <p><Users size={18} /> {isAdminBatchView ? '2,480 members under watch' : '186 members'}</p>
+            <div><Calendar size={18} /><strong>{isAdminBatchView ? 'Centennial Review' : '20-Year Gala'}</strong><small>{isAdminBatchView ? 'All-batch schedule and approvals' : 'Dec 14, 2026 - Main Hall'}</small></div>
+            <h3>{isAdminBatchView ? 'Admin Effects' : 'Batchmates'}</h3>
+            {isAdminBatchView ? (
+              <div className="admin-batch-effects">
+                <button onClick={() => showToast('All-batch broadcast mode is ready.', 'info')}><ShieldCheck size={16} /> Broadcast</button>
+                <button onClick={() => showToast('Verification watch opened.', 'info')}><Sparkles size={16} /> Verify Queue</button>
+                <button onClick={() => showToast('Admin highlight effect applied to featured batches.', 'success')}><Award size={16} /> Highlight</button>
+              </div>
+            ) : (
+              ['Arjun Mehta', 'Priya Sharma', 'Rohan Das'].map((name, index) => <p key={name}><img src={`https://images.unsplash.com/photo-${index === 0 ? '1500648767791-00dcc994a43e' : index === 1 ? '1494790108377-be9c29b29330' : '1506794778202-cad84cf45f1d'}?w=60&h=60&fit=crop&q=80`} alt={name} /> {name}</p>)
+            )}
           </section>
-          <section className="heritage-widget"><h3><Sparkles size={18} /> Batch Stats</h3><p>Memories shared <strong>412</strong></p><p>Active this week <strong>57</strong></p></section>
+          <section className={`heritage-widget ${isAdminBatchView ? 'admin-batch-widget' : ''}`}><h3><Sparkles size={18} /> {isAdminBatchView ? 'Admin Pulse' : 'Batch Stats'}</h3><p>{isAdminBatchView ? 'Pending approvals' : 'Memories shared'} <strong>{isAdminBatchView ? '18' : '412'}</strong></p><p>{isAdminBatchView ? 'Batches active this week' : 'Active this week'} <strong>{isAdminBatchView ? '42' : '57'}</strong></p></section>
         </aside>
 
         <main>
           <section className="batch-carousel-section">
-            <div><h1>Explore Your Batch</h1><p>Connect with alumni from every graduating class</p></div>
-            <button>View all <span aria-hidden="true">â€º</span></button>
+            <div><h1>{isAdminBatchView ? 'Admin Batch Control' : 'Explore Your Batch'}</h1><p>{isAdminBatchView ? 'Feature, verify, and coordinate special batches across the network' : 'Connect with alumni from every graduating class'}</p></div>
+            <button onClick={() => showToast(isAdminBatchView ? 'Showing all batch controls.' : 'Showing all batches.', 'info')}>View all <span aria-hidden="true">&gt;</span></button>
             <div className="batch-class-row">
-              {[1980, 1990, 2000, 2005].map((year, index) => (
-                <article key={year}>
-                  <img src={['https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=420&h=210&fit=crop&q=80', 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=420&h=210&fit=crop&q=80'][index]} alt={`Class of ${year}`} />
-                  <h2>Class of {year}</h2>
-                  <p><Users size={16} /> {[94, 138, 205, 186][index]} members</p>
-                  <button onClick={() => showToast(`Opened Class of ${year}.`, 'info')}>Join / View</button>
+              {featuredBatches.map((batch) => (
+                <article key={batch.year} className={isAdminBatchView ? 'admin-special-batch' : ''}>
+                  {isAdminBatchView && <span className="admin-special-batch-badge"><ShieldCheck size={13} /> Admin</span>}
+                  <img src={batch.image} alt={batch.title} />
+                  <h2>{batch.title}</h2>
+                  <p><Users size={16} /> {batch.members}</p>
+                  <button onClick={() => showToast(isAdminBatchView ? `${batch.title} controls opened.` : `Opened Class of ${batch.year}.`, 'info')}>{batch.action}</button>
                 </article>
               ))}
             </div>

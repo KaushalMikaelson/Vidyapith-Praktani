@@ -16,6 +16,7 @@ import {
   profileCache
 } from '../utils/cache.js';
 import type { Prisma } from '@prisma/client';
+import { createNotification } from '../services/notification.service.js';
 
 function applicationReferencesUser(rawApplication: string, userId: string): boolean {
   if (rawApplication === userId) {
@@ -34,6 +35,18 @@ function applicationReferencesUser(rawApplication: string, userId: string): bool
     return false;
   }
 }
+
+function getSingleParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    return value[0] || '';
+  }
+  return value || '';
+}
+
+const revokeUserTransactionOptions = {
+  maxWait: 10000,
+  timeout: 30000
+};
 
 // Retrieve all users with a verify_status of 'pending'
 export const listPendingUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -74,10 +87,101 @@ export const listPendingUsers = async (req: AuthenticatedRequest, res: Response)
   }
 };
 
+const formatAdminUser = (u: any) => {
+  const p = u.profile as any;
+  return {
+    id: u.id,
+    full_name: p?.full_name || "Vidyapith Alumnus",
+    email: u.email,
+    mobile: u.phone,
+    batch_year: p?.batch_year || 0,
+    leaving_class: p?.leaving_class || "XII",
+    house: p?.house || "",
+    role: u.role,
+    verify_status: u.verify_status,
+    profile_photo: p?.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80",
+    bio: p?.bio || "",
+    profession: p?.profession_category || "",
+    company: p?.company || "",
+    city: p?.city || "",
+    country: p?.country || "India",
+    linkedin_url: p?.linkedin_url || "",
+    certificate_url: p?.certificate_url || "",
+    created_at: u.created_at
+  };
+};
+
+export const listAdminUsers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const users = await prisma.user.findMany({
+      include: { profile: true },
+      orderBy: [
+        { role: 'asc' },
+        { created_at: 'desc' }
+      ]
+    });
+
+    res.status(200).json(users.map(formatAdminUser));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const makeUserAdmin = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const targetUserId = getSingleParam(req.params.id);
+
+    if (!targetUserId) {
+      res.status(400).json({ error: 'Member id is required.' });
+      return;
+    }
+
+    const promotedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        role: 'admin',
+        verify_status: 'approved'
+      },
+      include: { profile: true }
+    });
+
+    await Promise.all([
+      analyticsCache.clear(),
+      directoryCache.clear(),
+      homepageCache.clear(),
+      mentorsCache.clear(),
+      notificationsCache.clear(),
+      profileCache.clear()
+    ]);
+
+    await createNotification({
+      userId: promotedUser.id,
+      title: 'Admin Access Granted',
+      body: 'You can now sign in through the Admin Portal and manage Vidyapith Connect.',
+      type: 'success',
+      crucial: true,
+      actionUrl: '/admin'
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `${(promotedUser as any).profile?.full_name || promotedUser.email} is now an admin.`,
+      user: formatAdminUser(promotedUser)
+    });
+  } catch (err: any) {
+    if (err.code === 'P2025') {
+      res.status(404).json({ error: 'Member not found.' });
+      return;
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const removeUserFromSite = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const adminId = req.user?.id;
-    const targetUserId = req.params.id;
+    const targetUserId = getSingleParam(req.params.id);
 
     if (!adminId) {
       res.status(401).json({ error: 'Unauthorized access.' });
@@ -93,6 +197,10 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
       res.status(400).json({ error: 'Admins cannot remove their own account from the site.' });
       return;
     }
+
+    const jobsWithApplicationsToClean = (await prisma.job.findMany({
+      select: { id: true, applications: true }
+    })).filter(job => job.applications.some(application => applicationReferencesUser(application, targetUserId)));
 
     const removedUser = await prisma.$transaction(async (tx) => {
       const target = await tx.user.findUnique({
@@ -111,12 +219,11 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
         }
       }
 
-      const [ownedGroups, ownedEvents, authoredPosts, likedPosts, jobsWithApplications] = await Promise.all([
+      const [ownedGroups, ownedEvents, authoredPosts, likedPosts] = await Promise.all([
         tx.group.findMany({ where: { created_by: targetUserId }, select: { id: true } }),
         tx.event.findMany({ where: { created_by: targetUserId }, select: { id: true } }),
         tx.post.findMany({ where: { author_id: targetUserId }, select: { id: true } }),
-        tx.post.findMany({ where: { likes: { has: targetUserId } }, select: { id: true, likes: true } }),
-        tx.job.findMany({ select: { id: true, applications: true } })
+        tx.post.findMany({ where: { likes: { has: targetUserId } }, select: { id: true, likes: true } })
       ]);
 
       const ownedGroupIds = ownedGroups.map(group => group.id);
@@ -138,7 +245,7 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
         });
       }
 
-      for (const job of jobsWithApplications) {
+      for (const job of jobsWithApplicationsToClean) {
         const nextApplications = job.applications.filter(application => !applicationReferencesUser(application, targetUserId));
         if (nextApplications.length !== job.applications.length) {
           await tx.job.update({
@@ -206,10 +313,10 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
       return {
         id: target.id,
         email: target.email,
-        full_name: target.profile?.full_name || target.email,
+        full_name: (target as any).profile?.full_name || target.email,
         role: target.role
       };
-    });
+    }, revokeUserTransactionOptions);
 
     await Promise.all([
       analyticsCache.clear(),
@@ -239,6 +346,11 @@ export const removeUserFromSite = async (req: AuthenticatedRequest, res: Respons
 
     if (err.message === 'LAST_ADMIN') {
       res.status(400).json({ error: 'The last admin account cannot be removed.' });
+      return;
+    }
+
+    if (err.code === 'P2028') {
+      res.status(503).json({ error: 'Revoking this account is taking longer than expected. Please try again in a moment.' });
       return;
     }
 

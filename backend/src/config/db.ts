@@ -11,6 +11,7 @@ if (isLocalDemo) {
 // Suppress 'error' level logs to quiet Neon's normal idle-connection-closed messages.
 // Real errors are still surfaced via caught exceptions in controllers.
 const _prisma = isLocalDemo ? null : new PrismaClient({
+  errorFormat: 'minimal',
   log: [
     { level: 'warn', emit: 'stdout' },
     // Do NOT emit 'error' via stdout — Neon pgBouncer regularly closes idle
@@ -35,3 +36,12 @@ export const prisma = isLocalDemo
       }
     }))
   : _prisma!;
+
+export function isDatabaseConnectivityError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /Can't reach database server|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|P1001/i.test(message);
+}
+
+export function getDatabaseUnavailableMessage(): string {
+  return 'Database is temporarily unreachable. Please check your internet/DNS connection and make sure the Neon database is running, then try again.';
+}

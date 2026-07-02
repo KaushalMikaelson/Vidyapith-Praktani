@@ -113,7 +113,8 @@ export default function App() {
     setAuthError(null);
     setIsSubmitting(true);
     try {
-      const res = await loginWithGoogle(credential);
+      const requiredRole = selectedLoginRole === 'admin' ? 'admin' : undefined;
+      const res = await loginWithGoogle(credential, requiredRole);
       if (res.success) {
         if (res.status === 'needs_registration') {
           setRegName(res.name || '');
@@ -126,6 +127,9 @@ export default function App() {
           showToast("Google account verified! Complete registration details to join.", "info");
         } else {
           showToast("Signed in successfully with Google!", "success");
+          if (selectedLoginRole === 'admin') {
+            setActiveScreen('admin');
+          }
           setShowAuthModal(false);
         }
       } else {
@@ -456,11 +460,15 @@ export default function App() {
     setIsSubmitting(true);
     
     try {
-      const res = await login(loginEmail.trim(), loginPass);
+      const requiredRole = selectedLoginRole === 'admin' ? 'admin' : undefined;
+      const res = await login(loginEmail.trim(), loginPass, requiredRole);
       if (res.success) {
         showToast("Signed in successfully! Welcome back.", "success");
         setLoginEmail('');
         setLoginPass('');
+        if (selectedLoginRole === 'admin') {
+          setActiveScreen('admin');
+        }
         setShowAuthModal(false);
       } else {
         setAuthError(res.error || "Incorrect login credentials.");

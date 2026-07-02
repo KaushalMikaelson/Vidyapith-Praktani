@@ -7,9 +7,9 @@ import { API_BASE_URL } from '../utils/api';
 interface AuthContextType {
   currentUser: User | null;
   isAuthLoading: boolean;
-  login: (email: string, password_hash: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password_hash: string, requiredRole?: User['role']) => Promise<{ success: boolean; error?: string }>;
   register: (fields: any) => Promise<{ success: boolean; error?: string }>;
-  loginWithGoogle: (token: string) => Promise<{ success: boolean; status?: string; email?: string; name?: string; picture?: string; error?: string }>;
+  loginWithGoogle: (token: string, requiredRole?: User['role']) => Promise<{ success: boolean; status?: string; email?: string; name?: string; picture?: string; error?: string }>;
   logout: () => void;
   refreshSession: () => void;
 }
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('rkmv:auth-expired', handleAuthExpired);
   }, []);
 
-  const login = async (email: string, password_hash: string) => {
+  const login = async (email: string, password_hash: string, requiredRole?: User['role']) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -75,6 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await response.json();
       if (!response.ok) {
         return { success: false, error: data.error || "Login failed." };
+      }
+
+      if (requiredRole && data.user?.role !== requiredRole) {
+        return { success: false, error: requiredRole === 'admin' ? "This account does not have admin portal access." : `This account is not registered for the ${requiredRole} portal.` };
       }
 
       // Save token in localStorage
@@ -89,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithGoogle = async (token: string) => {
+  const loginWithGoogle = async (token: string, requiredRole?: User['role']) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
@@ -109,6 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: data.name,
           picture: data.picture
         };
+      }
+
+      if (requiredRole && data.user?.role !== requiredRole) {
+        return { success: false, error: requiredRole === 'admin' ? "This account does not have admin portal access." : `This account is not registered for the ${requiredRole} portal.` };
       }
 
       // Save token in localStorage

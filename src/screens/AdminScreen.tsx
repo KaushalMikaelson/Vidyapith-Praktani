@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert, Activity, Landmark, Search } from 'lucide-react';
+import { Users, ShieldCheck, Clock, FileText, Check, X, ShieldAlert, Activity, Landmark, Search, UserPlus, Trash2 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 interface AdminScreenProps {
@@ -11,7 +11,7 @@ interface AdminScreenProps {
 }
 
 export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfile }) => {
-  const { refreshSession } = useAuth();
+  const { currentUser, refreshSession } = useAuth();
   
   const [pendingList, setPendingList] = useState<any[]>([]);
   const [verifiedCount, setVerifiedCount] = useState(0);
@@ -19,15 +19,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
   const [donationTotal, setDonationTotal] = useState(0);
   const [certPreviewUser, setCertPreviewUser] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [memberList, setMemberList] = useState<any[]>([]);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
+  const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
 
   const loadAdminData = async () => {
     try {
       const pending = await apiFetch('/admin/pending-users');
       setPendingList(pending);
 
-      const directory = await apiFetch('/directory');
-      setVerifiedCount(directory.length);
-      setTotalCount(directory.length + pending.length);
+      const users = await apiFetch('/admin/users');
+      setMemberList(users);
+      setVerifiedCount(users.filter((user: any) => user.verify_status === 'approved').length);
+      setTotalCount(users.length);
 
       const leaderboard = await apiFetch('/donations/leaderboard');
       const total = leaderboard.reduce((sum: number, item: any) => sum + item.total_amount, 0) / 100;
@@ -58,6 +63,54 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
     }
   };
 
+  const handleMakeAdmin = async (id: string, name: string) => {
+    if (!window.confirm(`Make ${name} an admin? They will be able to sign in through the Admin Portal.`)) {
+      return;
+    }
+
+    setPromotingUserId(id);
+    try {
+      await apiFetch(`/admin/users/${id}/make-admin`, { method: 'POST' });
+      showToast(`${name} can now access the Admin Portal.`, 'success');
+      await loadAdminData();
+      refreshSession();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to make member an admin.', 'danger');
+    } finally {
+      setPromotingUserId(null);
+    }
+  };
+
+  const handleRevokeUser = async (id: string, name: string, role: string) => {
+    if (currentUser?.id === id) {
+      showToast('You cannot revoke your own admin account.', 'danger');
+      return;
+    }
+
+    const roleWarning = role === 'admin'
+      ? ' This account is also an admin, so their admin access and site account will both be removed.'
+      : '';
+
+    if (!window.confirm(`Revoke ${name} from the site? This permanently removes their account and related activity.${roleWarning}`)) {
+      return;
+    }
+
+    setRevokingUserId(id);
+    try {
+      await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+      showToast(`${name} has been revoked from the site.`, 'success');
+      if (certPreviewUser && certPreviewUser.id === id) {
+        setCertPreviewUser(null);
+      }
+      await loadAdminData();
+      refreshSession();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to revoke member.', 'danger');
+    } finally {
+      setRevokingUserId(null);
+    }
+  };
+
   // Filter application list by name, email, batch, or house
   const filteredPendingList = pendingList.filter(u => {
     const query = searchQuery.toLowerCase().trim();
@@ -69,6 +122,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
       (u.house || "").toLowerCase().includes(query)
     );
   });
+
+  const filteredManagedUsers = memberList.filter(u => {
+    const query = memberSearchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      (u.full_name || "").toLowerCase().includes(query) ||
+      (u.email || "").toLowerCase().includes(query) ||
+      (u.role || "").toLowerCase().includes(query) ||
+      (u.verify_status || "").toLowerCase().includes(query) ||
+      (u.batch_year || "").toString().includes(query)
+    );
+  });
+
+  const adminCount = memberList.filter(u => u.role === 'admin').length;
 
   return (
     <div className="admin-layout" style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px 48px', animation: 'fadeIn 0.4s ease-out' }}>
@@ -238,7 +305,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '1.8rem', fontWeight: 850, color: '#09152c', lineHeight: 1.1 }}>{verifiedCount}</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Verified Alumni</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>Approved Accounts</span>
           </div>
         </div>
 
@@ -336,6 +403,229 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({ showToast, onViewProfi
           </div>
         </div>
 
+      </div>
+
+      {/* Member Access Table Widget */}
+      <div
+        style={{
+          background: 'var(--heritage-card)',
+          border: '1px solid var(--heritage-line)',
+          borderRadius: '16px',
+          padding: '28px',
+          boxShadow: 'var(--heritage-shadow)',
+          marginBottom: '32px'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '18px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09152c', margin: 0, fontFamily: 'var(--font-title)' }}>
+              Member Access Management
+            </h3>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: '#0e6b8a',
+                background: 'rgba(14, 107, 138, 0.08)',
+                border: '1px solid rgba(14, 107, 138, 0.2)',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}
+            >
+              {adminCount} Admin{adminCount !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div style={{ position: 'relative', width: '280px' }}>
+            <input
+              type="text"
+              placeholder="Search members..."
+              value={memberSearchQuery}
+              onChange={(e) => setMemberSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px 10px 38px',
+                background: '#ffffff',
+                border: '1.5px solid var(--heritage-line)',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                color: 'var(--heritage-ink)',
+                outline: 'none',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#0e6b8a';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(14, 107, 138, 0.12)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--heritage-line)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--heritage-muted)' }} />
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr
+                style={{
+                  background: '#fcfbfa',
+                  color: 'var(--heritage-muted)',
+                  fontSize: '0.75rem',
+                  fontWeight: 750,
+                  textTransform: 'uppercase',
+                  borderBottom: '2px solid var(--heritage-line)',
+                  letterSpacing: '0.06em'
+                }}
+              >
+                <th style={{ padding: '14px 16px', borderTopLeftRadius: '10px', borderBottomLeftRadius: '10px', color: 'var(--heritage-muted)' }}>Member</th>
+                <th style={{ padding: '14px 16px', color: 'var(--heritage-muted)' }}>Status</th>
+                <th style={{ padding: '14px 16px', color: 'var(--heritage-muted)' }}>Role</th>
+                <th style={{ padding: '14px 16px', textAlign: 'right', borderTopRightRadius: '10px', borderBottomRightRadius: '10px', color: 'var(--heritage-muted)' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredManagedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: '56px 20px', textAlign: 'center', color: 'var(--heritage-muted)', fontWeight: 700 }}>
+                    {memberSearchQuery ? 'No matching members found.' : 'No members found.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredManagedUsers.map(u => (
+                  <tr
+                    key={u.id}
+                    style={{
+                      borderBottom: '1px solid var(--heritage-line)',
+                      fontSize: '0.9rem',
+                      color: 'var(--heritage-ink)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#faf9f6'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <td style={{ padding: '18px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <img
+                          src={u.profile_photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80"}
+                          alt={u.full_name}
+                          style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '1px solid var(--heritage-line)', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}
+                          onClick={() => onViewProfile(u.id)}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span onClick={() => onViewProfile(u.id)} style={{ fontWeight: 700, color: '#09152c', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-color)'} onMouseOut={(e) => e.currentTarget.style.color = '#09152c'}>{u.full_name}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--heritage-muted)', marginTop: '2px' }}>{u.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '18px 16px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        padding: '5px 10px',
+                        borderRadius: '9999px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        background: u.verify_status === 'approved' ? 'rgba(16, 185, 129, 0.08)' : u.verify_status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.08)',
+                        color: u.verify_status === 'approved' ? '#10b981' : u.verify_status === 'pending' ? '#b7791f' : '#ef4444',
+                        border: u.verify_status === 'approved' ? '1px solid rgba(16, 185, 129, 0.25)' : u.verify_status === 'pending' ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)'
+                      }}>
+                        {u.verify_status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '18px 16px', textTransform: 'capitalize', color: '#09152c', fontWeight: 700 }}>
+                      {u.role}
+                    </td>
+                    <td style={{ padding: '18px 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                        {u.role !== 'admin' && (
+                          <button
+                            title="Make Admin"
+                            onClick={() => handleMakeAdmin(u.id, u.full_name)}
+                            disabled={promotingUserId === u.id || revokingUserId === u.id}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              background: 'rgba(14, 107, 138, 0.08)',
+                              color: '#0e6b8a',
+                              border: '1px solid rgba(14, 107, 138, 0.3)',
+                              borderRadius: '8px',
+                              padding: '8px 14px',
+                              fontWeight: 800,
+                              fontSize: '0.8rem',
+                              cursor: promotingUserId === u.id || revokingUserId === u.id ? 'not-allowed' : 'pointer',
+                              opacity: promotingUserId === u.id || revokingUserId === u.id ? 0.6 : 1,
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseOver={(e) => {
+                              if (promotingUserId === u.id || revokingUserId === u.id) return;
+                              e.currentTarget.style.background = '#0e6b8a';
+                              e.currentTarget.style.color = 'white';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 10px rgba(14, 107, 138, 0.18)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'rgba(14, 107, 138, 0.08)';
+                              e.currentTarget.style.color = '#0e6b8a';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            <UserPlus size={14} />
+                            <span>{promotingUserId === u.id ? 'Promoting...' : 'Make Admin'}</span>
+                          </button>
+                        )}
+                        <button
+                          title={currentUser?.id === u.id ? 'You cannot revoke yourself' : 'Revoke user from site'}
+                          onClick={() => handleRevokeUser(u.id, u.full_name, u.role)}
+                          disabled={currentUser?.id === u.id || revokingUserId === u.id || promotingUserId === u.id}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            background: 'rgba(220, 38, 38, 0.08)',
+                            color: '#b91c1c',
+                            border: '1px solid rgba(220, 38, 38, 0.28)',
+                            borderRadius: '8px',
+                            padding: '8px 14px',
+                            fontWeight: 800,
+                            fontSize: '0.8rem',
+                            cursor: currentUser?.id === u.id || revokingUserId === u.id || promotingUserId === u.id ? 'not-allowed' : 'pointer',
+                            opacity: currentUser?.id === u.id || revokingUserId === u.id || promotingUserId === u.id ? 0.55 : 1,
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            if (currentUser?.id === u.id || revokingUserId === u.id || promotingUserId === u.id) return;
+                            e.currentTarget.style.background = '#b91c1c';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 10px rgba(185, 28, 28, 0.18)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(220, 38, 38, 0.08)';
+                            e.currentTarget.style.color = '#b91c1c';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span>{revokingUserId === u.id ? 'Revoking...' : 'Revoke'}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Verification Queue Table Widget */}
