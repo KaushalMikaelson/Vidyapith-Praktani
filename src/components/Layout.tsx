@@ -27,6 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const loadNotifications = async () => {
@@ -91,18 +92,45 @@ export const Layout: React.FC<LayoutProps> = ({
       : []),
   ];
 
+  const handleNavigate = (screen: string) => {
+    setActiveScreen(screen);
+    setSidebarOpen(false);
+    setProfileOpen(false);
+  };
+
   return (
-    <div className={`app-layout screen-${activeScreen}`}>
+    <div className={`app-layout screen-${activeScreen} ${sidebarOpen ? 'mobile-sidebar-open' : ''}`}>
       <ThreeBackground />
+
+      <button
+        className="mobile-emblem-toggle"
+        onClick={() => setSidebarOpen((open) => !open)}
+        aria-label={sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        aria-expanded={sidebarOpen}
+        aria-controls="sidebar"
+      >
+        <img src="/logo.png" alt="" className="mobile-emblem-image" />
+      </button>
+
+      {sidebarOpen && (
+        <button
+          className="mobile-sidebar-backdrop"
+          onClick={() => {
+            setSidebarOpen(false);
+            setProfileOpen(false);
+          }}
+          aria-label="Close navigation menu"
+        />
+      )}
 
 
       {/* ── Icon Rail Sidebar ─────────────────────────────── */}
-      <aside className="icon-rail" id="sidebar">
+      <aside className={`icon-rail ${sidebarOpen ? 'mobile-open' : ''}`} id="sidebar">
 
         {/* Logo */}
         <button
           className="rail-logo"
-          onClick={() => setActiveScreen('feed')}
+          onClick={() => handleNavigate('feed')}
           title="Vidyapith Alumni"
           aria-label="Return to Home Feed"
         >
@@ -122,7 +150,7 @@ export const Layout: React.FC<LayoutProps> = ({
               <button
                 key={item.id}
                 className={`rail-btn ${isActive ? 'active' : ''} ${item.id === 'create' ? 'rail-create-btn' : ''}`}
-                onClick={() => setActiveScreen(item.id)}
+                onClick={() => handleNavigate(item.id)}
                 aria-label={item.label}
               >
                 <span className="rail-icon">
@@ -164,11 +192,11 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
               </div>
               <div className="rail-popup-divider" />
-              <button className="rail-popup-item" onClick={() => { setActiveScreen('profile'); setProfileOpen(false); }}>
+              <button className="rail-popup-item" onClick={() => handleNavigate('profile')}>
                 <UserIcon size={15} /> My Profile
               </button>
               {currentUser.role === 'admin' && (
-                <button className="rail-popup-item" onClick={() => { setActiveScreen('admin'); setProfileOpen(false); }}>
+                <button className="rail-popup-item" onClick={() => handleNavigate('admin')}>
                   <ShieldCheck size={15} /> Admin Center
                 </button>
               )}
@@ -187,23 +215,6 @@ export const Layout: React.FC<LayoutProps> = ({
           {children}
         </section>
       </main>
-
-      {/* Mobile Bottom Nav */}
-      <div className="mobile-bottom-nav">
-        {navItems.slice(0, 5).map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              className={`mobile-nav-item ${activeScreen === item.id ? 'active' : ''}`}
-              onClick={() => setActiveScreen(item.id)}
-            >
-              <Icon size={22} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 };

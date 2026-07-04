@@ -2632,4 +2632,462 @@
   transform: scale(1.005);
 }
 
+/* Premium compact landing and auth experience */
+@media (max-width: 768px) {
+  .landing-root {
+    overflow-x: hidden;
+  }
+
+  .landing-container,
+  .landing-hero-inner {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .landing-nav {
+    top: 10px;
+    width: calc(100% - 24px);
+    border-radius: 18px;
+  }
+
+  .landing-nav-container {
+    min-height: 62px;
+    padding: 0 14px;
+  }
+
+  .landing-nav-title {
+    font-size: 0.95rem;
+  }
+
+  .landing-nav-mobile-menu {
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .landing-nav-mobile-link {
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .landing-nav-mobile-actions button,
+  .landing-hero-actions button,
+  .landing-hero-actions a,
+  .cta-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .landing-hero {
+    padding: 94px 0 54px;
+  }
+
+  .landing-hero-banner-wrapper {
+    border-radius: 22px;
+    min-height: 210px;
+  }
+
+  .landing-hero-banner-img {
+    min-height: 210px;
+    object-fit: cover;
+  }
+
+  .landing-hero-content.below-image {
+    gap: 28px;
+    margin-top: 28px;
+  }
+
+  .landing-hero-title {
+    font-size: 2.35rem;
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+
+  .landing-hero-subtitle {
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  .landing-hero-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .landing-hero-glass-card,
+  .landing-feature-card,
+  .house-glow-card,
+  .landing-testimonial-card,
+  .vivekananda-quote-card,
+  .landing-cta-banner {
+    border-radius: 20px;
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.32);
+  }
+
+  .landing-heritage-section,
+  .landing-stats-section,
+  .landing-features-section,
+  .landing-houses-section,
+  .landing-testimonials-section {
+    padding: 58px 0;
+  }
+
+  .landing-heritage-grid {
+    gap: 30px;
+  }
+
+  .landing-heritage-visual {
+    min-height: 220px;
+  }
+
+  .landing-heritage-emblem {
+    width: min(220px, 62vw);
+  }
+
+  .section-title {
+    font-size: clamp(1.7rem, 9vw, 2.2rem);
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+
+  .section-subtitle,
+  .section-desc {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  .landing-stat-card,
+  .landing-feature-card,
+  .house-glow-card,
+  .landing-testimonial-card {
+    padding: 22px;
+  }
+
+  .landing-cta-section {
+    padding: 34px 0 64px;
+  }
+
+  .landing-cta-banner {
+    padding: 34px 20px;
+  }
+
+  .landing-footer {
+    padding: 54px 0 34px;
+  }
+
+  .landing-auth-modal-overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .landing-auth-modal-content,
+  .auth-premium-container,
+  .landing-auth-modal-content .auth-premium-container {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .auth-premium-container,
+  .landing-auth-modal-content .auth-premium-container {
+    padding: 26px 20px;
+    border-radius: 22px;
+    max-height: calc(100dvh - 20px);
+  }
+
+  .landing-auth-modal-close {
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .auth-title-gradient {
+    font-size: 1.7rem;
+    letter-spacing: 0;
+  }
+
+  .auth-subtitle {
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  .auth-premium-tabs,
+  .auth-btn-row,
+  .auth-demo-grid {
+    gap: 8px;
+  }
+
+  .auth-demo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-btn-row {
+    flex-direction: column;
+  }
+
+  .auth-btn-row .btn {
+    width: 100%;
+  }
+
+  .auth-stepper-header {
+    margin-bottom: 28px;
+    padding: 0;
+  }
+
+  .auth-step-name {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .landing-hero-title {
+    font-size: 2.05rem;
+  }
+
+  .landing-feature-card,
+  .house-glow-card,
+  .landing-testimonial-card {
+    padding: 20px;
+  }
+
+  .auth-premium-container,
+  .landing-auth-modal-content .auth-premium-container {
+    padding: 24px 16px;
+  }
+}
+
+/* Final mobile landing polish: keep high-specificity desktop hero rules contained. */
+@media (max-width: 768px) {
+  .landing-nav {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    right: 12px;
+    width: auto;
+    height: 64px;
+    border-radius: 18px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+  }
+
+  .landing-nav-container {
+    min-height: 64px;
+    padding: 0 12px;
+  }
+
+  .landing-nav-brand {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .landing-nav-logo {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+
+  .landing-nav-title {
+    font-size: clamp(0.95rem, 5vw, 1.08rem);
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .landing-nav-mobile-toggle {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 42px;
+  }
+
+  .landing-nav-mobile-menu {
+    top: calc(100% + 10px);
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .landing-hero {
+    padding: calc(92px + env(safe-area-inset-top, 0px)) 0 46px;
+  }
+
+  .landing-hero-inner {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .landing-hero-banner-wrapper {
+    height: clamp(300px, 56vh, 420px);
+    min-height: 0;
+    margin-bottom: 28px;
+    border-radius: 24px;
+  }
+
+  .landing-hero-banner-img {
+    height: 100%;
+    min-height: 0;
+    object-position: center center;
+  }
+
+  .landing-hero-banner-glass-overlay {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    max-width: none;
+    padding: 10px 14px;
+    border-radius: 16px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  .landing-hero-content.below-image {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+    margin-top: 0;
+  }
+
+  .landing-hero-text-side,
+  .landing-hero-visual-side {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .landing-hero-title {
+    font-size: clamp(2.05rem, 11vw, 2.65rem);
+    line-height: 1.08;
+    margin-bottom: 16px;
+  }
+
+  .landing-hero-subtitle {
+    font-size: 0.98rem;
+    line-height: 1.62;
+    margin-bottom: 24px;
+  }
+
+  .landing-hero-actions {
+    width: 100%;
+  }
+
+  .landing-btn-primary-glowing,
+  .landing-btn-secondary-glass {
+    min-height: 48px;
+    border-radius: 14px;
+  }
+
+  .landing-hero-glass-card {
+    width: 100%;
+    padding: 20px;
+    border-radius: 22px;
+    gap: 16px;
+    transform: none !important;
+  }
+
+  .glass-card-header,
+  .glass-card-list-item {
+    min-width: 0;
+  }
+
+  .glass-card-list-item span {
+    overflow-wrap: anywhere;
+  }
+
+  .stat-num {
+    font-size: 2.35rem;
+  }
+
+  .landing-auth-modal-overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .landing-auth-modal-content {
+    max-width: 460px;
+  }
+
+  .landing-auth-modal-content .auth-premium-container,
+  .auth-premium-container {
+    max-height: calc(100dvh - 20px);
+    padding: 24px 18px;
+    border-radius: 22px;
+  }
+
+  .auth-title-gradient {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    line-height: 1.12;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .auth-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+
+  .auth-premium-tabs {
+    gap: 6px;
+    padding: 5px;
+    margin-bottom: 24px;
+  }
+
+  .auth-premium-tab-btn {
+    min-width: 0;
+    padding: 11px 8px;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+
+  .auth-role-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .auth-role-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+    gap: 10px;
+  }
+
+  .auth-role-icon-wrap {
+    width: 58px;
+    height: 58px;
+  }
+
+  .auth-role-title {
+    font-size: 1.08rem;
+  }
+
+  .auth-role-desc {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .auth-role-action-btn {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 430px) {
+  .landing-hero-inner {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .landing-hero-banner-wrapper {
+    height: clamp(280px, 52vh, 390px);
+  }
+
+  .landing-hero-glass-card {
+    padding: 18px;
+  }
+}
+
 

@@ -1043,7 +1043,7 @@ export const MessagesScreen: React.FC<MessagesScreenProps> = ({ showToast, onVie
 
   // ─── Main render ───────────────────────────────────────────────────────────────
   return (
-    <div className="glass-panel" style={{ display: 'flex', height: '100%', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)', background: 'var(--card-bg)' }}>
+    <div className={`glass-panel messages-panel ${activePanel ? 'has-active-chat' : ''}`} style={{ display: 'flex', height: '100%', overflow: 'hidden', borderRadius: 16, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)', background: 'var(--card-bg)' }}>
       {/* Left sidebar */}
       <div style={{ width: '320px', minWidth: '320px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-darker)', height: '100%' }}>
         {renderLeftHeader()}

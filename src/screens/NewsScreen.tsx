@@ -81,7 +81,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({ showToast }) => {
   const decades = ['All', '1920s', '1940s', '1960s', '1980s', '2000s', '2020s'];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '32px', animation: 'fadeIn 0.4s ease-out' }}>
+    <div className="news-layout" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '32px', animation: 'fadeIn 0.4s ease-out' }}>
 
       {/* ── Left Column: News Articles ─────────────────────── */}
       <div>

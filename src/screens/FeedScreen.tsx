@@ -1812,6 +1812,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           </div>
         </div>
 
+        <div className="ig-feed-body">
         {/* Center: post composer + feed */}
         <main className="ig-feed-main">
           {/* Instagram-style Stories Tray */}
@@ -2565,6 +2566,72 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </div>
           )}
         </main>
+
+        <aside className="feed-desktop-rail" aria-label="Feed sidebar">
+          <section className="feed-rail-card feed-rail-profile-card">
+            <div className="feed-rail-profile-head">
+              <img
+                src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop&q=80'}
+                alt={currentUser?.full_name || 'Profile'}
+              />
+              <div>
+                <h3>{currentUser?.full_name || 'Vidyapith Alumnus'}</h3>
+                <p>Class of {currentUser?.batch_year || 'Vidyapith'}</p>
+              </div>
+            </div>
+            <button type="button" onClick={() => onNavigate && onNavigate('profile')}>
+              View Profile
+            </button>
+          </section>
+
+          <section className="feed-rail-card">
+            <div className="feed-rail-card-title">
+              <Sparkles size={17} />
+              <span>Quick Actions</span>
+            </div>
+            <div className="feed-rail-actions">
+              <button type="button" onClick={() => onNavigate && onNavigate('create')}>
+                <Plus size={16} /> Create post
+              </button>
+              <button type="button" onClick={() => onNavigate && onNavigate('directory')}>
+                <Users size={16} /> Find alumni
+              </button>
+              <button type="button" onClick={() => onNavigate && onNavigate('messages')}>
+                <MessageCircle size={16} /> Messages
+              </button>
+            </div>
+          </section>
+
+          <section className="feed-rail-card">
+            <div className="feed-rail-card-title">
+              <TrendingUp size={17} />
+              <span>Community Pulse</span>
+            </div>
+            <div className="feed-rail-stats">
+              <div>
+                <strong>{posts.length}</strong>
+                <span>Total posts</span>
+              </div>
+              <div>
+                <strong>{connections.length}</strong>
+                <span>Connections</span>
+              </div>
+              <div>
+                <strong>{bookmarks.length}</strong>
+                <span>Saved</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="feed-rail-card feed-rail-note">
+            <GraduationCap size={20} />
+            <div>
+              <h3>Grow the Vidyapith network</h3>
+              <p>Share a memory, career update, or useful opportunity with your batchmates.</p>
+            </div>
+          </section>
+        </aside>
+        </div>
 
 
       </div>
