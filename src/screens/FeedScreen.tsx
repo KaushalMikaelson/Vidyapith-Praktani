@@ -1901,41 +1901,21 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
           {/* Profile Completeness Banner */}
           {(!currentUser.bio || currentUser.bio === 'Not specified' || !currentUser.linkedin_url || !currentUser.company || currentUser.company === 'Not specified') && (
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
-              border: '1px solid rgba(236, 72, 153, 0.15)',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '16px',
-              color: '#1e293b'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', flexShrink: 0
-                }}>
+            <div className="profile-completeness-banner">
+              <div className="profile-completeness-copy">
+                <div className="profile-completeness-icon">
                   ✨
                 </div>
                 <div>
-                  <h4 style={{ margin: '0 0 4px', fontSize: '0.9rem', fontWeight: 800 }}>Complete your Alumni Profile</h4>
-                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>
+                  <h4>Complete your Alumni Profile</h4>
+                  <p>
                     Add a bio, company details, and your LinkedIn profile to help batchmates discover and connect with you.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => onNavigate && onNavigate('profile')}
-                className="btn-connect-gradient"
-                style={{
-                  padding: '8px 16px', borderRadius: '30px', fontSize: '0.78rem',
-                  fontWeight: 700, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap'
-                }}
+                className="btn-connect-gradient profile-completeness-action"
               >
                 Complete Profile
               </button>

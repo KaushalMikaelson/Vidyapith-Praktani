@@ -7198,6 +7198,103 @@ button:disabled {
   opacity: 0.9;
 }
 
+.profile-completeness-banner {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border: 1px solid rgba(236, 72, 153, 0.15);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #1e293b;
+}
+
+.profile-completeness-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profile-completeness-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.profile-completeness-banner h4 {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.profile-completeness-banner p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.profile-completeness-action {
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .profile-completeness-banner {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+  }
+
+  .profile-completeness-copy {
+    display: contents;
+  }
+
+  .profile-completeness-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 0.86rem;
+  }
+
+  .profile-completeness-banner h4 {
+    margin-bottom: 2px;
+    font-size: 0.82rem;
+  }
+
+  .profile-completeness-banner p {
+    font-size: 0.72rem;
+    line-height: 1.32;
+  }
+
+  .profile-completeness-action {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 30px;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+  }
+}
+
 .btn-following-gray {
   background: #f3f4f6;
   color: #1f2937 !important;
