@@ -9222,3 +9222,288 @@ button:disabled {
   }
 }
 
+/* Compact small-screen density pass */
+@media (max-width: 768px) {
+  .mobile-emblem-toggle {
+    top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+    left: 14px !important;
+    width: 46px !important;
+    height: 46px !important;
+    padding: 7px !important;
+    border-radius: 15px !important;
+  }
+
+  .mobile-emblem-image {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .main-viewport {
+    padding: calc(72px + env(safe-area-inset-top, 0px)) 14px calc(22px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .feed-header-ig,
+  .heritage-title-row,
+  .page-title-box,
+  .events-section-head,
+  .screen-jobs .heritage-page > div:first-child,
+  .screen-notifications .main-viewport > div > div:first-child,
+  .admin-layout > div:first-child {
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .feed-header-ig h1,
+  .heritage-title-row h1,
+  .page-title-box h1,
+  .page-title-box h2,
+  .page-title-text h2,
+  .events-section-head h2,
+  .admin-layout h1,
+  .admin-layout h2,
+  .screen-jobs .heritage-page > div:first-child h1,
+  .screen-notifications .main-viewport h1 {
+    font-size: clamp(1.36rem, 5.8vw, 1.68rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  .feed-header-ig p,
+  .heritage-title-row p,
+  .page-title-box p,
+  .page-title-text p,
+  .admin-layout p,
+  .screen-jobs .heritage-page > div:first-child p,
+  .screen-notifications .main-viewport > div > div:first-child p {
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
+    margin-top: 5px !important;
+  }
+
+  .stories-tray-container,
+  .feed-story-card,
+  .feed-composer-card,
+  .profile-head-card,
+  .profile-post-card,
+  .events-filter-strip,
+  .heritage-filter-card,
+  .notification-card,
+  .mentor-card,
+  .sidebar-widget-card,
+  .job-card-premium,
+  .glass-panel,
+  .heritage-widget,
+  .suggest-card,
+  .calendar-card {
+    border-radius: 15px !important;
+  }
+
+  .feed-card-header,
+  .feed-story-card header,
+  .profile-post-card header {
+    padding: 12px !important;
+    gap: 9px !important;
+  }
+
+  .post-avatar-ring,
+  .feed-composer-card img,
+  .feed-story-card header img {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .header-action-btn {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 6px !important;
+    border-radius: 11px !important;
+  }
+
+  .btn,
+  .heritage-primary-btn,
+  .btn-connect-gradient,
+  .btn-following-gray,
+  .header-action-btn,
+  .feed-story-card button,
+  .profile-post-card button,
+  .notification-card button,
+  .mentor-card button,
+  .job-card-premium button {
+    min-height: 34px;
+    font-size: 0.8rem !important;
+  }
+
+  .heritage-input,
+  .heritage-filter-card select,
+  .heritage-modal input,
+  .heritage-modal select,
+  .heritage-modal textarea,
+  .events-filter-strip select {
+    min-height: 38px !important;
+    height: auto !important;
+    padding: 9px 11px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .screen-create .create-publication-page {
+    max-width: 100% !important;
+  }
+
+  .screen-create .create-publication-header {
+    margin-bottom: 12px !important;
+  }
+
+  .screen-create .create-back-btn {
+    margin-bottom: 6px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .screen-create .create-back-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .screen-create .create-publication-header h1 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: clamp(1.42rem, 6vw, 1.62rem) !important;
+    line-height: 1.08 !important;
+    max-width: none !important;
+    text-wrap: balance;
+  }
+
+  .screen-create .create-publication-header h1 span {
+    flex: 0 0 auto;
+    font-size: 1.18rem !important;
+  }
+
+  .screen-create .create-type-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    margin-top: 16px !important;
+  }
+
+  .screen-create .create-type-card {
+    padding: 16px 14px !important;
+    gap: 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .screen-create .create-type-card-icon {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .screen-create .create-type-card-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .screen-create .create-type-card h3 {
+    font-size: 0.96rem !important;
+  }
+
+  .screen-create .create-type-card p {
+    font-size: 0.76rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .screen-create .create-type-card-button {
+    min-height: 34px !important;
+    padding: 8px 14px !important;
+    font-size: 0.78rem !important;
+    border-radius: 9px !important;
+  }
+
+  .screen-create .create-publication-form {
+    padding: 14px !important;
+    margin-top: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .screen-create form > div {
+    margin-bottom: 14px !important;
+  }
+
+  .screen-create form label {
+    font-size: 0.78rem !important;
+    margin-bottom: 7px !important;
+  }
+
+  .screen-create input,
+  .screen-create select,
+  .screen-create textarea {
+    padding: 10px 11px !important;
+    font-size: 0.84rem !important;
+    border-radius: 8px !important;
+  }
+
+  .screen-create textarea {
+    line-height: 1.45 !important;
+  }
+
+  .screen-create .create-upload-toggle,
+  .screen-create .create-audience-options,
+  .screen-create .create-form-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .screen-create .create-upload-toggle-btn,
+  .screen-create .create-audience-options button,
+  .screen-create .create-form-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+    white-space: normal !important;
+  }
+
+  .screen-create form [style*="2px dashed"] {
+    padding: 20px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .screen-create form [style*="2px dashed"] svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .screen-create form [style*="2px dashed"] p {
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .screen-create .create-form-footer {
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding-top: 14px !important;
+  }
+
+  .screen-create .create-publish-group,
+  .screen-create .create-form-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .main-viewport {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .screen-create .create-publication-header h1 {
+    font-size: clamp(1.28rem, 7vw, 1.48rem) !important;
+  }
+
+  .screen-create .create-publication-header p {
+    max-width: 18rem;
+  }
+
+  .screen-create .create-type-card {
+    padding: 14px 12px !important;
+  }
+}
+

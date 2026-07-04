@@ -323,9 +323,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
   const UploadMethodToggle = ({
     method, setMethod, onDeviceClick
   }: { method: UploadMethod; setMethod: (m: UploadMethod) => void; onDeviceClick?: () => void }) => (
-    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+    <div className="create-upload-toggle" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
       {(['device', 'url'] as UploadMethod[]).map(m => (
-        <button key={m} type="button" onClick={() => {
+        <button key={m} className="create-upload-toggle-btn" type="button" onClick={() => {
           setMethod(m);
           if (m === 'device' && onDeviceClick) {
             onDeviceClick();
@@ -348,11 +348,12 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="heritage-page">
+    <div className="heritage-page create-publication-page">
       {/* Header */}
-      <div className="heritage-title-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+      <div className="heritage-title-row create-publication-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
         <div>
           <button type="button"
+            className="create-back-btn"
             onClick={() => selectedType ? setSelectedType(null) : setActiveScreen('feed')}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: selectedType ? 'var(--primary-color)' : 'var(--text-muted)', marginBottom: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
           >
@@ -368,7 +369,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
       {/* ── Type Selection ── */}
       {!selectedType && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginTop: '32px' }}>
+          <div className="create-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginTop: '32px' }}>
             {[
               { type: 'image' as PostType, icon: <Image size={28} />, gradient: 'linear-gradient(135deg, #f857a6, #ff5858)', title: 'Share Images', desc: 'Upload photos from your device or paste URLs — campus snapshots, batch photos, archives.', btnLabel: 'Add Images', btnIcon: <Upload size={14} /> },
               { type: 'video' as PostType, icon: <Video size={28} />, gradient: 'linear-gradient(135deg, #a855f7, #6366f1)', title: 'Share Video', desc: 'Upload an MP4 from your device or embed a YouTube / direct MP4 link.', btnLabel: 'Add Video', btnIcon: <Play size={14} /> },
@@ -390,7 +391,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   transition: 'transform 0.2s, box-shadow 0.2s',
                 }}
               >
-                <div style={{
+                <div className="create-type-card-icon" style={{
                   width: '60px', height: '60px', borderRadius: '50%',
                   background: gradient,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -398,7 +399,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                 }}>{icon}</div>
                 <h3 style={{ color: 'var(--heritage-ink, #161719)', fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>{title}</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--heritage-muted, #77797d)', lineHeight: '1.6', margin: 0 }}>{desc}</p>
-                <button type="button" style={{
+                <button type="button" className="create-type-card-button" style={{
                   background: gradient,
                   color: '#fff',
                   border: 'none',
@@ -422,7 +423,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
       {/* ── Create Form ── */}
       {selectedType && (
-        <form onSubmit={handlePublish} style={{ padding: '32px', marginTop: '24px', borderRadius: '16px', background: 'var(--heritage-card, #ffffff)', border: '1px solid var(--heritage-line, #e7e7e7)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <form className="create-publication-form" onSubmit={handlePublish} style={{ padding: '32px', marginTop: '24px', borderRadius: '16px', background: 'var(--heritage-card, #ffffff)', border: '1px solid var(--heritage-line, #e7e7e7)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
 
           <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-color)', fontWeight: 700, marginBottom: '24px' }}>
             Creating {selectedType === 'image' ? 'Image Post' : selectedType === 'video' ? 'Video Post' : 'Article'}
@@ -733,10 +734,10 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           </div>
 
           {/* Footer: Audience + Actions */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--heritage-line, #e7e7e7)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
+          <div className="create-form-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--heritage-line, #e7e7e7)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
+            <div className="create-publish-group">
               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--heritage-muted, #77797d)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 600 }}>Publish to</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div className="create-audience-options" style={{ display: 'flex', gap: '10px' }}>
                 <button type="button" onClick={() => setGroup('grp-all')}
                   style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group === 'grp-all' ? 'var(--primary-color)' : '#f0f0f0', color: group === 'grp-all' ? '#fff' : 'var(--heritage-ink, #161719)', border: group === 'grp-all' ? 'none' : '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '6px', cursor: 'pointer' }}
                 ><Globe size={14} /> All Alumni</button>
@@ -748,7 +749,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="create-form-actions" style={{ display: 'flex', gap: '12px' }}>
               <button type="button" onClick={() => setSelectedType(null)}
                 style={{ padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--heritage-line, #e7e7e7)', color: 'var(--heritage-ink, #161719)', background: '#fff', cursor: 'pointer', fontSize: '0.95rem' }}
               >Cancel</button>
