@@ -122,7 +122,7 @@ export const rsvpEvent = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
-    // Notify user
+    // Notify user of RSVP confirmation
     await notificationQueue.add('direct', {
       type: 'EVENT_RSVP',
       targetId: userId,
@@ -130,6 +130,20 @@ export const rsvpEvent = async (req: AuthenticatedRequest, res: Response): Promi
       body: `You have successfully RSVP'd for "${event.title}".`,
       actionUrl: '/events'
     });
+
+    // Schedule a reminder 24h before the event (only if event is in the future)
+    const eventDate = new Date(event.event_date);
+    const reminderTime = eventDate.getTime() - 24 * 60 * 60 * 1000;
+    const delay = reminderTime - Date.now();
+    if (delay > 0) {
+      await notificationQueue.add('event_reminder', {
+        userId,
+        eventId: id,
+        title: `Reminder: "${event.title}" is tomorrow!`,
+        body: `Don't forget — "${event.title}" is happening tomorrow at ${eventDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} at ${event.location}.`,
+        actionUrl: '/events'
+      }, { delay });
+    }
 
     await eventsCache.invalidate("events:");
     res.status(200).json({ success: true, rsvp });

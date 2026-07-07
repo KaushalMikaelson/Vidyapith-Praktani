@@ -113,6 +113,25 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
           actionUrl: '/admin'
         });
       }
+
+      // Send confirmation email to the registering user
+      await sendMail(
+        email.trim().toLowerCase(),
+        'Registration Received — Vidyapith Connect',
+        `Hi ${full_name},\n\nThank you for registering on Vidyapith Connect!\n\nYour application is now under review by the administrative committee. You will receive another email once your alumni status has been verified.\n\nRegards,\nVidyapith Connect`,
+        `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:8px;">
+            <h2 style="color:#1a1a2e;margin-bottom:4px;">👋 Registration Received!</h2>
+            <p style="color:#444;">Hi <strong>${full_name}</strong>,</p>
+            <p style="color:#444;">Thank you for registering on <strong>Vidyapith Connect</strong>. Your application has been submitted and is currently <strong>under review</strong> by the administrative committee.</p>
+            <p style="color:#444;">You will receive another email once your alumni status has been verified. This usually takes 1–2 business days.</p>
+            <div style="margin:24px 0;padding:16px;background:#fff;border-left:4px solid #4f46e5;border-radius:4px;">
+              <p style="margin:0;color:#555;"><strong>Batch:</strong> ${batch_year} &nbsp;|&nbsp; <strong>Class:</strong> ${leaving_class || 'XII'}</p>
+            </div>
+            <p style="color:#888;font-size:0.85rem;">This is an automated message from Vidyapith Connect. Please do not reply.</p>
+          </div>
+        `
+      );
     }
 
     await Promise.all([
@@ -232,6 +251,7 @@ export const resolveVerificationQueue = async (req: AuthenticatedRequest, res: R
         : 'The committee declined your uploaded certificate. Contact support.',
       type: status === 'approved' ? 'success' : 'alert',
       crucial: true,
+      sendEmail: true,
       actionUrl: status === 'approved' ? '/profile' : undefined
     });
 
@@ -286,9 +306,19 @@ export const requestEmailOTP = async (req: AuthenticatedRequest, res: Response):
     // Store in Redis (or Prisma fallback)
     await setOTP(cleanEmail, otp);
 
-    const subject = 'Vidyapith Connect Verification OTP';
+    const subject = 'Your Verification OTP — Vidyapith Connect';
     const text = `Greetings from Vidyapith Connect. Your verification OTP is: ${otp}. It will expire in 15 minutes.`;
-    const html = `<p>Greetings from Vidyapith Connect.</p><p>Your verification OTP is: <strong>${otp}</strong>.</p><p>It will expire in 15 minutes.</p>`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:8px;">
+        <h2 style="color:#1a1a2e;margin-bottom:4px;">&#x1F510; Email Verification</h2>
+        <p style="color:#444;">Greetings from <strong>Vidyapith Connect</strong>.</p>
+        <p style="color:#444;">Use the OTP below to verify your email address. It is valid for <strong>15 minutes</strong>.</p>
+        <div style="margin:24px 0;padding:20px;background:#fff;border-radius:8px;text-align:center;border:1px solid #e5e7eb;">
+          <span style="font-size:2rem;font-weight:700;letter-spacing:0.3em;color:#4f46e5;">${otp}</span>
+        </div>
+        <p style="color:#888;font-size:0.85rem;">If you did not request this, please ignore this email.</p>
+      </div>
+    `;
 
     await sendMail(cleanEmail, subject, text, html);
 
@@ -345,9 +375,19 @@ export const forgotPassword = async (req: AuthenticatedRequest, res: Response): 
     // Store in Redis (or Prisma fallback)
     await setResetToken(cleanEmail, token);
 
-    const subject = 'Vidyapith Connect Password Reset';
+    const subject = 'Reset Your Password — Vidyapith Connect';
     const text = `Greetings. You requested a password reset. Use verification code: ${token} to reset your password. It is valid for 15 minutes.`;
-    const html = `<p>Greetings.</p><p>You requested a password reset. Use verification code below to reset your password:</p><h3>${token}</h3><p>It is valid for 15 minutes.</p>`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:8px;">
+        <h2 style="color:#1a1a2e;margin-bottom:4px;">&#x1F511; Password Reset Request</h2>
+        <p style="color:#444;">You requested a password reset for your <strong>Vidyapith Connect</strong> account.</p>
+        <p style="color:#444;">Use the code below in the app to reset your password. It expires in <strong>15 minutes</strong>.</p>
+        <div style="margin:24px 0;padding:20px;background:#fff;border-radius:8px;text-align:center;border:1px solid #e5e7eb;">
+          <span style="font-size:1.1rem;font-weight:700;letter-spacing:0.15em;color:#4f46e5;word-break:break-all;">${token}</span>
+        </div>
+        <p style="color:#888;font-size:0.85rem;">If you did not request this, you can safely ignore this email. Your password will not change.</p>
+      </div>
+    `;
 
     await sendMail(cleanEmail, subject, text, html);
 
@@ -382,6 +422,21 @@ export const resetPassword = async (req: AuthenticatedRequest, res: Response): P
 
     // Consume token — delete after successful reset
     await deleteResetToken(token);
+
+    // Send password-changed confirmation email
+    await sendMail(
+      email,
+      'Password Changed — Vidyapith Connect',
+      `Hi,\n\nYour Vidyapith Connect account password has been successfully changed.\n\nIf you did not make this change, please contact support immediately.\n\nRegards,\nVidyapith Connect`,
+      `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:8px;">
+          <h2 style="color:#1a1a2e;">🔒 Password Changed</h2>
+          <p style="color:#444;">Your <strong>Vidyapith Connect</strong> account password has been successfully updated.</p>
+          <p style="color:#444;">If you did not make this change, please <a href="mailto:no-reply@vidyapith.online" style="color:#4f46e5;">contact support</a> immediately.</p>
+          <p style="color:#888;font-size:0.85rem;margin-top:24px;">This is an automated security notification. Please do not reply.</p>
+        </div>
+      `
+    );
 
     res.status(200).json({ success: true, message: 'Password reset successfully.' });
   } catch (err: any) {

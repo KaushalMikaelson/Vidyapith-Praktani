@@ -78,13 +78,14 @@ export const createCheckoutSession = async (req: AuthenticatedRequest, res: Resp
       }
     });
 
-    // Notify user
+    // Notify user with email confirmation
     await createNotification({
       userId,
       title: "Donation Successful",
       body: `Donated INR ${amount} to ${cause}. 80G tax receipt ready.`,
       type: "success",
       crucial: true,
+      sendEmail: true,
       actionUrl: '/donations'
     });
 

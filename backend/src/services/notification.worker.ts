@@ -148,6 +148,39 @@ export const notificationWorker = new Worker(
           break;
         }
 
+        case 'event_reminder': {
+          const { userId, title, body, actionUrl, eventId } = data as {
+            userId: string;
+            title: string;
+            body: string;
+            actionUrl: string;
+            eventId: string;
+          };
+
+          // Check user still has an RSVP for this event before sending
+          const rsvp = await prisma.rSVP.findFirst({
+            where: { user_id: userId, event_id: eventId }
+          });
+
+          if (!rsvp) {
+            console.log(`[Notification Worker] Skipping event_reminder — user ${userId} no longer RSVP'd for event ${eventId}`);
+            break;
+          }
+
+          console.log(`[Notification Worker] Sending event_reminder to user ${userId}`);
+          await createNotification({
+            userId,
+            title,
+            body,
+            type: 'info',
+            crucial: false,
+            actionUrl,
+            sendBrowser: true,
+            sendEmail: true
+          });
+          break;
+        }
+
         default:
           console.warn(`[Notification Worker] Unknown job name: "${name}" — skipping`);
       }
