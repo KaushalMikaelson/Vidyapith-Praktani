@@ -18,7 +18,7 @@ export interface CreateNotificationInput {
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:no-reply@vidyapithconnect.in';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:no-reply@vidyapith.online';
 
 const webPushConfigured = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
 

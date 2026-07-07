@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { eventsCache } from '../utils/cache.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 
 // List all events
 export const listEvents = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -70,21 +70,13 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response): Pro
       }
     });
 
-    const recipients = await prisma.user.findMany({
-      where: { verify_status: 'approved', id: { not: userId } },
-      select: { id: true }
+    await notificationQueue.add('broadcast', {
+      type: 'EVENT_CREATED',
+      actorId: userId,
+      title: 'New Event Published',
+      body: `"${title}" has been added to the alumni events calendar.`,
+      actionUrl: '/events'
     });
-
-    await Promise.all(recipients.map(recipient =>
-      createNotification({
-        userId: recipient.id,
-        title: 'New Event Published',
-        body: `"${title}" has been added to the alumni events calendar.`,
-        type: 'info',
-        actionUrl: '/events',
-        sendEmail: false
-      })
-    ));
 
     await eventsCache.invalidate("events:");
     res.status(201).json({ success: true, event: newEvent });
@@ -130,12 +122,12 @@ export const rsvpEvent = async (req: AuthenticatedRequest, res: Response): Promi
       }
     });
 
-    // Notify organizers or confirm to user
-    await createNotification({
-      userId,
+    // Notify user
+    await notificationQueue.add('direct', {
+      type: 'EVENT_RSVP',
+      targetId: userId,
       title: "Event RSVP Registered",
       body: `You have successfully RSVP'd for "${event.title}".`,
-      type: "success",
       actionUrl: '/events'
     });
 

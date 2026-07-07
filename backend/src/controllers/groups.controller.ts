@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/db.js';
 import { groupsCache } from '../utils/cache.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
@@ -62,13 +62,12 @@ export const createGroup = async (req: AuthenticatedRequest, res: Response): Pro
 
     await Promise.all(membersToAdd
       .filter(member => member.user_id !== userId)
-      .map(member => createNotification({
-        userId: member.user_id,
+      .map(member => notificationQueue.add('direct', {
+        type: 'GROUP_ADDED',
+        targetId: member.user_id,
         title: 'Added to Group',
         body: `You were added to "${group.name}".`,
-        type: 'info',
-        actionUrl: '/messages',
-        sendEmail: false
+        actionUrl: '/messages'
       })));
 
     // Invalidate user's group list cache
@@ -204,13 +203,12 @@ export const addMembers = async (req: AuthenticatedRequest, res: Response): Prom
     });
 
     const group = await prisma.group.findUnique({ where: { id: groupId } });
-    await Promise.all(memberIds.map(mid => createNotification({
-      userId: mid,
+    await Promise.all(memberIds.map(mid => notificationQueue.add('direct', {
+      type: 'GROUP_ADDED',
+      targetId: mid,
       title: 'Added to Group',
       body: `You were added to "${group?.name || 'a group'}".`,
-      type: 'info',
-      actionUrl: '/messages',
-      sendEmail: false
+      actionUrl: '/messages'
     })));
 
     // Invalidate group member caches
@@ -246,13 +244,13 @@ export const removeMember = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (callerId !== targetUserId) {
-      await createNotification({
-        userId: targetUserId,
+      await notificationQueue.add('direct', {
+        type: 'GROUP_REMOVED',
+        targetId: targetUserId,
         title: 'Removed from Group',
         body: `You were removed from "${group?.name || 'a group'}".`,
-        type: 'alert',
         actionUrl: '/messages',
-        sendEmail: false
+        crucial: true
       });
     }
 
@@ -292,13 +290,12 @@ export const updateGroup = async (req: AuthenticatedRequest, res: Response): Pro
 
     const recipients = await listGroupMemberIds(groupId, userId);
     if (recipients.length > 0) {
-      await Promise.all(recipients.map(recipientId => createNotification({
-        userId: recipientId,
+      await Promise.all(recipients.map(recipientId => notificationQueue.add('direct', {
+        type: 'GROUP_UPDATED',
+        targetId: recipientId,
         title: 'Group Updated',
         body: `"${existingGroup?.name || updated.name}" group details were updated.`,
-        type: 'info',
-        actionUrl: '/messages',
-        sendEmail: false
+        actionUrl: '/messages'
       })));
     }
 
@@ -328,13 +325,13 @@ export const deleteGroup = async (req: AuthenticatedRequest, res: Response): Pro
     await prisma.groupMember.deleteMany({ where: { group_id: groupId } });
     await prisma.group.delete({ where: { id: groupId } });
 
-    await Promise.all(memberIds.map(memberId => createNotification({
-      userId: memberId,
+    await Promise.all(memberIds.map(memberId => notificationQueue.add('direct', {
+      type: 'GROUP_DELETED',
+      targetId: memberId,
       title: 'Group Deleted',
       body: `"${group?.name || 'A group'}" was deleted by an administrator.`,
-      type: 'alert',
       actionUrl: '/messages',
-      sendEmail: false
+      crucial: true
     })));
 
     // Invalidate all groups cache (we don't know all members easily)
@@ -419,14 +416,14 @@ export const sendGroupMessage = async (req: AuthenticatedRequest, res: Response)
       select: { user_id: true }
     });
 
-    await Promise.all(recipients.map(recipient => createNotification({
-      userId: recipient.user_id,
+    await notificationQueue.add('group_broadcast', {
+      type: 'GROUP_POST_CREATED',
+      groupId,
+      actorId: userId,
       title: group?.name ? `New message in ${group.name}` : 'New Group Message',
       body: `${sender?.profile?.full_name ?? 'A group member'} sent a message.`,
-      type: 'info',
-      actionUrl: '/messages',
-      sendEmail: false
-    })));
+      actionUrl: '/messages'
+    });
 
     res.status(201).json({
       ...message,

@@ -7,7 +7,7 @@ export const app = express();
 // Middlewares
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001', 'https://vidyapithconnect.in'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001', 'https://vidyapith.online'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -29,7 +29,7 @@ app.use(cors({
     }
 
     // Automatically allow the custom production domain
-    if (origin === 'https://vidyapithconnect.in' || origin.endsWith('.vidyapithconnect.in')) {
+    if (origin === 'https://vidyapith.online' || origin.endsWith('.vidyapith.online')) {
       return callback(null, true);
     }
 

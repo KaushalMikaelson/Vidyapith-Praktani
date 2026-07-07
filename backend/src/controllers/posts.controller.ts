@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { postCache } from '../utils/cache.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 
 const sanitizeContent = (text: string): string => {
   if (!text) return '';
@@ -140,25 +140,30 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
-    if (newPost.group_id !== 'grp-all') {
-      const author = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { profile: true }
-      });
-      const group = await prisma.group.findUnique({ where: { id: newPost.group_id } });
-      const recipients = await prisma.groupMember.findMany({
-        where: { group_id: newPost.group_id, user_id: { not: userId } },
-        select: { user_id: true }
-      });
+    const author = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    });
+    const authorName = author?.profile?.full_name || 'An alumnus';
 
-      await Promise.all(recipients.map(recipient => createNotification({
-        userId: recipient.user_id,
+    if (newPost.group_id === 'grp-all') {
+      await notificationQueue.add('broadcast', {
+        type: 'POST_CREATED',
+        actorId: userId,
+        title: 'New Community Post',
+        body: `${authorName} published a post in the community feed.`,
+        actionUrl: '/feed'
+      });
+    } else {
+      const group = await prisma.group.findUnique({ where: { id: newPost.group_id } });
+      await notificationQueue.add('group_broadcast', {
+        type: 'GROUP_POST_CREATED',
+        groupId: newPost.group_id,
+        actorId: userId,
         title: group?.name ? `New post in ${group.name}` : 'New Group Post',
-        body: `${author?.profile?.full_name || 'A group member'} published a post.`,
-        type: 'info',
-        actionUrl: '/feed',
-        sendEmail: false
-      })));
+        body: `${authorName} published a post.`,
+        actionUrl: '/feed'
+      });
     }
 
     await postCache.invalidate('posts:');
@@ -204,13 +209,12 @@ export const likePost = async (req: AuthenticatedRequest, res: Response): Promis
         include: { profile: true }
       });
 
-      await createNotification({
-        userId: post.author_id,
+      await notificationQueue.add('direct', {
+        type: 'LIKE',
+        targetId: post.author_id,
         title: 'New Post Like',
         body: `${liker?.profile?.full_name || 'A fellow alumnus'} liked your post.`,
-        type: 'info',
-        actionUrl: '/feed',
-        sendEmail: false
+        actionUrl: '/feed'
       });
     }
 
@@ -291,11 +295,11 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
         include: { profile: true }
       });
 
-      await createNotification({
-        userId: post.author_id,
+      await notificationQueue.add('direct', {
+        type: 'COMMENT',
+        targetId: post.author_id,
         title: 'New Comment',
         body: `${commenter?.profile?.full_name || 'A fellow alumnus'} commented on your post.`,
-        type: 'info',
         actionUrl: '/feed'
       });
     }
@@ -344,13 +348,13 @@ export const deletePost = async (req: AuthenticatedRequest, res: Response): Prom
     });
 
     if (post.author_id !== userId) {
-      await createNotification({
-        userId: post.author_id,
+      await notificationQueue.add('direct', {
+        type: 'POST_CREATED',
+        targetId: post.author_id,
         title: 'Post Removed',
         body: 'An administrator removed one of your posts.',
-        type: 'alert',
         actionUrl: '/feed',
-        sendEmail: false
+        crucial: true
       });
     }
 
@@ -394,15 +398,14 @@ export const togglePinPost = async (req: AuthenticatedRequest, res: Response): P
     });
 
     if (post.author_id !== userId) {
-      await createNotification({
-        userId: post.author_id,
+      await notificationQueue.add('direct', {
+        type: 'POST_CREATED',
+        targetId: post.author_id,
         title: updatedPost.is_pinned ? 'Post Pinned' : 'Post Unpinned',
         body: updatedPost.is_pinned
           ? 'An administrator pinned your post.'
           : 'An administrator unpinned your post.',
-        type: 'info',
-        actionUrl: '/feed',
-        sendEmail: false
+        actionUrl: '/feed'
       });
     }
 

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { directoryCache, connectionsCache, profileCache } from '../utils/cache.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 import crypto from 'crypto';
 
 /** Build a stable, order-insensitive SHA-256 cache key from query params */
@@ -333,11 +333,11 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
           });
           const senderName = sender?.profile?.full_name || "An alumnus";
 
-          await createNotification({
-            userId: targetId,
+          await notificationQueue.add('direct', {
+            type: 'CONNECTION_ACCEPTED',
+            targetId,
             title: "Connection Request Accepted",
             body: `${senderName} accepted your connection request.`,
-            type: "success",
             actionUrl: '/directory'
           });
 
@@ -367,11 +367,11 @@ export const connectRequest = async (req: AuthenticatedRequest, res: Response): 
     const senderName = sender?.profile?.full_name || "An alumnus";
 
     // Create notification for target user
-    await createNotification({
-      userId: targetId,
+    await notificationQueue.add('direct', {
+      type: 'CONNECTION_REQUEST',
+      targetId,
       title: "New Connection Request",
       body: `${senderName} wants to connect with you.`,
-      type: "info",
       actionUrl: `/?screen=notifications&connectionId=${connection.id}&senderId=${senderId}`
     });
 
@@ -522,11 +522,11 @@ export const respondConnectionRequest = async (req: AuthenticatedRequest, res: R
       const responderName = responder?.profile?.full_name || "An alumnus";
 
       // Notify the requester
-      await createNotification({
-        userId: connection.sender_id,
+      await notificationQueue.add('direct', {
+        type: 'CONNECTION_ACCEPTED',
+        targetId: connection.sender_id,
         title: "Connection Request Accepted",
         body: `${responderName} accepted your connection request.`,
-        type: "success",
         actionUrl: '/directory'
       });
 

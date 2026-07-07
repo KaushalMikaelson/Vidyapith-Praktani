@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 
 // List all conversations for the current user (includes connections even with no messages)
 export const listConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -176,11 +176,11 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response): Pro
         where: { id: userId },
         include: { profile: true }
       });
-      await createNotification({
-        userId: partnerId,
+      await notificationQueue.add('direct', {
+        type: 'MESSAGE',
+        targetId: partnerId,
         title: 'New Direct Message',
         body: `${sender?.profile?.full_name || 'A fellow alumnus'} sent you a message.`,
-        type: 'info',
         actionUrl: '/messages'
       });
     } catch { /* Notification creation failure is non-fatal */ }

@@ -64,7 +64,7 @@ export const enableBrowserNotifications = async (): Promise<void> => {
 
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(config.publicKey)
+    applicationServerKey: urlBase64ToUint8Array(config.publicKey) as any
   });
 
   await apiFetch('/notifications/push/subscribe', {

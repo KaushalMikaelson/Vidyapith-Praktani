@@ -43,7 +43,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ showToast }) => {
       "VERSION:2.0",
       "PRODID:-//Vidyapith Connect//Event Calendar//EN",
       "BEGIN:VEVENT",
-      `UID:${event.id}@vidyapithconnect.in`,
+      `UID:${event.id}@vidyapith.online`,
       `DTSTAMP:${start}`,
       `DTSTART:${start}`,
       `DTEND:${end}`,

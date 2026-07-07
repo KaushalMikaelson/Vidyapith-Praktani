@@ -10,6 +10,8 @@ dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'LOCAL DEV'} (loaded: ${envFile})`);
 
 const { app } = await import('./app.js');
+// Start background notification worker
+await import('./services/notification.worker.js');
 
 let PORT = 8000;
 if (process.env.PORT) {

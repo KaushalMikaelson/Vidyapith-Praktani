@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/db.js';
 import { AuthenticatedRequest } from '../middlewares/auth.js';
 import { newsCache } from '../utils/cache.js';
-import { createNotification } from '../services/notification.service.js';
+import { notificationQueue } from '../services/notification.queue.js';
 
 export const listNews = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -52,21 +52,13 @@ export const createNews = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
-    const recipients = await prisma.user.findMany({
-      where: { verify_status: 'approved', id: { not: req.user?.id } },
-      select: { id: true }
+    await notificationQueue.add('broadcast', {
+      type: 'NEWS_CREATED',
+      actorId: req.user?.id || '',
+      title: 'New Alumni News',
+      body: `${title} has been published in ${category}.`,
+      actionUrl: '/news'
     });
-
-    await Promise.all(recipients.map(recipient =>
-      createNotification({
-        userId: recipient.id,
-        title: 'New Alumni News',
-        body: `${title} has been published in ${category}.`,
-        type: 'info',
-        actionUrl: '/news',
-        sendEmail: false
-      })
-    ));
 
     await newsCache.invalidate("news:");
     res.status(201).json({ success: true, news: newPost });

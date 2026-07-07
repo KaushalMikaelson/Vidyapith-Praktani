@@ -27,11 +27,11 @@ SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
-SMTP_FROM=no-reply@vidyapithconnect.in
+SMTP_FROM=no-reply@vidyapith.online
 
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:no-reply@vidyapithconnect.in
+VAPID_SUBJECT=mailto:no-reply@vidyapith.online
 ```
 
 Generate Web Push VAPID keys from the backend folder:

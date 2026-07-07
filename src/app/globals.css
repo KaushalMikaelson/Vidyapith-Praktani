@@ -9507,3 +9507,941 @@ button:disabled {
   }
 }
 
+/* App-wide small-screen refinement for every major page */
+@media (max-width: 768px) {
+  .app-layout {
+    min-width: 0;
+  }
+
+  .heritage-page,
+  .ig-feed-layout,
+  .news-layout,
+  .donations-layout,
+  .mentorship-layout,
+  .directory-main-container,
+  .jobs-layout-grid,
+  .events-shell,
+  .admin-layout,
+  .screen-notifications .main-viewport > div {
+    width: 100% !important;
+    max-width: 440px !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .screen-directory .heritage-page,
+  .screen-jobs .heritage-page,
+  .screen-create .heritage-page {
+    padding-top: 0 !important;
+    padding-bottom: 22px !important;
+  }
+
+  .screen-feed .main-viewport,
+  .screen-create .main-viewport,
+  .screen-events .main-viewport,
+  .screen-batch .main-viewport,
+  .screen-memories .main-viewport,
+  .screen-discover .main-viewport,
+  .screen-directory .main-viewport,
+  .screen-search .main-viewport,
+  .screen-notifications .main-viewport,
+  .screen-admin .main-viewport,
+  .screen-profile .main-viewport,
+  .screen-mentorship .main-viewport,
+  .screen-careers .main-viewport,
+  .screen-jobs .main-viewport,
+  .screen-donations .main-viewport,
+  .screen-news .main-viewport {
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+
+  .screen-messages .main-viewport {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .feed-header-ig,
+  .heritage-title-row,
+  .page-title-box,
+  .events-section-head,
+  .screen-jobs .heritage-page > div:first-child,
+  .screen-notifications .main-viewport > div > div:first-child,
+  .screen-admin .admin-layout > div:first-child {
+    padding: 0 !important;
+    margin-bottom: 13px !important;
+  }
+
+  .page-title-box {
+    align-items: flex-start !important;
+  }
+
+  .screen-news .news-layout,
+  .screen-donations .donations-layout,
+  .screen-directory .directory-main-container,
+  .screen-events .events-shell,
+  .screen-jobs .jobs-layout-grid,
+  .screen-mentorship .mentorship-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 13px !important;
+  }
+
+  .screen-directory .directory-main-container > *,
+  .screen-events .events-shell > *,
+  .screen-jobs .jobs-layout-grid > *,
+  .screen-news .news-layout > *,
+  .screen-donations .donations-layout > *,
+  .screen-mentorship .mentorship-layout > *,
+  .screen-admin .admin-layout > * {
+    min-width: 0 !important;
+  }
+
+  .screen-directory .directory-main-container > aside,
+  .screen-events .events-shell > aside,
+  .screen-jobs .jobs-layout-grid > aside,
+  .screen-donations .donations-sidebar,
+  .screen-mentorship .mentor-search-sidebar {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .screen-directory .directory-cards-grid,
+  .screen-mentorship .mentor-grid,
+  .heritage-directory-grid,
+  .screen-admin .admin-layout > div[style*="grid-template-columns"],
+  .screen-notifications .main-viewport > div > div[style*="grid-template-columns"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .screen-admin .admin-layout > div[style*="grid-template-columns"]:not(:has(table)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .screen-feed .feed-story-card,
+  .screen-feed .feed-composer-card,
+  .screen-profile .profile-head-card,
+  .screen-profile .profile-post-card,
+  .screen-directory .glass-panel,
+  .screen-directory .sidebar-widget-card,
+  .screen-events .heritage-widget,
+  .screen-events .suggest-card,
+  .screen-events .calendar-card,
+  .screen-events .event-row-card,
+  .screen-jobs .job-card-premium,
+  .screen-jobs .jobs-layout-grid > div:first-child > div,
+  .screen-mentorship .mentor-card,
+  .screen-mentorship .mentor-search-sidebar,
+  .screen-donations .donation-stats-widget,
+  .screen-donations .cause-card,
+  .screen-donations .leaderboard-widget,
+  .screen-news .news-layout > div:first-child > div,
+  .screen-news .news-layout > div:last-child > div,
+  .screen-notifications .notification-card,
+  .screen-admin .admin-layout > div {
+    border-radius: 14px !important;
+    padding: 14px !important;
+  }
+
+  .screen-directory .sidebar-widget-card,
+  .screen-events .events-filter-strip,
+  .screen-news .news-layout > div:first-child > div,
+  .screen-news .news-layout > div:last-child > div,
+  .screen-donations .donations-sidebar .glass-panel {
+    gap: 10px !important;
+  }
+
+  .events-hero {
+    min-height: 168px !important;
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .events-hero span {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .events-hero h1 {
+    font-size: clamp(1.65rem, 8vw, 2.05rem) !important;
+    line-height: 1.05 !important;
+    margin-top: 4px !important;
+  }
+
+  .events-hero p {
+    font-size: 0.82rem !important;
+    margin-top: 4px !important;
+  }
+
+  .events-hero button {
+    min-height: 34px !important;
+    padding: 8px 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .events-filter-strip,
+  .heritage-filter-card,
+  .directory-main-container [style*="grid-template-columns: repeat(5"],
+  .directory-main-container [style*="grid-template-columns: repeat(4"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .events-filter-strip label,
+  .heritage-filter-card label,
+  .screen-create form label {
+    gap: 6px !important;
+  }
+
+  .directory-pill-select,
+  .events-filter-strip select,
+  .heritage-filter-card select,
+  .screen-jobs select,
+  .screen-jobs input,
+  .screen-news input,
+  .screen-news select,
+  .screen-news textarea,
+  .screen-donations input,
+  .screen-donations select,
+  .screen-donations textarea,
+  .screen-notifications select,
+  .screen-admin input,
+  .screen-admin select,
+  .screen-admin textarea,
+  .screen-mentorship select,
+  .screen-mentorship textarea {
+    min-height: 36px !important;
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+    border-radius: 8px !important;
+  }
+
+  .directory-tab-pill,
+  .group-item-btn,
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child button,
+  .screen-notifications .main-viewport button,
+  .screen-admin button,
+  .screen-news button,
+  .screen-donations button,
+  .screen-events button,
+  .screen-mentorship button {
+    min-height: 32px !important;
+    padding: 7px 10px !important;
+    font-size: 0.76rem !important;
+    border-radius: 9px !important;
+  }
+
+  .screen-directory .avatar-gradient-ring {
+    padding: 3px !important;
+  }
+
+  .screen-directory .avatar-gradient-ring img,
+  .mentor-photo,
+  .leader-photo {
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  .screen-directory .directory-meta-row,
+  .screen-donations .progress-header,
+  .screen-donations .progress-footer-stats,
+  .screen-donations .cause-card,
+  .screen-donations .cause-action-bar,
+  .screen-mentorship .mentor-card-header,
+  .screen-mentorship .mentor-stats,
+  .screen-news .news-layout > div:first-child > div:nth-child(2),
+  .screen-admin .admin-layout > div:first-child,
+  .screen-admin .admin-layout > div:first-child > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .screen-mentorship .mentor-card-header {
+    align-items: flex-start !important;
+  }
+
+  .screen-mentorship .mentor-photo {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .screen-mentorship .mentor-badge,
+  .screen-mentorship .skill-tag {
+    font-size: 0.68rem !important;
+    padding: 3px 7px !important;
+  }
+
+  .screen-mentorship .mentor-bio {
+    min-height: 0 !important;
+    font-size: 0.78rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .screen-donations .cause-emblem-box {
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 1.55rem !important;
+  }
+
+  .screen-donations .cause-title,
+  .screen-donations .donation-stats-widget h3,
+  .screen-news .news-layout h2,
+  .screen-news .news-layout h3,
+  .screen-news .news-layout h4,
+  .screen-jobs .job-card-premium h3,
+  .screen-mentorship .mentor-meta h3,
+  .screen-directory h3,
+  .screen-notifications .notification-card h3,
+  .screen-admin h2,
+  .screen-admin h3 {
+    font-size: clamp(0.98rem, 4.2vw, 1.18rem) !important;
+    line-height: 1.18 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .screen-donations .total-raised {
+    font-size: 1.05rem !important;
+  }
+
+  .screen-donations .leader-item {
+    padding: 8px 9px !important;
+    gap: 8px !important;
+  }
+
+  .screen-donations .leader-rank {
+    width: 20px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .screen-donations .leader-photo {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .screen-donations .leader-name,
+  .screen-donations .leader-amount {
+    font-size: 0.76rem !important;
+  }
+
+  .screen-news .news-layout img {
+    max-height: 180px !important;
+    border-radius: 10px !important;
+  }
+
+  .screen-news .news-layout > div:first-child > div[style*="display: flex"] {
+    gap: 12px !important;
+  }
+
+  .screen-news .news-layout > div:first-child > div:nth-child(n+4) > div[style*="display: flex"] {
+    flex-direction: column !important;
+  }
+
+  .screen-news .news-layout > div:first-child > div:nth-child(n+4) img {
+    width: 100% !important;
+    height: 150px !important;
+  }
+
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding: 4px 0 10px !important;
+    scrollbar-width: none;
+  }
+
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .screen-jobs .job-card-premium {
+    gap: 10px !important;
+  }
+
+  .screen-jobs .job-card-premium [style*="display: flex"],
+  .screen-directory .glass-panel [style*="display: flex"],
+  .screen-events .heritage-widget [style*="display: flex"],
+  .screen-notifications .notification-card [style*="display: flex"],
+  .screen-admin .admin-layout [style*="display: flex"] {
+    min-width: 0 !important;
+  }
+
+  .screen-notifications .notification-card {
+    gap: 10px !important;
+  }
+
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"] {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none;
+  }
+
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"] > * {
+    flex: 0 0 auto !important;
+  }
+
+  .screen-admin .admin-layout {
+    padding: 0 0 22px !important;
+  }
+
+  .screen-admin .admin-layout > div:first-child {
+    border-left-width: 4px !important;
+  }
+
+  .screen-admin .admin-layout > div:first-child > div:first-child > div:first-child,
+  .screen-admin .admin-layout > div[style*="grid-template-columns"] > div > div:first-child {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 11px !important;
+  }
+
+  .screen-admin .admin-layout > div:has(table) {
+    padding: 12px !important;
+    overflow-x: auto !important;
+  }
+
+  .screen-admin .admin-layout table {
+    min-width: 680px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .screen-admin .admin-layout th,
+  .screen-admin .admin-layout td {
+    padding: 9px 10px !important;
+  }
+
+  .screen-messages .messages-panel {
+    height: calc(100dvh - 92px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 14px !important;
+  }
+
+  .screen-messages .messages-panel > div:first-child {
+    width: 100% !important;
+  }
+
+  .screen-messages .messages-panel input {
+    min-height: 34px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .modal-card,
+  .heritage-modal,
+  .payment-card,
+  .profile-modal-card,
+  .create-story-modal-card {
+    width: 100% !important;
+    max-width: 440px !important;
+    padding: 16px !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .heritage-page,
+  .ig-feed-layout,
+  .news-layout,
+  .donations-layout,
+  .mentorship-layout,
+  .directory-main-container,
+  .jobs-layout-grid,
+  .events-shell,
+  .admin-layout,
+  .screen-notifications .main-viewport > div {
+    max-width: 100% !important;
+  }
+
+  .screen-feed .main-viewport,
+  .screen-create .main-viewport,
+  .screen-events .main-viewport,
+  .screen-directory .main-viewport,
+  .screen-search .main-viewport,
+  .screen-notifications .main-viewport,
+  .screen-admin .main-viewport,
+  .screen-profile .main-viewport,
+  .screen-mentorship .main-viewport,
+  .screen-jobs .main-viewport,
+  .screen-donations .main-viewport,
+  .screen-news .main-viewport {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .screen-admin .admin-layout > div[style*="grid-template-columns"]:not(:has(table)) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .events-hero {
+    min-height: 150px !important;
+  }
+
+  .screen-news .news-layout img {
+    max-height: 155px !important;
+  }
+}
+
+/* Broad mobile density pass: authenticated shell + all screen containers. */
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0 !important;
+  }
+
+  .app-layout[class*="screen-"] .main-viewport {
+    padding: calc(82px + env(safe-area-inset-top, 0px)) 12px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--mobile-page-bg, #f7f6f2) !important;
+    overflow-x: hidden !important;
+  }
+
+  .screen-messages .main-viewport {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .screen-feed .ig-feed-layout,
+  .screen-discover .ig-feed-layout,
+  .screen-batch .heritage-page,
+  .screen-memories .heritage-page,
+  .screen-reunions .heritage-page,
+  .screen-archives .heritage-page,
+  .screen-saved .ig-feed-layout,
+  .screen-explore .ig-feed-layout,
+  .screen-notes .ig-feed-layout,
+  .screen-profile .ig-feed-layout,
+  .screen-profile .heritage-page,
+  .screen-create .heritage-page,
+  .screen-directory .heritage-page,
+  .screen-search .heritage-page,
+  .screen-events .heritage-page,
+  .screen-donations .donations-layout,
+  .screen-news .news-layout,
+  .screen-jobs .heritage-page,
+  .screen-careers .heritage-page,
+  .screen-mentorship .mentorship-layout,
+  .screen-notifications .main-viewport > div,
+  .screen-admin .admin-layout,
+  .screen-messages .messages-panel {
+    width: 100% !important;
+    max-width: 430px !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .screen-directory .heritage-page,
+  .screen-search .heritage-page,
+  .screen-jobs .heritage-page,
+  .screen-careers .heritage-page,
+  .screen-create .heritage-page,
+  .screen-admin .admin-layout,
+  .screen-notifications .main-viewport > div {
+    padding-top: 0 !important;
+    padding-bottom: 16px !important;
+  }
+
+  .feed-header-ig,
+  .heritage-title-row,
+  .page-title-box,
+  .events-section-head,
+  .screen-directory .heritage-page > div:first-child,
+  .screen-search .heritage-page > div:first-child,
+  .screen-jobs .heritage-page > div:first-child,
+  .screen-careers .heritage-page > div:first-child,
+  .screen-notifications .main-viewport > div > div:first-child,
+  .screen-admin .admin-layout > div:first-child {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+    min-width: 0 !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child > div:first-child,
+  .screen-search .heritage-page > div:first-child > div:first-child,
+  .screen-jobs .heritage-page > div:first-child > div:first-child,
+  .screen-careers .heritage-page > div:first-child > div:first-child,
+  .feed-header-ig > div:first-child,
+  .heritage-title-row > div:first-child,
+  .page-title-box > div:first-child,
+  .page-title-text,
+  .admin-layout > div:first-child > div:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child h1,
+  .screen-search .heritage-page > div:first-child h1,
+  .screen-jobs .heritage-page > div:first-child h1,
+  .screen-careers .heritage-page > div:first-child h1,
+  .feed-header-ig h1,
+  .heritage-title-row h1,
+  .page-title-box h1,
+  .page-title-box h2,
+  .page-title-text h2,
+  .events-section-head h2,
+  .screen-notifications .main-viewport h1,
+  .admin-layout h1,
+  .admin-layout h2 {
+    font-size: clamp(1.28rem, 5.8vw, 1.6rem) !important;
+    line-height: 1.12 !important;
+    letter-spacing: 0 !important;
+    overflow-wrap: anywhere !important;
+    text-wrap: balance;
+  }
+
+  .screen-directory .heritage-page > div:first-child p,
+  .screen-search .heritage-page > div:first-child p,
+  .screen-jobs .heritage-page > div:first-child p,
+  .screen-careers .heritage-page > div:first-child p,
+  .feed-header-ig p,
+  .heritage-title-row p,
+  .page-title-box p,
+  .page-title-text p,
+  .screen-notifications .main-viewport > div > div:first-child p,
+  .admin-layout p {
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+    margin-top: 4px !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child > div:last-child,
+  .screen-search .heritage-page > div:first-child > div:last-child,
+  .feed-header-actions,
+  .screen-notifications .main-viewport > div > div:first-child > div:last-child,
+  .screen-jobs .heritage-page > div:first-child > button,
+  .screen-careers .heritage-page > div:first-child > button {
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child > div:last-child {
+    gap: 12px !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child svg,
+  .screen-search .heritage-page > div:first-child svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .screen-news .news-layout,
+  .screen-donations .donations-layout,
+  .screen-directory .directory-main-container,
+  .screen-search .directory-main-container,
+  .screen-events .events-shell,
+  .screen-jobs .jobs-layout-grid,
+  .screen-careers .jobs-layout-grid,
+  .screen-mentorship .mentorship-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .screen-news .news-layout > *,
+  .screen-donations .donations-layout > *,
+  .screen-directory .directory-main-container > *,
+  .screen-search .directory-main-container > *,
+  .screen-events .events-shell > *,
+  .screen-jobs .jobs-layout-grid > *,
+  .screen-careers .jobs-layout-grid > *,
+  .screen-mentorship .mentorship-layout > *,
+  .screen-admin .admin-layout > * {
+    min-width: 0 !important;
+  }
+
+  .screen-feed .feed-story-card,
+  .screen-feed .feed-composer-card,
+  .screen-profile .profile-head-card,
+  .screen-profile .profile-post-card,
+  .screen-directory .glass-panel,
+  .screen-search .glass-panel,
+  .screen-directory article,
+  .screen-search article,
+  .screen-events .event-row-card,
+  .screen-events .heritage-widget,
+  .screen-events .suggest-card,
+  .screen-events .calendar-card,
+  .screen-jobs .job-card-premium,
+  .screen-careers .job-card-premium,
+  .screen-mentorship .mentor-card,
+  .screen-mentorship .mentor-search-sidebar,
+  .screen-donations .donation-stats-widget,
+  .screen-donations .cause-card,
+  .screen-donations .leaderboard-widget,
+  .screen-news .news-layout > div:first-child > div,
+  .screen-news .news-layout > div:last-child > div,
+  .screen-notifications .notification-card,
+  .screen-admin .admin-layout > div,
+  .screen-create .create-type-card,
+  .screen-create .create-publication-form {
+    border-radius: 12px !important;
+    padding: 12px !important;
+  }
+
+  .screen-directory .directory-main-container > div:first-child,
+  .screen-search .directory-main-container > div:first-child,
+  .screen-jobs .jobs-layout-grid > div:first-child,
+  .screen-careers .jobs-layout-grid > div:first-child,
+  .screen-news .news-layout > div:first-child,
+  .screen-news .news-layout > div:last-child,
+  .screen-donations .donation-causes-list,
+  .screen-donations .leaderboard-list,
+  .screen-mentorship .mentor-grid {
+    gap: 10px !important;
+  }
+
+  .screen-directory .directory-main-container > div:first-child > div:first-child,
+  .screen-search .directory-main-container > div:first-child > div:first-child,
+  .screen-jobs .job-card-premium > div:first-child,
+  .screen-careers .job-card-premium > div:first-child,
+  .screen-news .news-layout > div:first-child > div:first-child,
+  .screen-donations .progress-header,
+  .screen-donations .progress-footer-stats,
+  .screen-donations .cause-card,
+  .screen-donations .cause-action-bar,
+  .screen-events .event-row-card,
+  .screen-mentorship .mentor-card-header,
+  .screen-mentorship .mentor-stats,
+  .screen-notifications .notification-card > div:first-child,
+  .screen-admin .admin-layout > div:first-child,
+  .screen-admin .admin-layout > div:first-child > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 9px !important;
+  }
+
+  .screen-directory .directory-main-container > div:first-child > div:first-child,
+  .screen-search .directory-main-container > div:first-child > div:first-child {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .screen-directory .directory-main-container > div:first-child > div:first-child button,
+  .screen-search .directory-main-container > div:first-child > div:first-child button,
+  .screen-jobs .heritage-page > div:first-child > button,
+  .screen-careers .heritage-page > div:first-child > button,
+  .screen-events .event-row-card > button,
+  .screen-donations .cause-action-bar .btn,
+  .screen-create .heritage-primary-btn,
+  .screen-create form button[type="submit"] {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .screen-directory .directory-main-container [style*="grid-template-columns"],
+  .screen-search .directory-main-container [style*="grid-template-columns"],
+  .screen-create .create-type-grid,
+  .screen-create .create-publication-form [style*="grid-template-columns"],
+  .screen-news .news-layout [style*="grid-template-columns"],
+  .screen-notifications .main-viewport > div > div[style*="grid-template-columns"],
+  .screen-admin .admin-layout > div[style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .screen-admin .admin-layout > div[style*="grid-template-columns"]:not(:has(table)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .screen-directory .directory-tab-pill,
+  .screen-search .directory-tab-pill,
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child button,
+  .screen-careers .jobs-layout-grid > div:first-child > div:first-child button,
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"] > *,
+  .screen-events .events-section-head button {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child,
+  .screen-careers .jobs-layout-grid > div:first-child > div:first-child,
+  .screen-directory .directory-main-container > div:first-child > div:nth-child(4) > div:first-child,
+  .screen-search .directory-main-container > div:first-child > div:nth-child(4) > div:first-child,
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"],
+  .events-section-head > div {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 8px !important;
+    scrollbar-width: none;
+  }
+
+  .screen-jobs .jobs-layout-grid > div:first-child > div:first-child::-webkit-scrollbar,
+  .screen-careers .jobs-layout-grid > div:first-child > div:first-child::-webkit-scrollbar,
+  .screen-directory .directory-main-container > div:first-child > div:nth-child(4) > div:first-child::-webkit-scrollbar,
+  .screen-search .directory-main-container > div:first-child > div:nth-child(4) > div:first-child::-webkit-scrollbar,
+  .screen-notifications .main-viewport > div > div[style*="flex-wrap"]::-webkit-scrollbar,
+  .events-section-head > div::-webkit-scrollbar {
+    display: none;
+  }
+
+  .screen-news .news-layout > div:first-child > div:nth-child(n+4) > div,
+  .screen-news .news-layout > div:first-child > div[style*="display: flex"],
+  .screen-news .news-layout > div:last-child > div[style*="display: flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .screen-news .news-layout img,
+  .screen-events .event-row-card img {
+    width: 100% !important;
+    max-height: 160px !important;
+    object-fit: cover !important;
+  }
+
+  .screen-events .events-hero {
+    min-height: 132px !important;
+    margin: 0 0 12px !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .screen-events .events-hero h1 {
+    font-size: clamp(1.55rem, 8vw, 1.95rem) !important;
+  }
+
+  .screen-events .events-filter-strip,
+  .screen-directory .heritage-filter-card,
+  .screen-search .heritage-filter-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .screen-donations .cause-emblem-box {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 1.35rem !important;
+  }
+
+  .screen-donations .cause-desc,
+  .screen-news .news-layout p,
+  .screen-jobs .job-card-premium p,
+  .screen-careers .job-card-premium p,
+  .screen-mentorship .mentor-bio,
+  .screen-notifications .notification-card p {
+    font-size: 0.78rem !important;
+    line-height: 1.42 !important;
+  }
+
+  .screen-admin .admin-layout > div:has(table) {
+    padding: 10px !important;
+    overflow-x: auto !important;
+  }
+
+  .screen-admin .admin-layout table {
+    min-width: 660px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .screen-admin .admin-layout th,
+  .screen-admin .admin-layout td {
+    padding: 8px !important;
+  }
+
+  .screen-messages .messages-panel {
+    height: calc(100dvh - 104px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-width: 100% !important;
+    border-radius: 12px !important;
+  }
+
+  .screen-messages .messages-panel > div:first-child {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .screen-messages .messages-panel.has-active-chat > div:first-child {
+    display: none !important;
+  }
+
+  .screen-messages .messages-panel.has-active-chat > div:nth-child(2) {
+    display: flex !important;
+  }
+
+  .modal-card,
+  .heritage-modal,
+  .payment-card,
+  .profile-modal-card,
+  .create-story-modal-card {
+    width: 100% !important;
+    max-width: 430px !important;
+    max-height: calc(100dvh - 16px) !important;
+    padding: 14px !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-layout[class*="screen-"] .main-viewport {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .screen-messages .main-viewport {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .screen-feed .ig-feed-layout,
+  .screen-discover .ig-feed-layout,
+  .screen-batch .heritage-page,
+  .screen-memories .heritage-page,
+  .screen-reunions .heritage-page,
+  .screen-archives .heritage-page,
+  .screen-saved .ig-feed-layout,
+  .screen-explore .ig-feed-layout,
+  .screen-notes .ig-feed-layout,
+  .screen-profile .ig-feed-layout,
+  .screen-profile .heritage-page,
+  .screen-create .heritage-page,
+  .screen-directory .heritage-page,
+  .screen-search .heritage-page,
+  .screen-events .heritage-page,
+  .screen-donations .donations-layout,
+  .screen-news .news-layout,
+  .screen-jobs .heritage-page,
+  .screen-careers .heritage-page,
+  .screen-mentorship .mentorship-layout,
+  .screen-notifications .main-viewport > div,
+  .screen-admin .admin-layout {
+    max-width: 100% !important;
+  }
+
+  .screen-admin .admin-layout > div[style*="grid-template-columns"]:not(:has(table)) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .screen-notifications .main-viewport > div > div[style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child,
+  .screen-search .heritage-page > div:first-child,
+  .screen-jobs .heritage-page > div:first-child,
+  .screen-careers .heritage-page > div:first-child,
+  .screen-notifications .main-viewport > div > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .screen-directory .heritage-page > div:first-child > div:last-child,
+  .screen-search .heritage-page > div:first-child > div:last-child,
+  .screen-notifications .main-viewport > div > div:first-child > div:last-child {
+    justify-content: flex-start !important;
+  }
+}
+
