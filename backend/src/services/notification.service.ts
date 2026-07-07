@@ -145,10 +145,19 @@ const deliverNotification = async ({
     if (sendEmail && emailCrucialEnabled) {
       const subject = crucial ? `[Important] ${title}` : title;
       const text = `${title}\n\n${body}`;
+      
+      const frontendUrl = (process.env.FRONTEND_URL || 'https://vidyapith.online').replace(/\/$/, '');
+      const absoluteUrl = actionUrl 
+        ? (actionUrl.startsWith('http') ? actionUrl : `${frontendUrl}${actionUrl.startsWith('/') ? '' : '/'}${actionUrl}`)
+        : undefined;
+
       const html = `
-        <p><strong>${escapeHtml(title)}</strong></p>
-        <p>${escapeHtml(body)}</p>
-        ${actionUrl ? `<p><a href="${escapeHtml(actionUrl)}">Open Vidyapith Connect</a></p>` : ''}
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:8px;">
+          <p style="font-size:1.1rem;color:#1a1a2e;margin-top:0;"><strong>${escapeHtml(title)}</strong></p>
+          <p style="color:#444;line-height:1.6;">${escapeHtml(body)}</p>
+          ${absoluteUrl ? `<p style="margin-top:24px;"><a href="${escapeHtml(absoluteUrl)}" style="display:inline-block;padding:10px 20px;background:#4f46e5;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">Open Vidyapith Connect</a></p>` : ''}
+          <p style="color:#888;font-size:0.8rem;margin-top:32px;border-top:1px solid #eee;padding-top:16px;">This is an automated notification from Vidyapith Connect. Please do not reply.</p>
+        </div>
       `;
       await sendMail(user.email, subject, text, html);
     }
