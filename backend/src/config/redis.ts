@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 
-const REDIS_URL = process.env.REDIS_URL?.trim() || '';
+const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL)?.trim() || '';
 export const KEY_PREFIX = process.env.REDIS_KEY_PREFIX?.trim() || 'vp';
 
 let redisClient: Redis | null = null;

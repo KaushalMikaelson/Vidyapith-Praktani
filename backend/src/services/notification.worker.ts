@@ -3,7 +3,7 @@ import { Worker } from 'bullmq';
 import { createNotification } from './notification.service.js';
 import { notificationRules, NotificationTriggerType } from './notification.rules.js';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || 'redis://127.0.0.1:6379';
 const isTLS = REDIS_URL.startsWith('rediss://');
 
 function parseRedisUrl(url: string): { host: string; port: number; password?: string; tls?: object } {
