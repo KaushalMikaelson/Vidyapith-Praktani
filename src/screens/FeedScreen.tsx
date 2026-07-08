@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FeedScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -1794,85 +1795,158 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         );
 
     return (
-      <div className="ig-feed-layout">
+      <motion.div
+        className="ig-feed-layout"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
         {/* Custom Instagram-style Feed Header */}
-        <div className="feed-header-ig">
+        <motion.div
+          className="feed-header-ig"
+          initial={{ y: -16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
           <div>
-            <h1>Vidyapith Alumni</h1>
-            <p>Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Rahul'} 👋</p>
+            <motion.h1
+              initial={{ x: -10, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
+              Vidyapith Alumni
+            </motion.h1>
+            <motion.p
+              initial={{ x: -10, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.18, duration: 0.3 }}
+            >
+              Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Rahul'} 👋
+            </motion.p>
           </div>
           <div className="feed-header-actions">
-            <button className="header-action-btn" title="Search" onClick={() => showToast('Search panel is available in the sidebar.', 'info')}>
+            <motion.button
+              className="header-action-btn"
+              title="Search"
+              onClick={() => showToast('Search panel is available in the sidebar.', 'info')}
+              whileHover={{ scale: 1.12, rotate: 5 }}
+              whileTap={{ scale: 0.88 }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 18 }}
+            >
               <Search size={22} />
-            </button>
-            <button className="header-action-btn" title="Notifications" onClick={() => onNavigate && onNavigate('notifications')}>
+            </motion.button>
+            <motion.button
+              className="header-action-btn"
+              title="Notifications"
+              onClick={() => onNavigate && onNavigate('notifications')}
+              whileHover={{ scale: 1.12 }}
+              whileTap={{ scale: 0.88 }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.28, type: 'spring', stiffness: 260, damping: 18 }}
+            >
               <Bell size={22} />
-              {unreadNotifCount > 0 && <span className="notif-badge-dot" />}
-            </button>
+              {unreadNotifCount > 0 && (
+                <motion.span
+                  className="notif-badge-dot"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                />
+              )}
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         <div className="ig-feed-body">
         {/* Center: post composer + feed */}
         <main className="ig-feed-main">
           {/* Instagram-style Stories Tray */}
-          <div className="stories-tray-container">
+          <motion.div
+            className="stories-tray-container"
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } }
+            }}
+          >
             {/* Current User's Story */}
-            <div className="story-item-wrap">
-              <div 
+            <motion.div
+              className="story-item-wrap"
+              variants={{
+                hidden: { opacity: 0, scale: 0.75, y: 12 },
+                show: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 16 } }
+              }}
+            >
+              <motion.div
                 className={`story-avatar-ring ${currentUserStories.length > 0 ? 'has-unviewed' : 'viewed'}`}
                 onClick={handleUserStoryClick}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
               >
-                <img 
-                  src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
-                  alt="Your Story" 
-                  className="story-avatar" 
+                <img
+                  src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'}
+                  alt="Your Story"
+                  className="story-avatar"
                 />
-                <button 
+                <motion.button
                   className="story-add-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCreateStoryOpen(true);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); setCreateStoryOpen(true); }}
                   title="Add to story"
                   type="button"
+                  whileHover={{ scale: 1.2, rotate: 90 }}
+                  whileTap={{ scale: 0.85 }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 14 }}
                 >
                   <Plus size={12} />
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
               <span className="story-username">Your Story</span>
-            </div>
+            </motion.div>
 
             {/* Other Story Groups */}
             {stories.map((group, idx) => (
-              <div 
-                key={group.userId} 
+              <motion.div
+                key={group.userId}
                 className="story-item-wrap"
                 onClick={() => handleStoryGroupClick(idx)}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.75, y: 12 },
+                  show: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 16 } }
+                }}
               >
-                <div className={`story-avatar-ring ${group.hasUnviewed ? 'has-unviewed' : 'viewed'}`}>
-                  <img 
-                    src={group.userAvatar} 
-                    alt={group.userName} 
-                    className="story-avatar" 
-                  />
-                </div>
+                <motion.div
+                  className={`story-avatar-ring ${group.hasUnviewed ? 'has-unviewed' : 'viewed'}`}
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                >
+                  <img src={group.userAvatar} alt={group.userName} className="story-avatar" />
+                </motion.div>
                 <span className="story-username">{group.userName}</span>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Feed Filtering Tabs */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            borderBottom: '1px solid #e2e8f0',
-            padding: '12px 16px',
-            marginBottom: '16px',
-            background: '#ffffff',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-          }}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.3 }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              borderBottom: '1px solid #e2e8f0',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              background: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              position: 'relative'
+            }}
+          >
             {['All', 'Connected', 'Batch', 'Department', 'Trending'].map(tab => {
               const isActive = feedTab === tab;
               return (
@@ -1886,26 +1960,51 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     fontSize: '0.85rem',
                     fontWeight: 700,
                     color: isActive ? '#ec4899' : '#64748b',
-                    borderBottom: isActive ? '3px solid #ec4899' : '3px solid transparent',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    outline: 'none'
+                    transition: 'color 0.2s',
+                    outline: 'none',
+                    position: 'relative'
                   }}
                 >
                   {tab}
+                  {isActive && (
+                    <motion.span
+                      layoutId="feedTabIndicator"
+                      style={{
+                        position: 'absolute',
+                        bottom: -12,
+                        left: 0,
+                        right: 0,
+                        height: 3,
+                        background: '#ec4899',
+                        borderRadius: 2
+                      }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                    />
+                  )}
                 </button>
               );
             })}
-          </div>
+          </motion.div>
 
 
           {/* Profile Completeness Banner */}
           {(!currentUser.bio || currentUser.bio === 'Not specified' || !currentUser.linkedin_url || !currentUser.company || currentUser.company === 'Not specified') && (
-            <div className="profile-completeness-banner">
+            <motion.div
+              className="profile-completeness-banner"
+              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 18 }}
+              whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(0,0,0,0.08)' }}
+            >
               <div className="profile-completeness-copy">
-                <div className="profile-completeness-icon">
+                <motion.div
+                  className="profile-completeness-icon"
+                  animate={{ rotate: [0, 12, -8, 12, 0] }}
+                  transition={{ delay: 0.6, duration: 0.6, ease: 'easeInOut' }}
+                >
                   ✨
-                </div>
+                </motion.div>
                 <div>
                   <h4>Complete your Alumni Profile</h4>
                   <p>
@@ -1913,13 +2012,15 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                   </p>
                 </div>
               </div>
-              <button
+              <motion.button
                 onClick={() => onNavigate && onNavigate('profile')}
                 className="btn-connect-gradient profile-completeness-action"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
               >
                 Complete Profile
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           )}
 
           {loading && (
@@ -1967,7 +2068,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             const isLiked = (post.likes || []).includes(currentUser.id);
 
             return (
-              <article key={post.id} className="feed-story-card">
+              <motion.article 
+                key={post.id} 
+                className="feed-story-card"
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
                 {/* Post Header */}
                 <header className="feed-card-header" onClick={() => author?.id && onViewProfile(author.id)}>
                   <div className="post-avatar-ring">
@@ -2332,7 +2440,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     </div>
                   );
                 })()}
-              </article>
+              </motion.article>
             );
           })}
 
@@ -2547,8 +2655,29 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           )}
         </main>
 
-        <aside className="feed-desktop-rail" aria-label="Feed sidebar">
-          <section className="feed-rail-card feed-rail-profile-card">
+        <motion.aside 
+          className="feed-desktop-rail" 
+          aria-label="Feed sidebar"
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.08
+              }
+            }
+          }}
+        >
+          <motion.section 
+            className="feed-rail-card feed-rail-profile-card"
+            variants={{
+              hidden: { opacity: 0, x: 20 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 180, damping: 14 } }
+            }}
+            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}
+          >
             <div className="feed-rail-profile-head">
               <img
                 src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop&q=80'}
@@ -2559,30 +2688,64 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <p>Class of {currentUser?.batch_year || 'Vidyapith'}</p>
               </div>
             </div>
-            <button type="button" onClick={() => onNavigate && onNavigate('profile')}>
+            <motion.button 
+              type="button" 
+              onClick={() => onNavigate && onNavigate('profile')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               View Profile
-            </button>
-          </section>
+            </motion.button>
+          </motion.section>
 
-          <section className="feed-rail-card">
+          <motion.section 
+            className="feed-rail-card"
+            variants={{
+              hidden: { opacity: 0, x: 20 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 180, damping: 14 } }
+            }}
+            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}
+          >
             <div className="feed-rail-card-title">
               <Sparkles size={17} />
               <span>Quick Actions</span>
             </div>
             <div className="feed-rail-actions">
-              <button type="button" onClick={() => onNavigate && onNavigate('create')}>
+              <motion.button 
+                type="button" 
+                onClick={() => onNavigate && onNavigate('create')}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <Plus size={16} /> Create post
-              </button>
-              <button type="button" onClick={() => onNavigate && onNavigate('directory')}>
+              </motion.button>
+              <motion.button 
+                type="button" 
+                onClick={() => onNavigate && onNavigate('directory')}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <Users size={16} /> Find alumni
-              </button>
-              <button type="button" onClick={() => onNavigate && onNavigate('messages')}>
+              </motion.button>
+              <motion.button 
+                type="button" 
+                onClick={() => onNavigate && onNavigate('messages')}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <MessageCircle size={16} /> Messages
-              </button>
+              </motion.button>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="feed-rail-card">
+          <motion.section 
+            className="feed-rail-card"
+            variants={{
+              hidden: { opacity: 0, x: 20 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 180, damping: 14 } }
+            }}
+            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}
+          >
             <div className="feed-rail-card-title">
               <TrendingUp size={17} />
               <span>Community Pulse</span>
@@ -2601,20 +2764,27 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <span>Saved</span>
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="feed-rail-card feed-rail-note">
+          <motion.section 
+            className="feed-rail-card feed-rail-note"
+            variants={{
+              hidden: { opacity: 0, x: 20 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 180, damping: 14 } }
+            }}
+            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}
+          >
             <GraduationCap size={20} />
             <div>
               <h3>Grow the Vidyapith network</h3>
               <p>Share a memory, career update, or useful opportunity with your batchmates.</p>
             </div>
-          </section>
-        </aside>
+          </motion.section>
+        </motion.aside>
         </div>
 
 
-      </div>
+      </motion.div>
     );
   }
 
