@@ -320,30 +320,7 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
   // ── Reusable UI ────────────────────────────────────────────────────────────
 
-  const UploadMethodToggle = ({
-    method, setMethod, onDeviceClick
-  }: { method: UploadMethod; setMethod: (m: UploadMethod) => void; onDeviceClick?: () => void }) => (
-    <div className="create-upload-toggle" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-      {(['device', 'url'] as UploadMethod[]).map(m => (
-        <button key={m} className="create-upload-toggle-btn" type="button" onClick={() => {
-          setMethod(m);
-          if (m === 'device' && onDeviceClick) {
-            onDeviceClick();
-          }
-        }} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem',
-          fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-          background: method === m ? 'var(--primary-color)' : '#f0f0f0',
-          color: method === m ? '#fff' : 'var(--heritage-ink, #161719)',
-          border: method === m ? 'none' : '1px solid var(--heritage-line, #e7e7e7)',
-        }}>
-          {m === 'device' ? <Upload size={14} /> : <Link size={14} />}
-          {m === 'device' ? 'From Device' : 'Paste URL'}
-        </button>
-      ))}
-    </div>
-  );
+
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -371,9 +348,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
         <>
           <div className="create-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginTop: '32px' }}>
             {[
-              { type: 'image' as PostType, icon: <Image size={28} />, gradient: 'linear-gradient(135deg, #f857a6, #ff5858)', title: 'Share Images', desc: 'Upload photos from your device or paste URLs — campus snapshots, batch photos, archives.', btnLabel: 'Add Images', btnIcon: <Upload size={14} /> },
-              { type: 'video' as PostType, icon: <Video size={28} />, gradient: 'linear-gradient(135deg, #a855f7, #6366f1)', title: 'Share Video', desc: 'Upload an MP4 from your device or embed a YouTube / direct MP4 link.', btnLabel: 'Add Video', btnIcon: <Play size={14} /> },
-              { type: 'article' as PostType, icon: <FileText size={28} />, gradient: 'linear-gradient(135deg, #f857a6, #c026d3)', title: 'Write Article', desc: 'Compose long-form thought-pieces, guides, career advice, or memoirs.', btnLabel: 'Start Writing', btnIcon: <FileText size={14} /> },
+              { type: 'image' as PostType, icon: <Image size={28} />, gradient: 'linear-gradient(135deg, #0E6B8A 0%, #064E65 100%)', title: 'Share Images', desc: 'Upload photos from your device or paste URLs — campus snapshots, batch photos, archives.', btnLabel: 'Add Images', btnIcon: <Upload size={14} /> },
+              { type: 'video' as PostType, icon: <Video size={28} />, gradient: 'linear-gradient(135deg, #F37021 0%, #B8272C 100%)', title: 'Share Video', desc: 'Upload an MP4 from your device or embed a YouTube / direct MP4 link.', btnLabel: 'Add Video', btnIcon: <Play size={14} /> },
+              { type: 'article' as PostType, icon: <FileText size={28} />, gradient: 'linear-gradient(135deg, #D4AF37 0%, #BCA030 100%)', title: 'Write Article', desc: 'Compose long-form thought-pieces, guides, career advice, or memoirs.', btnLabel: 'Start Writing', btnIcon: <FileText size={14} /> },
             ].map(({ type, icon, gradient, title, desc, btnLabel, btnIcon }) => (
               <div key={type} className="create-type-card" onClick={() => setSelectedType(type)}
                 style={{
@@ -422,9 +399,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
       {/* ── Create Form ── */}
       {selectedType && (
-        <form className="create-publication-form" onSubmit={handlePublish} style={{ padding: '32px', marginTop: '24px', borderRadius: '16px', background: 'var(--heritage-card, #ffffff)', border: '1px solid var(--heritage-line, #e7e7e7)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <form className="create-publication-form" onSubmit={handlePublish} style={{ padding: '32px', marginTop: '24px', borderRadius: '16px', background: '#ffffff', border: '1px solid rgba(15, 23, 42, 0.08)', boxShadow: '0 12px 42px rgba(5, 11, 22, 0.05)' }}>
 
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-color)', fontWeight: 700, marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--primary-color)', fontWeight: 800, marginBottom: '24px', fontFamily: 'var(--font-title)' }}>
             Creating {selectedType === 'image' ? 'Image Post' : selectedType === 'video' ? 'Video Post' : 'Article'}
           </div>
 
@@ -432,26 +409,26 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {selectedType === 'article' && (
             <>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Article Title</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Article Title</label>
                 <input type="text" value={articleTitle} onChange={e => setArticleTitle(e.target.value)} required
                   placeholder="Enter a compelling title..."
-                  style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Category</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Category</label>
                   <select value={articleCategory} onChange={e => setArticleCategory(e.target.value)}
-                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', cursor: 'pointer', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', cursor: 'pointer', boxSizing: 'border-box' }}
                   >
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Cover Image URL (Optional)</label>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Cover Image URL (Optional)</label>
                   <input type="text" value={coverImageUrl} onChange={e => setCoverImageUrl(e.target.value)}
                     placeholder="https://..."
-                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                   />
                 </div>
               </div>
@@ -461,53 +438,39 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {/* ── Images ── */}
           {selectedType === 'image' && (
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Add Images</label>
-              <UploadMethodToggle
-                method={imageUploadMethod}
-                setMethod={setImageUploadMethod}
-                onDeviceClick={() => imageInputRef.current?.click()}
-              />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', fontFamily: 'var(--font-title)' }}>Add Images</label>
               <input ref={imageInputRef} type="file" accept="image/*" multiple onChange={handleImageFileChange} style={{ display: 'none' }} />
 
-              {imageUploadMethod === 'device' ? (
-                <div
-                  onDragOver={e => { e.preventDefault(); setIsDraggingImage(true); }}
-                  onDragLeave={() => setIsDraggingImage(false)}
-                  onDrop={handleImageDrop}
-                  onClick={() => imageInputRef.current?.click()}
-                  style={{
-                    border: `2px dashed ${isDraggingImage ? 'var(--primary-color)' : 'var(--heritage-line, #e7e7e7)'}`,
-                    borderRadius: '12px', padding: '32px 24px', textAlign: 'center', cursor: 'pointer',
-                    background: isDraggingImage ? 'rgba(255,122,26,0.05)' : '#f8f8f8', transition: 'all 0.2s', marginBottom: '16px'
-                  }}
-                >
-                  <Upload size={28} style={{ color: 'var(--primary-color)', marginBottom: '8px' }} />
-                  <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop</p>
-                  <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>JPG, PNG, GIF, WebP · Max 10 images · Each uploaded to Cloudinary CDN</p>
+              <div
+                onDragOver={e => { e.preventDefault(); setIsDraggingImage(true); }}
+                onDragLeave={() => setIsDraggingImage(false)}
+                onDrop={handleImageDrop}
+                onClick={() => imageInputRef.current?.click()}
+                style={{
+                  border: `2px dashed ${isDraggingImage ? 'var(--primary-color)' : 'rgba(15, 23, 42, 0.15)'}`,
+                  borderRadius: '16px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer',
+                  background: isDraggingImage ? 'rgba(243, 112, 33, 0.04)' : '#f8fbfd', 
+                  transition: 'all 0.2s ease', marginBottom: '16px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(243, 112, 33, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                  <Upload size={22} style={{ color: 'var(--primary-color)' }} />
                 </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                  <input type="text" value={tempImageUrl} onChange={e => setTempImageUrl(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddImageUrl(); } }}
-                    placeholder="Paste image URL..."
-                    style={{ flexGrow: 1, padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem' }}
-                  />
-                  <button type="button" onClick={handleAddImageUrl} className="heritage-primary-btn"
-                    style={{ padding: '0 20px', borderRadius: '8px', flexShrink: 0, cursor: 'pointer' }}
-                  >Add</button>
-                </div>
-              )}
+                <p style={{ color: '#0c1e36', fontWeight: 700, margin: '0 0 6px', fontSize: '0.92rem' }}>Click to browse or drag & drop</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>JPG, PNG, GIF, WebP · Max 10 images · Uploads automatically</p>
+              </div>
 
               {/* Image Preview Grid */}
               {imageItems.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                   {imageItems.map((item, idx) => (
-                    <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${item.error ? '#fc8181' : 'var(--heritage-line, #e7e7e7)'}`, background: '#f0f0f0' }}>
+                    <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${item.error ? '#fc8181' : 'rgba(15, 23, 42, 0.08)'}`, background: '#f8fbfd' }}>
                       <img src={item.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: item.uploading ? 0.4 : 1, transition: 'opacity 0.3s' }} />
 
                       {/* Uploading spinner */}
                       {item.uploading && (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(5, 11, 22, 0.5)' }}>
                           <Loader2 size={20} style={{ color: 'white', animation: 'spin 1s linear infinite' }} />
                           <span style={{ fontSize: '0.7rem', color: 'white', marginTop: '4px' }}>Uploading…</span>
                         </div>
@@ -515,14 +478,14 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
                       {/* Upload success */}
                       {!item.uploading && !item.error && item.url && (
-                        <div style={{ position: 'absolute', top: '4px', left: '4px', background: 'rgba(72,187,120,0.85)', borderRadius: '50%', padding: '2px' }}>
+                        <div style={{ position: 'absolute', top: '4px', left: '4px', background: 'rgba(74, 222, 128, 0.9)', borderRadius: '50%', padding: '2px', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
                           <CheckCircle2 size={12} style={{ color: 'white' }} />
                         </div>
                       )}
 
                       {/* Upload error */}
                       {item.error && (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', padding: '4px' }}>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(5, 11, 22, 0.75)', padding: '4px' }}>
                           <AlertCircle size={16} style={{ color: '#fc8181' }} />
                           <button type="button" onClick={() => retryImageUpload(idx)}
                             style={{ fontSize: '0.65rem', color: 'white', background: 'var(--primary-color)', border: 'none', borderRadius: '4px', padding: '2px 6px', marginTop: '4px', cursor: 'pointer' }}
@@ -650,9 +613,9 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
               {/* Tag classmates */}
               <div style={{ marginTop: '8px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>Tag Classmates (Optional)</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Tag Classmates (Optional)</label>
                 <input type="text" value={tagClassmates} onChange={e => setTagClassmates(e.target.value)} placeholder="e.g. Aurobindo, Shubhendu"
-                  style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 />
               </div>
             </div>
@@ -661,99 +624,71 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
           {/* ── Video ── */}
           {selectedType === 'video' && (
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '12px' }}>Video</label>
-              <UploadMethodToggle
-                method={videoUploadMethod}
-                setMethod={m => { setVideoUploadMethod(m); clearVideo(); setVideoUrl(''); }}
-                onDeviceClick={() => videoInputRef.current?.click()}
-              />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', fontFamily: 'var(--font-title)' }}>Video</label>
               <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoFileChange} style={{ display: 'none' }} />
 
-              {videoUploadMethod === 'device' ? (
-                !videoPreviewSrc ? (
-                  <div
-                    onDragOver={e => { e.preventDefault(); setIsDraggingVideo(true); }}
-                    onDragLeave={() => setIsDraggingVideo(false)}
-                    onDrop={handleVideoDrop}
-                    onClick={() => videoInputRef.current?.click()}
-                    style={{
-                      border: `2px dashed ${isDraggingVideo ? 'var(--primary-color)' : 'var(--heritage-line, #e7e7e7)'}`,
-                      borderRadius: '12px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer',
-                      background: isDraggingVideo ? 'rgba(255,122,26,0.05)' : '#f8f8f8', transition: 'all 0.2s'
-                    }}
-                  >
-                    <Play size={32} style={{ color: 'var(--primary-color)', marginBottom: '10px' }} />
-                    <p style={{ color: 'var(--heritage-ink, #161719)', fontWeight: 600, margin: '0 0 4px' }}>Click to browse or drag & drop a video</p>
-                    <p style={{ color: 'var(--heritage-muted, #77797d)', fontSize: '0.82rem', margin: 0 }}>MP4, MOV, WebM · Max 100 MB · Uploaded to Cloudinary CDN</p>
+              {!videoPreviewSrc ? (
+                <div
+                  onDragOver={e => { e.preventDefault(); setIsDraggingVideo(true); }}
+                  onDragLeave={() => setIsDraggingVideo(false)}
+                  onDrop={handleVideoDrop}
+                  onClick={() => videoInputRef.current?.click()}
+                  style={{
+                    border: `2px dashed ${isDraggingVideo ? 'var(--primary-color)' : 'rgba(15, 23, 42, 0.15)'}`,
+                    borderRadius: '16px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer',
+                    background: isDraggingVideo ? 'rgba(243, 112, 33, 0.04)' : '#f8fbfd', 
+                    transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(243, 112, 33, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                    <Play size={20} style={{ color: 'var(--primary-color)', marginLeft: '2px' }} />
                   </div>
-                ) : (
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--heritage-line, #e7e7e7)', background: '#f8f8f8' }}>
-                    <video src={videoPreviewSrc} controls style={{ width: '100%', maxHeight: '280px', display: 'block', objectFit: 'contain' }} />
-                    <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {videoUploading && <Loader2 size={16} style={{ color: 'var(--primary-color)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
-                        {!videoUploading && videoCloudUrl && <CheckCircle2 size={16} style={{ color: '#48bb78', flexShrink: 0 }} />}
-                        {!videoUploading && videoUploadError && <AlertCircle size={16} style={{ color: '#fc8181', flexShrink: 0 }} />}
-                        <span style={{ fontSize: '0.82rem', color: 'var(--heritage-muted, #77797d)' }}>
-                          {videoUploading ? 'Uploading to Cloudinary…' : videoUploadError ? `Error: ${videoUploadError}` : `✅ Ready · ${videoFileName}`}
-                        </span>
-                      </div>
-                      <button type="button" onClick={clearVideo}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--heritage-muted, #77797d)', cursor: 'pointer', fontSize: '0.82rem' }}
-                      ><X size={14} /> Remove</button>
-                    </div>
-                  </div>
-                )
+                  <p style={{ color: '#0c1e36', fontWeight: 700, margin: '0 0 6px', fontSize: '0.92rem' }}>Click to browse or drag & drop a video</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>MP4, MOV, WebM · Max 100 MB · Uploads automatically</p>
+                </div>
               ) : (
-                <>
-                  <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
-                    placeholder="YouTube URL or direct MP4 URL..."
-                    style={{ width: '100%', padding: '12px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', boxSizing: 'border-box' }}
-                  />
-                  {videoUrl.trim() && getYouTubeId(videoUrl) && (
-                    <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--heritage-line, #e7e7e7)' }}>
-                      <iframe src={`https://www.youtube.com/embed/${getYouTubeId(videoUrl)}`} style={{ width: '100%', height: '220px', border: 'none' }} title="YouTube Preview" allowFullScreen />
+                <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)', background: '#f8fbfd' }}>
+                  <video src={videoPreviewSrc} controls style={{ width: '100%', maxHeight: '280px', display: 'block', objectFit: 'contain' }} />
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {videoUploading && <Loader2 size={16} style={{ color: 'var(--primary-color)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
+                      {!videoUploading && videoCloudUrl && <CheckCircle2 size={16} style={{ color: '#48bb78', flexShrink: 0 }} />}
+                      {!videoUploading && videoUploadError && <AlertCircle size={16} style={{ color: '#fc8181', flexShrink: 0 }} />}
+                      <span style={{ fontSize: '0.82rem', color: 'var(--heritage-muted, #77797d)' }}>
+                        {videoUploading ? 'Uploading to Cloudinary…' : videoUploadError ? `Error: ${videoUploadError}` : `✅ Ready · ${videoFileName}`}
+                      </span>
                     </div>
-                  )}
-                </>
+                    <button type="button" onClick={clearVideo}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--heritage-muted, #77797d)', cursor: 'pointer', fontSize: '0.82rem' }}
+                    ><X size={14} /> Remove</button>
+                  </div>
+                </div>
               )}
             </div>
           )}
 
           {/* Caption / Body */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--heritage-ink, #161719)', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>
               {selectedType === 'article' ? 'Article Body' : 'Caption / Description'}
             </label>
             <textarea rows={selectedType === 'article' ? 12 : 5} value={content} onChange={e => setContent(e.target.value)}
               placeholder={selectedType === 'article' ? 'Write your article body here...' : "What's on your mind?..."}
               required
-              style={{ width: '100%', padding: '14px 16px', background: '#f8f8f8', border: '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '8px', color: 'var(--heritage-ink, #161719)', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', lineHeight: '1.6', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', lineHeight: '1.6', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
             />
           </div>
 
           {/* Footer: Audience + Actions */}
-          <div className="create-form-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--heritage-line, #e7e7e7)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
-            <div className="create-publish-group">
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--heritage-muted, #77797d)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 600 }}>Publish to</label>
-              <div className="create-audience-options" style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={() => setGroup('grp-all')}
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group === 'grp-all' ? 'var(--primary-color)' : '#f0f0f0', color: group === 'grp-all' ? '#fff' : 'var(--heritage-ink, #161719)', border: group === 'grp-all' ? 'none' : '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '6px', cursor: 'pointer' }}
-                ><Globe size={14} /> All Alumni</button>
-                {currentUser?.batch_year && (
-                  <button type="button" onClick={() => setGroup(`grp-${currentUser.batch_year}`)}
-                    style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: group !== 'grp-all' ? 'var(--primary-color)' : '#f0f0f0', color: group !== 'grp-all' ? '#fff' : 'var(--heritage-ink, #161719)', border: group !== 'grp-all' ? 'none' : '1px solid var(--heritage-line, #e7e7e7)', borderRadius: '6px', cursor: 'pointer' }}
-                  ><Users size={14} /> Class of {currentUser.batch_year}</button>
-                )}
-              </div>
-            </div>
+          <div className="create-form-footer" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid rgba(15, 23, 42, 0.08)', paddingTop: '20px', flexWrap: 'wrap', gap: '16px' }}>
+
 
             <div className="create-form-actions" style={{ display: 'flex', gap: '12px' }}>
               <button type="button" onClick={() => setSelectedType(null)}
-                style={{ padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--heritage-line, #e7e7e7)', color: 'var(--heritage-ink, #161719)', background: '#fff', cursor: 'pointer', fontSize: '0.95rem' }}
+                style={{ padding: '12px 24px', borderRadius: '10px', border: '1px solid rgba(15, 23, 42, 0.12)', color: '#0c1e36', background: '#fff', cursor: 'pointer', fontSize: '0.92rem', fontWeight: 600 }}
               >Cancel</button>
-              <button type="submit" disabled={isSubmitting} className="heritage-primary-btn"
-                style={{ padding: '12px 28px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', cursor: isSubmitting ? 'wait' : 'pointer', opacity: isSubmitting ? 0.8 : 1 }}
+              <button type="submit" disabled={isSubmitting}
+                style={{ padding: '12px 28px', borderRadius: '10px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: isSubmitting ? 'wait' : 'pointer', opacity: isSubmitting ? 0.8 : 1, background: 'var(--primary-gradient)', color: '#fff', fontWeight: 700, fontSize: '0.92rem', boxShadow: '0 4px 14px rgba(243, 112, 33, 0.22)' }}
               >
                 {isSubmitting ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
                 {isSubmitting ? 'Publishing…' : 'Publish'}
