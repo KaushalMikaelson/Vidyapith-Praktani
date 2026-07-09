@@ -1,10 +1,10 @@
 import { Queue } from 'bullmq';
+import { redisClient } from '../config/redis.js';
 
 const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || 'redis://127.0.0.1:6379';
 const isTLS = REDIS_URL.startsWith('rediss://');
 
-// BullMQ requires its own connection options object (not a shared ioredis client instance)
-// to avoid type conflicts between BullMQ's internal ioredis bundle and any top-level ioredis.
+// BullMQ connection options parser
 function parseRedisUrl(url: string): { host: string; port: number; password?: string; tls?: object } {
   try {
     const parsed = new URL(url);
@@ -22,18 +22,72 @@ function parseRedisUrl(url: string): { host: string; port: number; password?: st
 
 const connection = parseRedisUrl(REDIS_URL);
 
-export const notificationQueue = new Queue('notifications', {
-  connection,
-  defaultJobOptions: {
-    removeOnComplete: 100,
-    removeOnFail: 200,
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 }
+// In-memory fallback queue for local development / connection failures
+class MockQueue {
+  async add(name: string, data: any) {
+    console.log(`[Mock Queue] Enqueued job: ${name} (in-memory execution fallback)`);
+    setTimeout(async () => {
+      try {
+        const { executeNotificationJob } = await import('./notification.worker.js');
+        await executeNotificationJob(name, data);
+      } catch (err: any) {
+        console.error(`[Mock Queue] Error executing job ${name}:`, err.message);
+      }
+    }, 0);
+    return { id: `mock-${Date.now()}` };
+  }
+  on() {}
+}
+
+let realQueue: Queue | null = null;
+let useMock = false;
+
+export const notificationQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (useMock) {
+      return (new MockQueue() as any)[prop];
+    }
+
+    if (!realQueue) {
+      if (!REDIS_URL || (redisClient && (redisClient as any).status === 'end') || (redisClient as any)?.status === 'close') {
+        useMock = true;
+        console.warn('[Notification Queue] Redis is unavailable. Falling back to in-memory MockQueue.');
+        return (new MockQueue() as any)[prop];
+      }
+
+      try {
+        realQueue = new Queue('notifications', {
+          connection,
+          defaultJobOptions: {
+            removeOnComplete: 100,
+            removeOnFail: 200,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 2000 }
+          }
+        });
+
+        realQueue.on('error', (err: Error) => {
+          console.error('[Notification Queue] Error:', err.message);
+          if (err.message.includes('EACCES') || err.message.includes('ECONNREFUSED')) {
+            console.warn('[Notification Queue] Connection failed. Switching to in-memory MockQueue.');
+            useMock = true;
+            if (realQueue) {
+              realQueue.close().catch(() => {});
+              realQueue = null;
+            }
+          }
+        });
+      } catch (err: any) {
+        console.error('[Notification Queue] Failed to initialize Queue, using fallback:', err.message);
+        useMock = true;
+        return (new MockQueue() as any)[prop];
+      }
+    }
+
+    const value = (realQueue as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(realQueue);
+    }
+    return value;
   }
 });
-
-notificationQueue.on('error', (err: Error) => {
-  console.error('[Notification Queue] Error:', err.message);
-});
-
-console.log('[Notification Queue] Initialized — connected to Redis');

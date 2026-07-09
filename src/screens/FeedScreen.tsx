@@ -113,6 +113,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showSearchInput, setShowSearchInput] = useState<boolean>(false);
+  const [recommendedAlumni, setRecommendedAlumni] = useState<any[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
   const [filterChip, setFilterChip] = useState<string>('All');
   const [activeGroupId, setActiveGroupId] = useState<string>('grp-all');
   const [feedTab, setFeedTab] = useState<string>('All');
@@ -151,6 +154,28 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       .then(data => setConnections(data || []))
       .catch(err => console.error("Error loading connections for feed:", err));
   }, []);
+
+  // Debounced search recommendations effect
+  useEffect(() => {
+    if (!showSearchInput || searchQuery.trim().length < 2) {
+      setRecommendedAlumni([]);
+      return;
+    }
+
+    setLoadingRecommendations(true);
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const results = await apiFetch(`/directory/suggestions?q=${encodeURIComponent(searchQuery.trim())}`);
+        setRecommendedAlumni(results || []);
+      } catch (err) {
+        console.error("Error fetching search recommendations:", err);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, showSearchInput]);
 
   // Auto-advance logic for stories
   useEffect(() => {
@@ -1452,8 +1477,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     // Search query match
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
+      const authorName = ((post as any).author?.full_name || '').toLowerCase();
       const matchText = (post.content || '').toLowerCase().includes(q) ||
-                        (post.post_type || '').toLowerCase().includes(q);
+                        (post.post_type || '').toLowerCase().includes(q) ||
+                        authorName.includes(q);
       if (!matchText) return false;
     }
 
@@ -1808,56 +1835,164 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <div>
-            <motion.h1
-              initial={{ x: -10, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
-            >
-              Vidyapith Alumni
-            </motion.h1>
-            <motion.p
-              initial={{ x: -10, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.18, duration: 0.3 }}
-            >
-              Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Rahul'} 👋
-            </motion.p>
-          </div>
-          <div className="feed-header-actions">
-            <motion.button
-              className="header-action-btn"
-              title="Search"
-              onClick={() => showToast('Search panel is available in the sidebar.', 'info')}
-              whileHover={{ scale: 1.12, rotate: 5 }}
-              whileTap={{ scale: 0.88 }}
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 18 }}
-            >
-              <Search size={22} />
-            </motion.button>
-            <motion.button
-              className="header-action-btn"
-              title="Notifications"
-              onClick={() => onNavigate && onNavigate('notifications')}
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.28, type: 'spring', stiffness: 260, damping: 18 }}
-            >
-              <Bell size={22} />
-              {unreadNotifCount > 0 && (
-                <motion.span
-                  className="notif-badge-dot"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                />
+          {showSearchInput ? (
+            <div style={{ position: 'relative', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '12px' }}>
+                <div className="header-search-bar" style={{ width: '100%', maxWidth: 'none', margin: 0 }}>
+                  <Search className="search-icon" size={18} style={{ color: 'var(--heritage-ink, #0c1e36)', opacity: 0.7 }} />
+                  <input 
+                    type="text" 
+                    placeholder="Search posts or alumni by name..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      color: '#0c1e36', 
+                      background: 'rgba(15, 23, 42, 0.05)', 
+                      border: '1px solid rgba(15, 23, 42, 0.1)',
+                      borderRadius: '8px'
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <motion.button
+                  className="header-action-btn"
+                  onClick={() => {
+                    setShowSearchInput(false);
+                    setSearchQuery('');
+                    setRecommendedAlumni([]);
+                  }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={22} />
+                </motion.button>
+              </div>
+
+              {/* Recommendations Dropdown */}
+              {searchQuery.trim().length >= 2 && (
+                <div 
+                  className="search-recommendations-dropdown"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    left: 0,
+                    right: 0,
+                    background: '#ffffff',
+                    border: '1px solid rgba(15, 23, 42, 0.08)',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    padding: '8px 0'
+                  }}
+                >
+                  {loadingRecommendations ? (
+                    <div style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Loader2 className="animate-spin" style={{ color: '#64748b', animation: 'spin 1s linear infinite' }} size={16} />
+                      <span>Searching directory...</span>
+                    </div>
+                  ) : recommendedAlumni.length > 0 ? (
+                    recommendedAlumni.map((user: any) => (
+                      <div
+                        key={user.id}
+                        onClick={() => {
+                          onViewProfile(user.id);
+                          setShowSearchInput(false);
+                          setSearchQuery('');
+                          setRecommendedAlumni([]);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '10px 16px',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s',
+                          borderBottom: '1px solid rgba(15, 23, 42, 0.03)'
+                        }}
+                        className="recommendation-item"
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(243, 112, 33, 0.06)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      >
+                        <img 
+                          src={user.profile?.profile_photo || user.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'} 
+                          alt={user.profile?.full_name || user.full_name} 
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0c1e36' }}>
+                            {user.profile?.full_name || user.full_name}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            Class of {user.profile?.batch_year || user.batch_year || '—'} · {user.profile?.city || user.city || 'No Location'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.85rem' }}>
+                      No matching alumni found.
+                    </div>
+                  )}
+                </div>
               )}
-            </motion.button>
-          </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <motion.h1
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                >
+                  Vidyapith Alumni
+                </motion.h1>
+                <motion.p
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.18, duration: 0.3 }}
+                >
+                  Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Rahul'} 👋
+                </motion.p>
+              </div>
+              <div className="feed-header-actions">
+                <motion.button
+                  className="header-action-btn btn-search-premium"
+                  title="Search"
+                  onClick={() => setShowSearchInput(true)}
+                  whileHover={{ scale: 1.12, rotate: 5 }}
+                  whileTap={{ scale: 0.88 }}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.22, type: 'spring', stiffness: 260, damping: 18 }}
+                >
+                  <Search size={22} />
+                </motion.button>
+                <motion.button
+                  className="header-action-btn btn-bell-premium"
+                  title="Notifications"
+                  onClick={() => onNavigate && onNavigate('notifications')}
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.88 }}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.28, type: 'spring', stiffness: 260, damping: 18 }}
+                >
+                  <Bell size={22} />
+                  {unreadNotifCount > 0 && (
+                    <motion.span
+                      className="notif-badge-dot"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                    />
+                  )}
+                </motion.button>
+              </div>
+            </>
+          )}
         </motion.div>
 
         <div className="ig-feed-body">

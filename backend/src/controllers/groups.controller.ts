@@ -150,6 +150,15 @@ export const getGroupDetails = async (req: AuthenticatedRequest, res: Response):
 
     const groupId = req.params.id as string;
 
+    const cacheKey = `group:${groupId}:user:${userId}`;
+    const cachedData = await groupsCache.get<any>(cacheKey);
+    if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedData);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const role = await getMemberRole(groupId, userId);
     if (!role) { res.status(403).json({ error: 'You are not a member of this group.' }); return; }
 
@@ -176,7 +185,9 @@ export const getGroupDetails = async (req: AuthenticatedRequest, res: Response):
       };
     });
 
-    res.status(200).json({ ...group, members: enrichedMembers, currentUserRole: role });
+    const responsePayload = { ...group, members: enrichedMembers, currentUserRole: role };
+    groupsCache.set(cacheKey, responsePayload, 60_000); // 1 min TTL
+    res.status(200).json(responsePayload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -212,6 +223,7 @@ export const addMembers = async (req: AuthenticatedRequest, res: Response): Prom
     })));
 
     // Invalidate group member caches
+    await groupsCache.invalidate(`group:${groupId}`);
     for (const mid of memberIds) {
       await groupsCache.invalidate(`mygroups:${mid}`);
     }
@@ -261,6 +273,7 @@ export const removeMember = async (req: AuthenticatedRequest, res: Response): Pr
       await prisma.group.delete({ where: { id: groupId } });
     }
 
+    await groupsCache.invalidate(`group:${groupId}`);
     await groupsCache.invalidate(`mygroups:${targetUserId}`);
     res.status(200).json({ success: true });
   } catch (err: any) {
@@ -299,6 +312,7 @@ export const updateGroup = async (req: AuthenticatedRequest, res: Response): Pro
       })));
     }
 
+    await groupsCache.invalidate(`group:${groupId}`);
     res.status(200).json({ success: true, group: updated });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

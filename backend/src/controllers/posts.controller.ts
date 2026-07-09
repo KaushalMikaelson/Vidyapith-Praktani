@@ -230,6 +230,15 @@ export const listComments = async (req: AuthenticatedRequest, res: Response): Pr
   try {
     const id = req.params.id as string; // post id
 
+    const cacheKey = `comments:${id}`;
+    const cachedData = await postCache.get<any[]>(cacheKey);
+    if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedData);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const comments = await prisma.comment.findMany({
       where: { post_id: id },
       orderBy: { created_at: 'asc' }
@@ -262,6 +271,7 @@ export const listComments = async (req: AuthenticatedRequest, res: Response): Pr
       };
     });
 
+    postCache.set(cacheKey, joinedComments, 180_000); // 3 min TTL
     res.status(200).json(joinedComments);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -305,6 +315,7 @@ export const createComment = async (req: AuthenticatedRequest, res: Response): P
     }
 
     await postCache.invalidate('posts:');
+    await postCache.invalidate(`comments:${id}`);
     res.status(201).json({ success: true, comment: newComment });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -12,7 +12,7 @@ import { googleLogin } from '../controllers/oauth.controller.js';
 // Feature Controllers
 import { listPosts, createPost, likePost, listComments, createComment, deletePost, togglePinPost } from '../controllers/posts.controller.js';
 import { listEvents, createEvent, rsvpEvent } from '../controllers/events.controller.js';
-import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile, getUserRelations } from '../controllers/directory.controller.js';
+import { listDirectory, connectRequest, getProfile, getConnectionStatuses, listPendingConnections, respondConnectionRequest, removeConnection, listConnections, updateProfile, getUserRelations, getDirectorySuggestions } from '../controllers/directory.controller.js';
 import { listMentors, listPairings, requestMentorship } from '../controllers/mentorship.controller.js';
 import {
   getBrowserPushConfig,
@@ -85,6 +85,7 @@ apiRouter.post('/events', requireAuth, createEvent);
 apiRouter.post('/events/:id/rsvp', requireAuth, rsvpEvent);
 
 apiRouter.get('/directory', requireAuth, listDirectory);
+apiRouter.get('/directory/suggestions', requireAuth, getDirectorySuggestions);
 apiRouter.get('/directory/profile/:id', requireAuth, getProfile);
 apiRouter.post('/directory/profile/update', requireAuth, updateProfile);
 apiRouter.post('/directory/connect', requireAuth, connectRequest);

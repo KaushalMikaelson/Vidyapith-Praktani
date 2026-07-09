@@ -82,6 +82,15 @@ export const listPairings = async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
+    const cacheKey = `pairings:list:${userId}`;
+    const cachedData = await mentorsCache.get<any[]>(cacheKey);
+    if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cachedData);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
     const pairings = await prisma.mentorship.findMany({
       where: {
         OR: [
@@ -115,6 +124,7 @@ export const listPairings = async (req: AuthenticatedRequest, res: Response): Pr
       mentee: usersMap.get(p.mentee_id) || null
     }));
 
+    mentorsCache.set(cacheKey, joinedPairings, 120_000); // 2 min TTL
     res.status(200).json(joinedPairings);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -159,6 +169,8 @@ export const requestMentorship = async (req: AuthenticatedRequest, res: Response
       actionUrl: '/mentorship'
     });
 
+    await mentorsCache.invalidate(`pairings:list:${userId}`);
+    await mentorsCache.invalidate(`pairings:list:${mentorId}`);
     res.status(201).json({ success: true, mentorship: newPair });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

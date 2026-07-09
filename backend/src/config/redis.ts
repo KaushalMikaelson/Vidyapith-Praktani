@@ -52,7 +52,7 @@ if (REDIS_URL) {
   });
 
   redisClient.on('error', (err: Error) => {
-    if (/EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ETIMEDOUT/i.test(err.message)) {
+    if (/EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EACCES/i.test(err.message)) {
       disableRedis(`Connection failed (${err.message})`);
       return;
     }

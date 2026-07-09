@@ -104,7 +104,19 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
     // Keyword search
     if (search) {
       const searchStr = search as string;
+      const parsedYear = parseInt(searchStr);
+      const isYear = !isNaN(parsedYear) && parsedYear > 1900 && parsedYear < 2100;
+
       whereCondition.OR = [
+        ...(isYear
+          ? [
+              {
+                profile: {
+                  batch_year: parsedYear
+                }
+              }
+            ]
+          : []),
         {
           email: { contains: searchStr, mode: 'insensitive' }
         },
@@ -985,3 +997,73 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
     res.status(500).json({ error: err.message });
   }
 };
+
+// Get directory search suggestions/autocomplete results (highly optimized and cached)
+export const getDirectorySuggestions = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { q } = req.query;
+    if (!q || typeof q !== 'string' || q.trim().length < 2) {
+      res.status(200).json([]);
+      return;
+    }
+
+    const queryStr = q.trim();
+    const cacheKey = `suggestions:${queryStr.toLowerCase()}`;
+
+    // Try cache first
+    const cached = await directoryCache.get<any[]>(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      res.status(200).json(cached);
+      return;
+    }
+    res.setHeader('X-Cache', 'MISS');
+
+    // Fetch approved matching users (only selecting necessary projection fields)
+    const users = await prisma.user.findMany({
+      where: {
+        verify_status: 'approved',
+        OR: [
+          {
+            email: { contains: queryStr, mode: 'insensitive' }
+          },
+          {
+            profile: {
+              full_name: { contains: queryStr, mode: 'insensitive' }
+            }
+          }
+        ]
+      },
+      select: {
+        id: true,
+        role: true,
+        profile: {
+          select: {
+            full_name: true,
+            profile_photo: true,
+            batch_year: true,
+            city: true
+          }
+        }
+      },
+      take: 6
+    });
+
+    const formatted = users.map(u => ({
+      id: u.id,
+      role: u.role,
+      full_name: u.profile?.full_name || '',
+      profile_photo: u.profile?.profile_photo || '',
+      batch_year: u.profile?.batch_year || null,
+      city: u.profile?.city || ''
+    }));
+
+    // Cache results for 10 minutes (600,000 ms)
+    directoryCache.set(cacheKey, formatted, 600_000);
+
+    res.status(200).json(formatted);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
