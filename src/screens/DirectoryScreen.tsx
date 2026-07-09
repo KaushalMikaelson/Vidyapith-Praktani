@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User } from '../database/database';
 import { 
-  Briefcase, ChevronLeft, ChevronRight, Search, 
+  Briefcase, ChevronDown, ChevronLeft, ChevronRight, Search, 
   Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter,
   UserMinus, ShieldCheck
 } from 'lucide-react';
@@ -34,6 +34,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   const [filterCompany, setFilterCompany] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'alumni' | 'student' | 'faculty'>('all');
   const [sortBy] = useState('seed_order');
+  const [showFilters, setShowFilters] = useState(false);
   
   // List & Status State
   const [alumniList, setAlumniList] = useState<User[]>([]);
@@ -321,11 +322,11 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
   const getAvatarGradient = (dept?: string) => {
     const depts = dept || "";
-    if (depts === "Engineering" || depts === "Physics") return "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)";
-    if (depts === "Science" || depts === "Chemistry") return "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)";
-    if (depts === "Commerce") return "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)";
-    if (depts === "Arts") return "linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)";
-    return "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)";
+    if (depts === "Engineering" || depts === "Physics") return "linear-gradient(135deg, #0E6B8A 0%, #064E65 100%)";
+    if (depts === "Science" || depts === "Chemistry") return "linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)";
+    if (depts === "Commerce") return "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+    if (depts === "Arts") return "linear-gradient(135deg, #F37021 0%, #B8272C 100%)";
+    return "linear-gradient(135deg, #F37021 0%, #B8272C 100%)";
   };
 
   // Shared style objects for active filter chips
@@ -350,12 +351,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             width: '44px',
             height: '44px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #8b5cf6 100%)',
+            background: 'var(--primary-gradient)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.2)'
+            boxShadow: '0 4px 12px rgba(243, 112, 33, 0.2)'
           }}>
             <BookOpen size={24} strokeWidth={2.5} />
           </div>
@@ -421,165 +422,189 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               )}
             </div>
             
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handleQuickBatchFind}
               className="btn-connect-gradient"
-              style={{ minHeight: '48px', borderRadius: '12px', padding: '0 20px', fontSize: '0.9rem' }}
+              style={{ minHeight: '48px', borderRadius: '12px', padding: '0 20px', fontSize: '0.9rem', flexShrink: 0 }}
             >
               <Users size={16} />
               Find Classmates
             </button>
-          </div>
 
-          {/* Filter rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Row 1: 5-column Pill Selectors */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-              {/* Batch Year Select */}
-              <select 
-                value={filterBatch} 
-                onChange={(e) => setFilterBatch(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">Batch Year</option>
-                {batchYears.map(year => <option key={year} value={year}>{year}</option>)}
-              </select>
-
-              {/* Department Select */}
-              <select 
-                value={filterDepartment} 
-                onChange={(e) => setFilterDepartment(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">Department</option>
-                {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-              </select>
-
-              {/* Location Select */}
-              <select 
-                value={filterCity} 
-                onChange={(e) => setFilterCity(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">Location</option>
-                {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
-              </select>
-
-              {/* Industry Select */}
-              <select 
-                value={filterIndustry} 
-                onChange={(e) => setFilterIndustry(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">Industry</option>
-                {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-              </select>
-
-              {/* House Select */}
-              <select 
-                value={filterHouse} 
-                onChange={(e) => setFilterHouse(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">🏠 House</option>
-                <option value="Vivekananda">Vivekananda</option>
-                <option value="Brahmananda">Brahmananda</option>
-                <option value="Ramakrishnananda">Ramakrishnananda</option>
-                <option value="Shardananda">Shardananda</option>
-                <option value="Premananda">Premananda</option>
-                <option value="Yogananda">Yogananda</option>
-              </select>
-            </div>
-
-            {/* Row 2: Networking Filters */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '10px', alignItems: 'center' }}>
-              {/* Skill Filter */}
-              <select
-                value={filterSkill}
-                onChange={(e) => setFilterSkill(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">🛠 Skill</option>
-                {['Java', 'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'PostgreSQL', 'Machine Learning',
-                  'Data Science', 'DevOps', 'Marketing', 'Finance', 'Law', 'Medicine', 'Teaching', 'Research',
-                  'Design', 'Product Management', 'Entrepreneurship', 'Consulting'].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-
-              {/* Mentorship Status Filter */}
-              <select
-                value={filterMentorship}
-                onChange={(e) => setFilterMentorship(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">🎓 Mentorship Status</option>
-                <option value="Available">✅ Available</option>
-                <option value="Limited Availability">⚡ Limited Availability</option>
-                <option value="Not Available">❌ Not Available</option>
-              </select>
-
-              {/* Open For Filter */}
-              <select
-                value={filterOpenFor}
-                onChange={(e) => setFilterOpenFor(e.target.value)}
-                className="directory-pill-select"
-              >
-                <option value="">🟢 Open For</option>
-                <option value="Mentorship">Mentorship</option>
-                <option value="Networking">Networking</option>
-                <option value="Referrals">Referrals</option>
-                <option value="Hiring">Hiring</option>
-                <option value="Collaborations">Collaborations</option>
-                <option value="Career Guidance">Career Guidance</option>
-              </select>
-
-              {/* Company Filter */}
-              <input
-                type="text"
-                value={filterCompany}
-                onChange={(e) => setFilterCompany(e.target.value)}
-                className="directory-pill-select"
-                placeholder="🏢 Company"
-                style={{ fontFamily: 'inherit' }}
-              />
-
-              {/* Clear Networking Filters */}
-              {(filterSkill || filterMentorship || filterOpenFor || filterCompany) && (
+            {/* Filters Toggle */}
+            {(() => {
+              const activeCount = [filterBatch, filterDepartment, filterCity, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany].filter(Boolean).length;
+              return (
                 <button
-                  onClick={() => { setFilterSkill(''); setFilterMentorship(''); setFilterOpenFor(''); setFilterCompany(''); }}
+                  type="button"
+                  onClick={() => setShowFilters(p => !p)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: '#fef2f2', border: '1px solid #fecaca',
-                    color: '#ef4444', borderRadius: '10px', padding: '0 14px',
-                    height: '42px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem',
-                    whiteSpace: 'nowrap'
+                    display: 'flex', alignItems: 'center', gap: '7px',
+                    height: '48px', padding: '0 18px', flexShrink: 0,
+                    borderRadius: '12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem',
+                    border: showFilters ? '1.5px solid var(--primary-color)' : '1.5px solid #e2e8f0',
+                    background: showFilters ? 'rgba(243,112,33,0.06)' : '#fff',
+                    color: showFilters ? 'var(--primary-color)' : '#475569',
+                    transition: 'all 0.2s',
+                    position: 'relative'
                   }}
                 >
-                  <X size={14} /> Clear
+                  <Filter size={15} />
+                  Filters
+                  {activeCount > 0 && (
+                    <span style={{
+                      background: 'var(--primary-gradient)', color: '#fff',
+                      borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 800,
+                      padding: '1px 7px', marginLeft: '2px'
+                    }}>{activeCount}</span>
+                  )}
+                  <ChevronDown size={14} style={{ transform: showFilters ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                 </button>
+              );
+            })()}
+          </div>
+
+          {/* Collapsible Filter Panel */}
+          {showFilters && (
+            <div style={{
+              background: '#fff',
+              border: '1.5px solid rgba(243,112,33,0.2)',
+              borderRadius: '16px',
+              padding: '20px 22px',
+              boxShadow: '0 4px 20px rgba(243,112,33,0.06)',
+              animation: 'fadeSlideDown 0.2s ease'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+
+                {/* Batch Year */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Batch Year</label>
+                  <select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">All Years</option>
+                    {batchYears.map(year => <option key={year} value={year}>{year}</option>)}
+                  </select>
+                </div>
+
+                {/* Department */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</label>
+                  <select value={filterDepartment} onChange={(e) => setFilterDepartment(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">All Departments</option>
+                    {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</label>
+                  <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">All Locations</option>
+                    {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
+                  </select>
+                </div>
+
+                {/* Industry */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Industry</label>
+                  <select value={filterIndustry} onChange={(e) => setFilterIndustry(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">All Industries</option>
+                    {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+                  </select>
+                </div>
+
+                {/* House */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏠 House</label>
+                  <select value={filterHouse} onChange={(e) => setFilterHouse(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">All Houses</option>
+                    <option value="Vivekananda">Vivekananda</option>
+                    <option value="Brahmananda">Brahmananda</option>
+                    <option value="Ramakrishnananda">Ramakrishnananda</option>
+                    <option value="Shardananda">Shardananda</option>
+                    <option value="Premananda">Premananda</option>
+                    <option value="Yogananda">Yogananda</option>
+                  </select>
+                </div>
+
+                {/* Skill */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🛠 Skill</label>
+                  <select value={filterSkill} onChange={(e) => setFilterSkill(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">Any Skill</option>
+                    {['Java', 'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'PostgreSQL', 'Machine Learning',
+                      'Data Science', 'DevOps', 'Marketing', 'Finance', 'Law', 'Medicine', 'Teaching', 'Research',
+                      'Design', 'Product Management', 'Entrepreneurship', 'Consulting'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Mentorship Status */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎓 Mentorship</label>
+                  <select value={filterMentorship} onChange={(e) => setFilterMentorship(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">Any Status</option>
+                    <option value="Available">✅ Available</option>
+                    <option value="Limited Availability">⚡ Limited</option>
+                    <option value="Not Available">❌ Not Available</option>
+                  </select>
+                </div>
+
+                {/* Open For */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🟢 Open For</label>
+                  <select value={filterOpenFor} onChange={(e) => setFilterOpenFor(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
+                    <option value="">Anything</option>
+                    <option value="Mentorship">Mentorship</option>
+                    <option value="Networking">Networking</option>
+                    <option value="Referrals">Referrals</option>
+                    <option value="Hiring">Hiring</option>
+                    <option value="Collaborations">Collaborations</option>
+                    <option value="Career Guidance">Career Guidance</option>
+                  </select>
+                </div>
+
+                {/* Company */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏢 Company</label>
+                  <input
+                    type="text"
+                    value={filterCompany}
+                    onChange={(e) => setFilterCompany(e.target.value)}
+                    className="directory-pill-select"
+                    placeholder="e.g. Google, TCS..."
+                    style={{ fontFamily: 'inherit', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+              </div>
+
+              {/* Footer: active chips + clear all */}
+              {[filterBatch, filterDepartment, filterCity, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany].some(Boolean) && (
+                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>Active:</span>
+                    {filterBatch && <span style={chipStyle}>{filterBatch} <button onClick={() => setFilterBatch('')} style={chipXStyle}>×</button></span>}
+                    {filterDepartment && <span style={chipStyle}>{filterDepartment} <button onClick={() => setFilterDepartment('')} style={chipXStyle}>×</button></span>}
+                    {filterCity && <span style={chipStyle}>{filterCity} <button onClick={() => setFilterCity('')} style={chipXStyle}>×</button></span>}
+                    {filterIndustry && <span style={chipStyle}>{filterIndustry} <button onClick={() => setFilterIndustry('')} style={chipXStyle}>×</button></span>}
+                    {filterHouse && <span style={chipStyle}>{filterHouse} <button onClick={() => setFilterHouse('')} style={chipXStyle}>×</button></span>}
+                    {filterSkill && <span style={{ ...chipStyle, background: 'rgba(243,112,33,0.1)', color: 'var(--primary-color)', borderColor: 'rgba(243,112,33,0.3)' }}>{filterSkill} <button onClick={() => setFilterSkill('')} style={chipXStyle}>×</button></span>}
+                    {filterMentorship && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>{filterMentorship} <button onClick={() => setFilterMentorship('')} style={chipXStyle}>×</button></span>}
+                    {filterOpenFor && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>Open: {filterOpenFor} <button onClick={() => setFilterOpenFor('')} style={chipXStyle}>×</button></span>}
+                    {filterCompany && <span style={{ ...chipStyle, background: 'rgba(59,130,246,0.1)', color: '#1d4ed8', borderColor: 'rgba(59,130,246,0.3)' }}>🏢 {filterCompany} <button onClick={() => setFilterCompany('')} style={chipXStyle}>×</button></span>}
+                  </div>
+                  <button
+                    onClick={() => { setFilterBatch(''); setFilterDepartment(''); setFilterCity(''); setFilterIndustry(''); setFilterHouse(''); setFilterSkill(''); setFilterMentorship(''); setFilterOpenFor(''); setFilterCompany(''); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
+                  >
+                    <X size={13} /> Clear All
+                  </button>
+                </div>
               )}
             </div>
-
-            {/* Active filter chips */}
-            {(filterSkill || filterMentorship || filterOpenFor || filterCompany || filterBatch || filterDepartment || filterCity || filterIndustry || filterHouse) && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Filter size={12} /> Active:
-                </span>
-                {filterBatch && <span style={chipStyle}>{filterBatch} <button onClick={() => setFilterBatch('')} style={chipXStyle}>×</button></span>}
-                {filterDepartment && <span style={chipStyle}>{filterDepartment} <button onClick={() => setFilterDepartment('')} style={chipXStyle}>×</button></span>}
-                {filterCity && <span style={chipStyle}>{filterCity} <button onClick={() => setFilterCity('')} style={chipXStyle}>×</button></span>}
-                {filterIndustry && <span style={chipStyle}>{filterIndustry} <button onClick={() => setFilterIndustry('')} style={chipXStyle}>×</button></span>}
-                {filterHouse && <span style={chipStyle}>{filterHouse} <button onClick={() => setFilterHouse('')} style={chipXStyle}>×</button></span>}
-                {filterSkill && <span style={{ ...chipStyle, background: 'rgba(139,92,246,0.1)', color: '#7c3aed', borderColor: 'rgba(139,92,246,0.3)' }}>{filterSkill} <button onClick={() => setFilterSkill('')} style={chipXStyle}>×</button></span>}
-                {filterMentorship && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>{filterMentorship} <button onClick={() => setFilterMentorship('')} style={chipXStyle}>×</button></span>}
-                {filterOpenFor && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>Open: {filterOpenFor} <button onClick={() => setFilterOpenFor('')} style={chipXStyle}>×</button></span>}
-                {filterCompany && <span style={{ ...chipStyle, background: 'rgba(59,130,246,0.1)', color: '#1d4ed8', borderColor: 'rgba(59,130,246,0.3)' }}>🏢 {filterCompany} <button onClick={() => setFilterCompany('')} style={chipXStyle}>×</button></span>}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Pending Connection Requests Widget */}
           {pendingRequests.length > 0 && (
@@ -755,7 +780,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     <div 
                       className="avatar-gradient-ring" 
                       style={{ 
-                        background: isRequestSent ? '#e2e8f0' : 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+                        background: isRequestSent ? '#e2e8f0' : 'var(--primary-gradient)',
                         padding: '3px',
                         borderRadius: '50%',
                         display: 'inline-block',
@@ -788,7 +813,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                         color: '#1e293b',
                         marginBottom: '4px'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#8b5cf6'}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
                       onMouseLeave={(e) => e.currentTarget.style.color = '#1e293b'}
                     >
                       {alumnus.full_name}
@@ -816,7 +841,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     {/* Designation / Profession / Company */}
                     {(alumnus.designation || alumnus.profession || alumnus.company) && (
                       <div style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                        <Briefcase size={12} style={{ flexShrink: 0, color: '#8b5cf6' }} />
+                        <Briefcase size={12} style={{ flexShrink: 0, color: 'var(--primary-color)' }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
                           {alumnus.designation || alumnus.profession}{alumnus.company ? ` @ ${alumnus.company}` : ''}
                         </span>
@@ -834,8 +859,8 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                         {alumnus.skills.slice(0, 3).map(skill => (
                           <span key={skill} style={{
                             fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px',
-                            borderRadius: '9999px', background: 'rgba(139,92,246,0.08)',
-                            color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)'
+                            borderRadius: '9999px', background: 'rgba(243,112,33,0.08)',
+                            color: 'var(--primary-color)', border: '1px solid rgba(243,112,33,0.2)'
                           }}>{skill}</span>
                         ))}
                         {alumnus.skills.length > 3 && (
@@ -937,7 +962,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                             fontWeight: 700,
                             width: 'auto',
                             minWidth: '130px',
-                            boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
+                            boxShadow: '0 4px 14px rgba(243, 112, 33, 0.25)'
                           }}
                         >
                           Accept Request
@@ -1021,9 +1046,9 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '24px' }}>
 
           {/* Widget 0: Mentors Available */}
-          <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(16,185,129,0.06) 100%)', border: '1px solid rgba(139,92,246,0.2)' }}>
+          <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(135deg, rgba(243,112,33,0.06) 0%, rgba(184,39,44,0.04) 100%)', border: '1px solid rgba(243,112,33,0.15)' }}>
             <div className="sidebar-widget-title-row">
-              <div className="widget-icon-box" style={{ background: 'linear-gradient(135deg, #7c3aed, #059669)' }}>
+              <div className="widget-icon-box" style={{ background: 'var(--primary-gradient)' }}>
                 <Star size={18} />
               </div>
               <h3>Find a Mentor</h3>

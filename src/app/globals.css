@@ -7186,6 +7186,11 @@ button:disabled {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Redesigned Directory Styles */
 .directory-main-container {
   display: grid;
@@ -7220,22 +7225,25 @@ button:disabled {
 }
 
 .btn-connect-gradient {
-  background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%);
+  background: var(--primary-gradient);
   color: white !important;
   border: none;
   font-weight: 700;
   border-radius: 9999px;
   padding: 10px 24px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: 0 4px 14px rgba(243, 112, 33, 0.22);
 }
 
 .btn-connect-gradient:hover {
   opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(243, 112, 33, 0.3);
 }
 
 .profile-completeness-banner {
@@ -7344,11 +7352,17 @@ button:disabled {
   cursor: pointer;
   outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F37021' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 12px center;
   background-repeat: no-repeat;
   background-size: 1.25em;
   padding-right: 36px;
+  transition: border-color 0.2s;
+}
+
+.directory-pill-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(243, 112, 33, 0.1);
 }
 
 .directory-tab-pill {
@@ -7361,9 +7375,10 @@ button:disabled {
 }
 
 .directory-tab-pill.active {
-  background: #1e293b;
+  background: var(--primary-gradient);
   color: white;
   border: none;
+  box-shadow: 0 4px 12px rgba(243, 112, 33, 0.2);
 }
 
 .directory-tab-pill.inactive {
@@ -7381,12 +7396,12 @@ button:disabled {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  background: var(--primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 10px rgba(236, 72, 153, 0.15);
+  box-shadow: 0 4px 10px rgba(243, 112, 33, 0.2);
 }
 
 .sidebar-widget-card {
