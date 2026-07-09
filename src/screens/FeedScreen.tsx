@@ -1863,72 +1863,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         <div className="ig-feed-body">
         {/* Center: post composer + feed */}
         <main className="ig-feed-main">
-          {/* Instagram-style Stories Tray */}
-          <motion.div
-            className="stories-tray-container"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: {},
-              show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } }
-            }}
-          >
-            {/* Current User's Story */}
-            <motion.div
-              className="story-item-wrap"
-              variants={{
-                hidden: { opacity: 0, scale: 0.75, y: 12 },
-                show: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 16 } }
-              }}
-            >
-              <motion.div
-                className={`story-avatar-ring ${currentUserStories.length > 0 ? 'has-unviewed' : 'viewed'}`}
-                onClick={handleUserStoryClick}
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
-              >
-                <img
-                  src={currentUser?.profile_photo || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80'}
-                  alt="Your Story"
-                  className="story-avatar"
-                />
-                <motion.button
-                  className="story-add-btn"
-                  onClick={(e) => { e.stopPropagation(); setCreateStoryOpen(true); }}
-                  title="Add to story"
-                  type="button"
-                  whileHover={{ scale: 1.2, rotate: 90 }}
-                  whileTap={{ scale: 0.85 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 14 }}
-                >
-                  <Plus size={12} />
-                </motion.button>
-              </motion.div>
-              <span className="story-username">Your Story</span>
-            </motion.div>
 
-            {/* Other Story Groups */}
-            {stories.map((group, idx) => (
-              <motion.div
-                key={group.userId}
-                className="story-item-wrap"
-                onClick={() => handleStoryGroupClick(idx)}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.75, y: 12 },
-                  show: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 16 } }
-                }}
-              >
-                <motion.div
-                  className={`story-avatar-ring ${group.hasUnviewed ? 'has-unviewed' : 'viewed'}`}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                >
-                  <img src={group.userAvatar} alt={group.userName} className="story-avatar" />
-                </motion.div>
-                <span className="story-username">{group.userName}</span>
-              </motion.div>
-            ))}
-          </motion.div>
 
           {/* Feed Filtering Tabs */}
           <motion.div
