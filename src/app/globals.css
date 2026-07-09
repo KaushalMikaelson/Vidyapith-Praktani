@@ -10472,3 +10472,51 @@ button:disabled {
   }
 }
 
+/* Overrides to make the sidebar/navigation icons and containers smaller on small screens */
+@media (max-width: 768px) {
+  .icon-rail {
+    width: 68px !important;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  .icon-rail .rail-logo-image {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .icon-rail .rail-logo {
+    margin-bottom: 8px !important;
+  }
+
+  .icon-rail .rail-divider {
+    margin: 6px auto 10px !important;
+    width: 28px !important;
+  }
+
+  .icon-rail .rail-nav {
+    gap: 8px !important;
+  }
+
+  .icon-rail .rail-btn,
+  .icon-rail .rail-btn.rail-create-btn,
+  .icon-rail .rail-profile-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+  }
+
+  .icon-rail .rail-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .icon-rail .rail-avatar {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .mobile-sidebar-backdrop {
+    inset: 0 0 0 68px !important;
+  }
+}
+

@@ -398,7 +398,6 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   color: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
                 }}>{icon}</div>
                 <h3 style={{ color: 'var(--heritage-ink, #161719)', fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>{title}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--heritage-muted, #77797d)', lineHeight: '1.6', margin: 0 }}>{desc}</p>
                 <button type="button" className="create-type-card-button" style={{
                   background: gradient,
                   color: '#fff',
