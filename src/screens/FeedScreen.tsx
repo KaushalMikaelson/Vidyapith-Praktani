@@ -6245,11 +6245,29 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       <div className="article-post-block" style={{ padding: '0 20px 10px 20px' }}>
                         <div className="glass-panel" style={{ overflow: 'hidden', borderRadius: '12px', padding: 0 }}>
                           {post.media_urls[0] && (
-                            <img 
-                              src={post.media_urls[0]} 
-                              alt={post.media_urls[1] || 'Article Cover'} 
-                              style={{ width: '100%', maxHeight: '250px', objectFit: 'cover' }} 
-                            />
+                            getYouTubeId(post.media_urls[0]) || post.media_urls[0].includes('video/upload') || post.media_urls[0].endsWith('.mp4') || post.media_urls[0].endsWith('.mov') || post.media_urls[0].endsWith('.webm') ? (
+                              getYouTubeId(post.media_urls[0]) ? (
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${getYouTubeId(post.media_urls[0])}`}
+                                  style={{ width: '100%', height: '250px', border: 'none' }}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  title="Article Video Cover"
+                                />
+                              ) : (
+                                <video 
+                                  src={post.media_urls[0]} 
+                                  controls 
+                                  style={{ width: '100%', maxHeight: '250px', objectFit: 'contain', background: '#000', display: 'block' }} 
+                                />
+                              )
+                            ) : (
+                              <img 
+                                src={post.media_urls[0]} 
+                                alt={post.media_urls[1] || 'Article Cover'} 
+                                style={{ width: '100%', maxHeight: '250px', objectFit: 'cover' }} 
+                              />
+                            )
                           )}
                           <div style={{ padding: '20px' }}>
                             {post.media_urls[2] && (

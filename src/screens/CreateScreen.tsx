@@ -92,13 +92,15 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
 
   // ── Article state ──────────────────────────────────────────────────────────
   const [articleTitle, setArticleTitle] = useState('');
-  const [articleCategory, setArticleCategory] = useState('Nostalgia & School Stories');
-  const [coverImageUrl, setCoverImageUrl] = useState('');
-
-  const categories = [
-    'Nostalgia & School Stories', 'Tech & Innovation', 'Monastery & Spirituality',
-    'Career & Jobs Advice', 'Centenary Celebrations', 'General Reflections', 'Achievements'
-  ];
+  const [articleCategory] = useState('General Reflections');
+  const [articleMediaCloudUrl, setArticleMediaCloudUrl] = useState('');
+  const [articleMediaPreview, setArticleMediaPreview] = useState('');
+  const [articleMediaType, setArticleMediaType] = useState<'image' | 'video' | null>(null);
+  const [articleMediaFileName, setArticleMediaFileName] = useState('');
+  const [articleMediaUploading, setArticleMediaUploading] = useState(false);
+  const [articleMediaError, setArticleMediaError] = useState<string | null>(null);
+  const [isDraggingArticleMedia, setIsDraggingArticleMedia] = useState(false);
+  const articleMediaInputRef = useRef<HTMLInputElement>(null);
 
   // ── Image handlers ─────────────────────────────────────────────────────────
 
@@ -261,6 +263,59 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
     setVideoUploading(false);
   };
 
+  // ── Article media handlers ──────────────────────────────────────────────────
+
+  const handleArticleMediaFile = async (file: File) => {
+    if (!file) return;
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isVideo && !isImage) {
+      showToast('Please select a valid image or video file.', 'danger');
+      return;
+    }
+
+    setArticleMediaType(isVideo ? 'video' : 'image');
+    const objectUrl = URL.createObjectURL(file);
+    setArticleMediaPreview(objectUrl);
+    setArticleMediaFileName(file.name);
+    setArticleMediaError(null);
+    setArticleMediaUploading(true);
+
+    try {
+      const folder = isVideo ? 'posts/videos' : 'posts/images';
+      const result = await uploadMedia(file, folder);
+      setArticleMediaCloudUrl(result.url);
+      setArticleMediaUploading(false);
+      showToast('Cover media uploaded successfully!', 'success');
+    } catch (err: any) {
+      setArticleMediaError(err.message || 'Upload failed');
+      setArticleMediaUploading(false);
+    }
+  };
+
+  const handleArticleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleArticleMediaFile(file);
+    e.target.value = '';
+  };
+
+  const handleArticleMediaDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingArticleMedia(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleArticleMediaFile(file);
+  };
+
+  const clearArticleMedia = () => {
+    if (articleMediaPreview.startsWith('blob:')) URL.revokeObjectURL(articleMediaPreview);
+    setArticleMediaPreview('');
+    setArticleMediaCloudUrl('');
+    setArticleMediaType(null);
+    setArticleMediaFileName('');
+    setArticleMediaError(null);
+    setArticleMediaUploading(false);
+  };
+
   // ── YouTube helper ─────────────────────────────────────────────────────────
 
   const getYouTubeId = (url: string) => {
@@ -326,11 +381,15 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
       mediaUrls = [finalVideoSrc, JSON.stringify(meta)];
     } else if (selectedType === 'article') {
       if (!articleTitle.trim()) { showToast('Please provide an article title.', 'danger'); return; }
+      if (articleMediaUploading) {
+        showToast('Cover media is still uploading — please wait.', 'info');
+        return;
+      }
       if (!finalContent) { showToast('Article body cannot be empty.', 'danger'); return; }
       finalPostType = 'article';
       mediaUrls = [
-        coverImageUrl.trim(), articleTitle.trim(), articleCategory,
-        JSON.stringify({ tagClassmates: '', targetBatchYear: '', isReunionPost: false, nostalgicPhotoUrl: coverImageUrl.trim(), memoryLocation: '' })
+        articleMediaCloudUrl.trim(), articleTitle.trim(), articleCategory,
+        JSON.stringify({ tagClassmates: '', targetBatchYear: '', isReunionPost: false, nostalgicPhotoUrl: articleMediaCloudUrl.trim(), memoryLocation: '' })
       ];
     }
 
@@ -448,22 +507,51 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
                   style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Category</label>
-                  <select value={articleCategory} onChange={e => setArticleCategory(e.target.value)}
-                    style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', cursor: 'pointer', boxSizing: 'border-box' }}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', fontFamily: 'var(--font-title)' }}>Cover Media</label>
+                <input ref={articleMediaInputRef} type="file" accept="image/*,video/*" onChange={handleArticleMediaChange} style={{ display: 'none' }} />
+
+                {!articleMediaPreview ? (
+                  <div
+                    onDragOver={e => { e.preventDefault(); setIsDraggingArticleMedia(true); }}
+                    onDragLeave={() => setIsDraggingArticleMedia(false)}
+                    onDrop={handleArticleMediaDrop}
+                    onClick={() => articleMediaInputRef.current?.click()}
+                    style={{
+                      border: `2px dashed ${isDraggingArticleMedia ? 'var(--primary-color)' : 'rgba(15, 23, 42, 0.15)'}`,
+                      borderRadius: '16px', padding: '40px 24px', textAlign: 'center', cursor: 'pointer',
+                      background: isDraggingArticleMedia ? 'rgba(243, 112, 33, 0.04)' : '#f8fbfd', 
+                      transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                    }}
                   >
-                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Cover Image URL (Optional)</label>
-                  <input type="text" value={coverImageUrl} onChange={e => setCoverImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-                  />
-                </div>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(243, 112, 33, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                      <Upload size={22} style={{ color: 'var(--primary-color)' }} />
+                    </div>
+                    <p style={{ color: '#0c1e36', fontWeight: 700, margin: '0 0 6px', fontSize: '0.92rem' }}>Click to browse or drag & drop</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>Image or Video · Uploads automatically</p>
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)', background: '#f8fbfd', maxWidth: '400px' }}>
+                    {articleMediaType === 'video' ? (
+                      <video src={articleMediaPreview} controls style={{ width: '100%', maxHeight: '250px', display: 'block', objectFit: 'contain' }} />
+                    ) : (
+                      <img src={articleMediaPreview} alt="Cover Preview" style={{ width: '100%', maxHeight: '250px', display: 'block', objectFit: 'cover' }} />
+                    )}
+                    <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {articleMediaUploading && <Loader2 size={16} style={{ color: 'var(--primary-color)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
+                        {!articleMediaUploading && articleMediaCloudUrl && <CheckCircle2 size={16} style={{ color: '#48bb78', flexShrink: 0 }} />}
+                        {!articleMediaUploading && articleMediaError && <AlertCircle size={16} style={{ color: '#fc8181', flexShrink: 0 }} />}
+                        <span style={{ fontSize: '0.82rem', color: 'var(--heritage-muted, #77797d)' }}>
+                          {articleMediaUploading ? 'Uploading cover...' : articleMediaError ? `Error: ${articleMediaError}` : `✅ Ready · ${articleMediaFileName || 'Media file'}`}
+                        </span>
+                      </div>
+                      <button type="button" onClick={clearArticleMedia}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--heritage-muted, #77797d)', cursor: 'pointer', fontSize: '0.82rem' }}
+                      ><X size={14} /> Remove</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
