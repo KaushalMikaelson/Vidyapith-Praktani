@@ -1865,62 +1865,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         <main className="ig-feed-main">
 
 
-          {/* Feed Filtering Tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.3 }}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              borderBottom: '1px solid #e2e8f0',
-              padding: '12px 16px',
-              marginBottom: '16px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              position: 'relative'
-            }}
-          >
-            {['All', 'Connected', 'Batch', 'Department', 'Trending'].map(tab => {
-              const isActive = feedTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setFeedTab(tab)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: '8px 16px',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    color: isActive ? '#ec4899' : '#64748b',
-                    cursor: 'pointer',
-                    transition: 'color 0.2s',
-                    outline: 'none',
-                    position: 'relative'
-                  }}
-                >
-                  {tab}
-                  {isActive && (
-                    <motion.span
-                      layoutId="feedTabIndicator"
-                      style={{
-                        position: 'absolute',
-                        bottom: -12,
-                        left: 0,
-                        right: 0,
-                        height: 3,
-                        background: '#ec4899',
-                        borderRadius: 2
-                      }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </motion.div>
+
 
 
           {/* Profile Completeness Banner */}

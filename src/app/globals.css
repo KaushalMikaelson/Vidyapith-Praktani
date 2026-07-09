@@ -7199,8 +7199,8 @@ button:disabled {
 }
 
 .profile-completeness-banner {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
-  border: 1px solid rgba(236, 72, 153, 0.15);
+  background: linear-gradient(135deg, rgba(243, 112, 33, 0.08) 0%, rgba(184, 39, 44, 0.08) 100%);
+  border: 1px solid rgba(243, 112, 33, 0.15);
   border-radius: 16px;
   padding: 16px 20px;
   margin-bottom: 20px;
@@ -7222,7 +7222,7 @@ button:disabled {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--emblem-saffron) 0%, var(--emblem-red) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7245,6 +7245,8 @@ button:disabled {
 }
 
 .profile-completeness-action {
+  background: linear-gradient(135deg, var(--emblem-saffron) 0%, var(--emblem-red) 100%) !important;
+  color: white !important;
   padding: 8px 16px;
   border-radius: 30px;
   font-size: 0.78rem;
@@ -7257,41 +7259,24 @@ button:disabled {
 
 @media (max-width: 480px) {
   .profile-completeness-banner {
-    display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
+    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px 10px;
-    padding: 12px;
-    margin-bottom: 14px;
-    border-radius: 14px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: 12px;
   }
 
   .profile-completeness-copy {
-    display: contents;
-  }
-
-  .profile-completeness-icon {
-    width: 34px;
-    height: 34px;
-    font-size: 0.86rem;
-  }
-
-  .profile-completeness-banner h4 {
-    margin-bottom: 2px;
-    font-size: 0.82rem;
-  }
-
-  .profile-completeness-banner p {
-    font-size: 0.72rem;
-    line-height: 1.32;
+    display: none;
   }
 
   .profile-completeness-action {
-    grid-column: 2;
-    justify-self: start;
-    min-height: 30px;
-    padding: 6px 12px;
-    font-size: 0.72rem;
+    width: 100%;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    border-radius: 30px;
   }
 }
 
