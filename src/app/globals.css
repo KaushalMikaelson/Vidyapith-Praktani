@@ -10520,3 +10520,7 @@ button:disabled {
   }
 }
 
+.tag-suggestion-item:hover {
+  background: #f4f8ff !important;
+}
+

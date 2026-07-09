@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Image, Video, FileText, Send, ArrowLeft, Globe, Users,
   X, Upload, Link, Play, Loader2, CheckCircle2, AlertCircle
@@ -45,6 +45,39 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [aspectRatio, setAspectRatio] = useState<'original' | '1:1' | '4:5' | '4:3' | '16:9'>('original');
   const [fitMode, setFitMode] = useState<'contain' | 'cover'>('contain');
+
+  // Tag autocomplete states
+  const [tagSuggestions, setTagSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  // Tag classmates debounce autocomplete query
+  useEffect(() => {
+    const tokens = tagClassmates.split(',');
+    const activeToken = tokens[tokens.length - 1].trim();
+
+    if (activeToken.length < 2) {
+      setTagSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const results = await apiFetch(`/directory/suggestions?q=${encodeURIComponent(activeToken)}&connectionsOnly=true`);
+        const existingNames = tokens.map(t => t.trim().toLowerCase());
+        const filtered = results.filter((res: any) => 
+          res.profile?.full_name && !existingNames.includes(res.profile.full_name.toLowerCase())
+        );
+        setTagSuggestions(filtered);
+      } catch (err) {
+        console.error('[Tagging Autocomplete Error]', err);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [tagClassmates]);
 
   // ── Video state ────────────────────────────────────────────────────────────
   const [videoUrl, setVideoUrl] = useState('');             // URL-mode
@@ -612,11 +645,72 @@ export const CreateScreen: React.FC<CreateScreenProps> = ({ showToast, setActive
               )}
 
               {/* Tag classmates */}
-              <div style={{ marginTop: '8px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Tag Classmates (Optional)</label>
+              <div style={{ marginTop: '8px', position: 'relative' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#0c1e36', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', fontFamily: 'var(--font-title)' }}>Tag Classmates</label>
                 <input type="text" value={tagClassmates} onChange={e => setTagClassmates(e.target.value)} placeholder="e.g. Aurobindo, Shubhendu"
                   style={{ width: '100%', padding: '14px 18px', background: '#f8fbfd', border: '1px solid rgba(15, 23, 42, 0.08)', borderRadius: '12px', color: '#0c1e36', fontSize: '0.95rem', boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 />
+                
+                {tagSuggestions.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: '#ffffff',
+                    border: '1px solid rgba(15, 23, 42, 0.12)',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(5, 11, 22, 0.12)',
+                    zIndex: 10,
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    marginTop: '6px',
+                    padding: '6px'
+                  }}>
+                    {tagSuggestions.map(user => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => {
+                          const tokens = tagClassmates.split(',');
+                          tokens[tokens.length - 1] = ` ${user.profile.full_name}`;
+                          setTagClassmates(tokens.join(',').trim() + ', ');
+                          setTagSuggestions([]);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background 0.15s'
+                        }}
+                        className="tag-suggestion-item"
+                      >
+                        <img
+                          src={user.profile.profile_photo || '/default-avatar.png'}
+                          alt=""
+                          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0c1e36' }}>
+                            {user.profile.full_name}
+                          </span>
+                          {user.profile.batch_year && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              Class of {user.profile.batch_year}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

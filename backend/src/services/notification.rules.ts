@@ -22,7 +22,8 @@ export type NotificationTriggerType =
   | 'GROUP_UPDATED'
   | 'GROUP_DELETED'
   | 'MENTORSHIP_REQUEST'
-  | 'EVENT_REMINDER';
+  | 'EVENT_REMINDER'
+  | 'TAGGED_IN_POST';
 
 export const notificationRules: Record<NotificationTriggerType, DeliveryPreferences> = {
   POST_CREATED: { push: true, email: false },
@@ -43,5 +44,6 @@ export const notificationRules: Record<NotificationTriggerType, DeliveryPreferen
   GROUP_UPDATED: { push: true, email: false },
   GROUP_DELETED: { push: true, email: true },
   MENTORSHIP_REQUEST: { push: true, email: true },
-  EVENT_REMINDER: { push: true, email: true }
+  EVENT_REMINDER: { push: true, email: true },
+  TAGGED_IN_POST: { push: true, email: true }
 };

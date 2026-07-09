@@ -166,6 +166,49 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
       });
     }
 
+    // Process classmate tags if any
+    let tagClassmatesStr = '';
+    if (mediaUrls && mediaUrls.length > 0) {
+      try {
+        const lastUrl = mediaUrls[mediaUrls.length - 1];
+        if (lastUrl && lastUrl.startsWith('{') && lastUrl.endsWith('}')) {
+          const meta = JSON.parse(lastUrl);
+          if (meta && meta.tagClassmates) {
+            tagClassmatesStr = meta.tagClassmates;
+          }
+        }
+      } catch {}
+    }
+
+    if (tagClassmatesStr) {
+      const names = tagClassmatesStr
+        .split(',')
+        .map((n: string) => n.trim())
+        .filter(Boolean);
+
+      if (names.length > 0) {
+        const taggedUsers = await prisma.user.findMany({
+          where: {
+            verify_status: 'approved',
+            profile: {
+              full_name: { in: names, mode: 'insensitive' }
+            }
+          }
+        });
+
+        for (const taggedUser of taggedUsers) {
+          if (taggedUser.id === userId) continue;
+          await notificationQueue.add('direct', {
+            type: 'TAGGED_IN_POST',
+            targetId: taggedUser.id,
+            title: 'Tagged in a Post',
+            body: `${authorName} tagged you in their publication.`,
+            actionUrl: '/feed'
+          });
+        }
+      }
+    }
+
     await postCache.invalidate('posts:');
     res.status(201).json({ success: true, post: newPost });
   } catch (err: any) {

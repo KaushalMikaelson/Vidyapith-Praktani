@@ -1001,13 +1001,75 @@ export const getUserRelations = async (req: AuthenticatedRequest, res: Response)
 // Get directory search suggestions/autocomplete results (highly optimized and cached)
 export const getDirectorySuggestions = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { q } = req.query;
+    const { q, connectionsOnly } = req.query;
     if (!q || typeof q !== 'string' || q.trim().length < 2) {
       res.status(200).json([]);
       return;
     }
 
     const queryStr = q.trim();
+    const userId = req.user?.id;
+
+    if (connectionsOnly === 'true' && userId) {
+      const suggestionsCacheKey = `connections:suggestions:${userId}:${queryStr.toLowerCase()}`;
+      const cachedSuggestions = await connectionsCache.get<any[]>(suggestionsCacheKey);
+      if (cachedSuggestions) {
+        res.setHeader('X-Cache', 'HIT');
+        res.status(200).json(cachedSuggestions);
+        return;
+      }
+
+      const idsCacheKey = `connections:ids:${userId}`;
+      let partnerIds = await connectionsCache.get<string[]>(idsCacheKey);
+      if (!partnerIds) {
+        const connections = await prisma.connection.findMany({
+          where: {
+            status: 'accepted',
+            OR: [
+              { sender_id: userId },
+              { receiver_id: userId }
+            ]
+          },
+          select: { sender_id: true, receiver_id: true }
+        });
+        partnerIds = connections.map(c => c.sender_id === userId ? c.receiver_id : c.sender_id);
+        await connectionsCache.set(idsCacheKey, partnerIds, 300000); // 5 minutes cache
+      }
+
+      if (partnerIds.length === 0) {
+        res.setHeader('X-Cache', 'MISS');
+        await connectionsCache.set(suggestionsCacheKey, [], 60000); // 1 minute cache for empty results
+        res.status(200).json([]);
+        return;
+      }
+
+      const users = await prisma.user.findMany({
+        where: {
+          id: { in: partnerIds },
+          verify_status: 'approved',
+          profile: {
+            full_name: { contains: queryStr, mode: 'insensitive' }
+          }
+        },
+        select: {
+          id: true,
+          role: true,
+          profile: {
+            select: {
+              full_name: true,
+              profile_photo: true,
+              batch_year: true,
+              city: true
+            }
+          }
+        }
+      });
+      res.setHeader('X-Cache', 'MISS');
+      await connectionsCache.set(suggestionsCacheKey, users, 60000); // 1 minute cache for autocomplete suggestions query
+      res.status(200).json(users);
+      return;
+    }
+
     const cacheKey = `suggestions:${queryStr.toLowerCase()}`;
 
     // Try cache first
