@@ -8132,9 +8132,9 @@ button:disabled {
   }
 
   .feed-header-ig {
-    align-items: flex-end !important;
+    align-items: center !important;
     gap: 16px !important;
-    padding: 0 4px !important;
+    padding: 0 12px !important;
   }
 
   .feed-header-ig > div:first-child {
@@ -8172,7 +8172,7 @@ button:disabled {
   .feed-header-actions {
     gap: 14px !important;
     flex-shrink: 0;
-    padding-bottom: 28px;
+    padding-bottom: 0 !important;
   }
 
   .header-action-btn {
