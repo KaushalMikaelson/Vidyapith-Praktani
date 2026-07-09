@@ -40,13 +40,25 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      handleAuthFailure();
+      const msg: string = (errorData.error || '').toLowerCase();
+      // Only log out if the token itself is the problem — not a resource permission issue
+      const isAuthFailure =
+        msg.includes('token') ||
+        msg.includes('expired') ||
+        msg.includes('session') ||
+        msg.includes('invalid') ||
+        msg.includes('no active token') ||
+        endpoint.startsWith('/auth/');
+      if (isAuthFailure) {
+        handleAuthFailure();
+      }
     }
     throw new ApiError(errorData.error || `Request failed with status ${response.status}`, response.status);
   }
 
   return response.json();
 };
+
 
 /**
  * Upload helper for multipart/form-data (file uploads).
@@ -69,7 +81,17 @@ export const apiUploadFetch = async (endpoint: string, formData: FormData) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      handleAuthFailure();
+      const msg: string = (errorData.error || '').toLowerCase();
+      const isAuthFailure =
+        msg.includes('token') ||
+        msg.includes('expired') ||
+        msg.includes('session') ||
+        msg.includes('invalid') ||
+        msg.includes('no active token') ||
+        endpoint.startsWith('/auth/');
+      if (isAuthFailure) {
+        handleAuthFailure();
+      }
     }
     throw new ApiError(errorData.error || `Upload failed with status ${response.status}`, response.status);
   }

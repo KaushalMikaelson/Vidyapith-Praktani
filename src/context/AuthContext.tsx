@@ -33,16 +33,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         fetch(`${API_BASE_URL}/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
-        }).then(res => {
-          if (res.ok) return res.json();
-          throw new Error('Session expired');
-        }).then(data => {
+        }).then(async res => {
+          if (res.status === 401) {
+            // Genuine auth failure — token expired or revoked
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem('rkmv_auth_token');
+            setCurrentUser(null);
+            return;
+          }
+          if (!res.ok) {
+            // Network/server error — keep existing session, don't log out
+            return;
+          }
+          const data = await res.json();
           localStorage.setItem(SESSION_KEY, JSON.stringify(data.user));
           setCurrentUser(data.user);
         }).catch(() => {
-          localStorage.removeItem(SESSION_KEY);
-          localStorage.removeItem('rkmv_auth_token');
-          setCurrentUser(null);
+          // Network error (backend restarting, offline, etc.) — keep session alive
+          // Do NOT clear session on network failures
         }).finally(() => {
           setIsAuthLoading(false);
         });
@@ -174,15 +182,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (response.status === 401) {
+        // Only log out on explicit auth rejection
+        logout();
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem(SESSION_KEY, JSON.stringify(data.user));
         setCurrentUser(data.user);
-      } else {
-        logout();
       }
+      // On 5xx or network error: silently ignore, keep session alive
     } catch (err) {
-      console.error("Session refresh failed:", err);
+      // Network error — do not log out, backend may be temporarily unavailable
+      console.warn("Session refresh failed (network error) — keeping session:", err);
     }
   };
 

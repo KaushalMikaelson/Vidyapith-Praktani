@@ -24,12 +24,9 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBatch, setFilterBatch] = useState('');
-  const [filterDepartment, setFilterDepartment] = useState('');
-  const [filterCity, setFilterCity] = useState('');
-  const [filterIndustry, setFilterIndustry] = useState('');
-  const [filterHouse, setFilterHouse] = useState('');
-  const [filterSkill, setFilterSkill] = useState('');
-  const [filterMentorship, setFilterMentorship] = useState('');
+  const [filterState, setFilterState] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('');
+  const [filterProfession, setFilterProfession] = useState('');
   const [filterOpenFor, setFilterOpenFor] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'alumni' | 'student' | 'faculty'>('all');
@@ -45,7 +42,6 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
   // B06: Dynamic filter options computed from real DB data
   const [availableCities, setAvailableCities] = useState<string[]>(['Mumbai', 'Delhi', 'Pune', 'Bangalore', 'Kolkata', 'Deoghar']);
   const [availableDepartments, setAvailableDepartments] = useState<string[]>(['Engineering', 'Science', 'Commerce', 'Arts', 'Physics', 'Chemistry']);
-  const [availableIndustries, setAvailableIndustries] = useState<string[]>(['Technology', 'Healthcare', 'Finance', 'Government', 'Education', 'Research', 'Art']);
 
   // Advanced Connection Pipeline States
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -101,14 +97,11 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     const queryParams = new URLSearchParams();
     if (searchQuery.trim()) queryParams.append('search', searchQuery.trim());
     if (filterBatch) queryParams.append('batchYear', filterBatch);
-    if (filterCity.trim()) queryParams.append('city', filterCity.trim());
+    if (filterState.trim()) queryParams.append('city', filterState.trim());
+    if (filterDistrict.trim()) queryParams.append('city', filterDistrict.trim());
     if (filterRole && filterRole !== 'all') queryParams.append('role', filterRole);
     if (sortBy) queryParams.append('sortBy', sortBy);
-    if (filterDepartment) queryParams.append('department', filterDepartment);
-    if (filterIndustry) queryParams.append('industry', filterIndustry);
-    if (filterHouse) queryParams.append('house', filterHouse);
-    if (filterSkill) queryParams.append('skills', filterSkill);
-    if (filterMentorship) queryParams.append('mentorshipStatus', filterMentorship);
+    if (filterProfession) queryParams.append('profession', filterProfession);
     if (filterOpenFor) queryParams.append('openFor', filterOpenFor);
     if (filterCompany) queryParams.append('company', filterCompany);
 
@@ -128,7 +121,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
       setAlumniList(results);
 
       // Compute overall stats if no search query or filters are active
-      if (!searchQuery.trim() && !filterBatch && !filterCity.trim() && filterRole === 'all' && !filterDepartment && !filterIndustry && !filterSkill && !filterMentorship && !filterOpenFor && !filterCompany) {
+      if (!searchQuery.trim() && !filterBatch && !filterState.trim() && !filterDistrict.trim() && filterRole === 'all' && !filterProfession && !filterOpenFor && !filterCompany) {
         let alumni = 0;
         let students = 0;
         let faculty = 0;
@@ -136,7 +129,6 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
         const citiesSet = new Set<string>();
         const deptsSet = new Set<string>();
-        const industriesSet = new Set<string>();
 
         results.forEach((u: User) => {
           if (u.role === 'alumni') alumni++;
@@ -158,10 +150,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
             deptsSet.add(deptVal.trim());
           }
 
-          const indVal = u.profile?.industry || u.industry;
-          if (indVal && indVal.trim()) {
-            industriesSet.add(indVal.trim());
-          }
+
         });
 
         const minYear = years.length ? Math.min(...years) : 0;
@@ -181,9 +170,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
         if (deptsSet.size > 0) {
           setAvailableDepartments(Array.from(deptsSet).sort());
         }
-        if (industriesSet.size > 0) {
-          setAvailableIndustries(Array.from(industriesSet).sort());
-        }
+
       }
     } catch (err: any) {
       showToast(err.message, 'danger');
@@ -199,12 +186,12 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filterBatch, filterCity, filterRole, sortBy, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany]);
+  }, [searchQuery, filterBatch, filterState, filterDistrict, filterRole, sortBy, filterProfession, filterOpenFor, filterCompany]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterBatch, filterCity, filterRole, filterDepartment, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany]);
+  }, [searchQuery, filterBatch, filterState, filterDistrict, filterRole, filterProfession, filterOpenFor, filterCompany]);
 
   // Pagination helper calculations
   const totalItems = alumniList.length;
@@ -214,7 +201,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
   const batchYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: currentYear - 1984 }, (_, index) => currentYear - index);
+    return Array.from({ length: currentYear - 1960 + 1 }, (_, index) => currentYear - index);
   }, []);
 
   const handleConnectRequest = async (id: string, name: string) => {
@@ -434,7 +421,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
             {/* Filters Toggle */}
             {(() => {
-              const activeCount = [filterBatch, filterDepartment, filterCity, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany].filter(Boolean).length;
+              const activeCount = [filterBatch, filterState, filterDistrict, filterProfession, filterOpenFor, filterCompany].filter(Boolean).length;
               return (
                 <button
                   type="button"
@@ -486,69 +473,135 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                   </select>
                 </div>
 
-                {/* Department */}
+                {/* State */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</label>
-                  <select value={filterDepartment} onChange={(e) => setFilterDepartment(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">All Departments</option>
-                    {availableDepartments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📍 State</label>
+                  <select
+                    value={filterState}
+                    onChange={(e) => { setFilterState(e.target.value); setFilterDistrict(''); }}
+                    className="directory-pill-select"
+                    style={{ borderRadius: '10px', width: '100%' }}
+                  >
+                    <option value="">All States</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Delhi">Delhi (NCT)</option>
+                    <option value="Jammu">Jammu &amp; Kashmir</option>
+                    <option value="Ladakh">Ladakh</option>
                   </select>
                 </div>
 
-                {/* Location */}
+                {/* District */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</label>
-                  <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">All Locations</option>
-                    {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏘 District</label>
+                  <select
+                    value={filterDistrict}
+                    onChange={(e) => setFilterDistrict(e.target.value)}
+                    className="directory-pill-select"
+                    style={{ borderRadius: '10px', width: '100%' }}
+                  >
+                    <option value="">All Districts</option>
+                    {/* Jharkhand */}
+                    {(!filterState || filterState === 'Jharkhand') && (<>
+                      <option value="Deoghar">Deoghar</option>
+                      <option value="Dhanbad">Dhanbad</option>
+                      <option value="Bokaro">Bokaro</option>
+                      <option value="Dumka">Dumka</option>
+                      <option value="East Singhbhum">East Singhbhum (Jamshedpur)</option>
+                      <option value="West Singhbhum">West Singhbhum (Chaibasa)</option>
+                      <option value="Giridih">Giridih</option>
+                      <option value="Godda">Godda</option>
+                      <option value="Gumla">Gumla</option>
+                      <option value="Hazaribagh">Hazaribagh</option>
+                      <option value="Jamtara">Jamtara</option>
+                      <option value="Khunti">Khunti</option>
+                      <option value="Koderma">Koderma</option>
+                      <option value="Latehar">Latehar</option>
+                      <option value="Lohardaga">Lohardaga</option>
+                      <option value="Pakur">Pakur</option>
+                      <option value="Palamu">Palamu</option>
+                      <option value="Ramgarh">Ramgarh</option>
+                      <option value="Ranchi">Ranchi</option>
+                      <option value="Sahebganj">Sahebganj</option>
+                      <option value="Seraikela-Kharsawan">Seraikela-Kharsawan</option>
+                      <option value="Simdega">Simdega</option>
+                      <option value="Chatra">Chatra</option>
+                      <option value="Garhwa">Garhwa</option>
+                    </>)}
+                    {/* Bihar */}
+                    {filterState === 'Bihar' && (<>
+                      <option value="Patna">Patna</option>
+                      <option value="Gaya">Gaya</option>
+                      <option value="Bhagalpur">Bhagalpur</option>
+                      <option value="Muzaffarpur">Muzaffarpur</option>
+                      <option value="Darbhanga">Darbhanga</option>
+                      <option value="Purnia">Purnia</option>
+                      <option value="Nalanda">Nalanda</option>
+                      <option value="Munger">Munger</option>
+                      <option value="Saharsa">Saharsa</option>
+                      <option value="Madhubani">Madhubani</option>
+                      <option value="Begusarai">Begusarai</option>
+                      <option value="Ara (Bhojpur)">Ara (Bhojpur)</option>
+                    </>)}
+                    {/* West Bengal */}
+                    {filterState === 'West Bengal' && (<>
+                      <option value="Kolkata">Kolkata</option>
+                      <option value="Howrah">Howrah</option>
+                      <option value="Hooghly">Hooghly</option>
+                      <option value="Darjeeling">Darjeeling</option>
+                      <option value="Siliguri">Siliguri (Darjeeling)</option>
+                      <option value="Asansol">Asansol (Paschim Bardhaman)</option>
+                      <option value="Durgapur">Durgapur</option>
+                      <option value="Malda">Malda</option>
+                      <option value="Murshidabad">Murshidabad</option>
+                      <option value="Nadia">Nadia</option>
+                    </>)}
+                    {/* All other states — show generic "Enter district" prompt */}
+                    {filterState && filterState !== 'Jharkhand' && filterState !== 'Bihar' && filterState !== 'West Bengal' && (
+                      <option value={filterState} disabled>— Select state first for districts —</option>
+                    )}
                   </select>
                 </div>
 
-                {/* Industry */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Industry</label>
-                  <select value={filterIndustry} onChange={(e) => setFilterIndustry(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">All Industries</option>
-                    {availableIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-                  </select>
-                </div>
 
-                {/* House */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏠 House</label>
-                  <select value={filterHouse} onChange={(e) => setFilterHouse(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">All Houses</option>
-                    <option value="Vivekananda">Vivekananda</option>
-                    <option value="Brahmananda">Brahmananda</option>
-                    <option value="Ramakrishnananda">Ramakrishnananda</option>
-                    <option value="Shardananda">Shardananda</option>
-                    <option value="Premananda">Premananda</option>
-                    <option value="Yogananda">Yogananda</option>
-                  </select>
-                </div>
 
-                {/* Skill */}
+                {/* Profession */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🛠 Skill</label>
-                  <select value={filterSkill} onChange={(e) => setFilterSkill(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">Any Skill</option>
-                    {['Java', 'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'PostgreSQL', 'Machine Learning',
-                      'Data Science', 'DevOps', 'Marketing', 'Finance', 'Law', 'Medicine', 'Teaching', 'Research',
-                      'Design', 'Product Management', 'Entrepreneurship', 'Consulting'].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Mentorship Status */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎓 Mentorship</label>
-                  <select value={filterMentorship} onChange={(e) => setFilterMentorship(e.target.value)} className="directory-pill-select" style={{ borderRadius: '10px', width: '100%' }}>
-                    <option value="">Any Status</option>
-                    <option value="Available">✅ Available</option>
-                    <option value="Limited Availability">⚡ Limited</option>
-                    <option value="Not Available">❌ Not Available</option>
-                  </select>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💼 Profession</label>
+                  <input
+                    type="text"
+                    value={filterProfession}
+                    onChange={(e) => setFilterProfession(e.target.value)}
+                    className="directory-pill-select"
+                    placeholder="e.g. Doctor, Engineer..."
+                    style={{ fontFamily: 'inherit', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}
+                  />
                 </div>
 
                 {/* Open For */}
@@ -566,14 +619,14 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                 </div>
 
                 {/* Company */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏢 Company</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.73rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏢 Company / Organisation</label>
                   <input
                     type="text"
                     value={filterCompany}
                     onChange={(e) => setFilterCompany(e.target.value)}
                     className="directory-pill-select"
-                    placeholder="e.g. Google, TCS..."
+                    placeholder="e.g. Google, AIIMS, Tata..."
                     style={{ fontFamily: 'inherit', borderRadius: '10px', width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
@@ -581,22 +634,19 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               </div>
 
               {/* Footer: active chips + clear all */}
-              {[filterBatch, filterDepartment, filterCity, filterIndustry, filterHouse, filterSkill, filterMentorship, filterOpenFor, filterCompany].some(Boolean) && (
+              {[filterBatch, filterState, filterDistrict, filterProfession, filterOpenFor, filterCompany].some(Boolean) && (
                 <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>Active:</span>
                     {filterBatch && <span style={chipStyle}>{filterBatch} <button onClick={() => setFilterBatch('')} style={chipXStyle}>×</button></span>}
-                    {filterDepartment && <span style={chipStyle}>{filterDepartment} <button onClick={() => setFilterDepartment('')} style={chipXStyle}>×</button></span>}
-                    {filterCity && <span style={chipStyle}>{filterCity} <button onClick={() => setFilterCity('')} style={chipXStyle}>×</button></span>}
-                    {filterIndustry && <span style={chipStyle}>{filterIndustry} <button onClick={() => setFilterIndustry('')} style={chipXStyle}>×</button></span>}
-                    {filterHouse && <span style={chipStyle}>{filterHouse} <button onClick={() => setFilterHouse('')} style={chipXStyle}>×</button></span>}
-                    {filterSkill && <span style={{ ...chipStyle, background: 'rgba(243,112,33,0.1)', color: 'var(--primary-color)', borderColor: 'rgba(243,112,33,0.3)' }}>{filterSkill} <button onClick={() => setFilterSkill('')} style={chipXStyle}>×</button></span>}
-                    {filterMentorship && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>{filterMentorship} <button onClick={() => setFilterMentorship('')} style={chipXStyle}>×</button></span>}
+                    {filterState && <span style={chipStyle}>📍 {filterState} <button onClick={() => setFilterState('')} style={chipXStyle}>×</button></span>}
+                    {filterDistrict && <span style={chipStyle}>🏘 {filterDistrict} <button onClick={() => setFilterDistrict('')} style={chipXStyle}>×</button></span>}
+                    {filterProfession && <span style={{ ...chipStyle, background: 'rgba(243,112,33,0.1)', color: 'var(--primary-color)', borderColor: 'rgba(243,112,33,0.3)' }}>💼 {filterProfession} <button onClick={() => setFilterProfession('')} style={chipXStyle}>×</button></span>}
                     {filterOpenFor && <span style={{ ...chipStyle, background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.3)' }}>Open: {filterOpenFor} <button onClick={() => setFilterOpenFor('')} style={chipXStyle}>×</button></span>}
                     {filterCompany && <span style={{ ...chipStyle, background: 'rgba(59,130,246,0.1)', color: '#1d4ed8', borderColor: 'rgba(59,130,246,0.3)' }}>🏢 {filterCompany} <button onClick={() => setFilterCompany('')} style={chipXStyle}>×</button></span>}
                   </div>
                   <button
-                    onClick={() => { setFilterBatch(''); setFilterDepartment(''); setFilterCity(''); setFilterIndustry(''); setFilterHouse(''); setFilterSkill(''); setFilterMentorship(''); setFilterOpenFor(''); setFilterCompany(''); }}
+                    onClick={() => { setFilterBatch(''); setFilterState(''); setFilterDistrict(''); setFilterProfession(''); setFilterOpenFor(''); setFilterCompany(''); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
                   >
                     <X size={13} /> Clear All
@@ -761,7 +811,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                 return (
                   <article 
                     key={alumnus.id} 
-                    className="glass-panel" 
+                    className="glass-panel directory-alumni-card" 
                     style={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
@@ -803,44 +853,46 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       />
                     </div>
                     
-                    <h2 
-                      onClick={() => onViewProfile(alumnus.id)} 
-                      style={{ 
-                        cursor: 'pointer', 
-                        fontSize: '1.1rem', 
-                        marginTop: '16px', 
-                        fontWeight: 800, 
-                        color: '#1e293b',
-                        marginBottom: '4px'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#1e293b'}
-                    >
-                      {alumnus.full_name}
-                    </h2>
-                    
-                    {/* Role/Batch & Department Subtitle */}
-                    <div style={{ fontSize: '0.83rem', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
-                      {alumnus.role === 'faculty' ? (
-                        `Faculty · ${alumnus.department || 'Physics'}`
-                      ) : alumnus.role === 'student' ? (
-                        `Student · ${alumnus.department || 'Science'}`
-                      ) : (
-                        <>
-                          Class of {alumnus.batch_year}
-                          {alumnus.leaving_class && (
-                            <span style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '10px', padding: '1px 7px', fontWeight: 700, verticalAlign: 'middle' }}>
-                              Cls {alumnus.leaving_class}
-                            </span>
-                          )}
-                          {' '}· {alumnus.department || 'Engineering'}
-                        </>
-                      )}
+                    <div className="card-info-header" style={{ display: 'contents' }}>
+                      <h2 
+                        onClick={() => onViewProfile(alumnus.id)} 
+                        style={{ 
+                          cursor: 'pointer', 
+                          fontSize: '1.1rem', 
+                          marginTop: '16px', 
+                          fontWeight: 800, 
+                          color: '#1e293b',
+                          marginBottom: '4px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = '#1e293b'}
+                      >
+                        {alumnus.full_name}
+                      </h2>
+                      
+                      {/* Role/Batch & Department Subtitle */}
+                      <div style={{ fontSize: '0.83rem', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
+                        {alumnus.role === 'faculty' ? (
+                          <>Faculty <span className="card-sub-detail">· {alumnus.department || 'Physics'}</span></>
+                        ) : alumnus.role === 'student' ? (
+                          <>Student <span className="card-sub-detail">· {alumnus.department || 'Science'}</span></>
+                        ) : (
+                          <>
+                            Class of {alumnus.batch_year}
+                            {alumnus.leaving_class && (
+                              <span className="card-sub-detail" style={{ marginLeft: '6px', fontSize: '0.7rem', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '10px', padding: '1px 7px', fontWeight: 700, verticalAlign: 'middle' }}>
+                                Cls {alumnus.leaving_class}
+                              </span>
+                            )}
+                            <span className="card-sub-detail">{' '}· {alumnus.department || 'Engineering'}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Designation / Profession / Company */}
                     {(alumnus.designation || alumnus.profession || alumnus.company) && (
-                      <div style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                      <div className="card-detail-row" style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 500, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
                         <Briefcase size={12} style={{ flexShrink: 0, color: 'var(--primary-color)' }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
                           {alumnus.designation || alumnus.profession}{alumnus.company ? ` @ ${alumnus.company}` : ''}
@@ -849,13 +901,13 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     )}
 
                     {/* Location */}
-                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', justifyContent: 'center' }}>
+                    <div className="card-detail-row" style={{ fontSize: '0.82rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', justifyContent: 'center' }}>
                       <span>📍 {alumnus.city || 'India'}</span>
                     </div>
 
                     {/* Skill Tags */}
                     {alumnus.skills && alumnus.skills.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div className="card-detail-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
                         {alumnus.skills.slice(0, 3).map(skill => (
                           <span key={skill} style={{
                             fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px',
@@ -874,7 +926,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
                     {/* Mentorship Badge */}
                     {alumnus.mentorship_status === 'Available' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div className="card-detail-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
                         <span style={{
                           fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px',
                           borderRadius: '9999px', background: 'rgba(16,185,129,0.1)',
@@ -886,7 +938,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       </div>
                     )}
                     {alumnus.mentorship_status === 'Limited Availability' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div className="card-detail-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
                         <span style={{
                           fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px',
                           borderRadius: '9999px', background: 'rgba(245,158,11,0.1)',
@@ -900,7 +952,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
 
                     {/* Open For Badges */}
                     {alumnus.open_for && alumnus.open_for.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div className="card-detail-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center', marginBottom: '8px' }}>
                         {alumnus.open_for.slice(0, 2).map((badge: string) => (
                           <span key={badge} style={{
                             fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px',
@@ -915,7 +967,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     )}
 
                     {/* Spacer */}
-                    <div style={{ flexGrow: 1 }} />
+                    <div className="card-spacer" style={{ flexGrow: 1 }} />
                     
                     {/* Connect Button */}
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
@@ -984,6 +1036,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       )}
                     </div>
                   </article>
+
                 );
               })
             )}
@@ -1045,45 +1098,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
         {/* Right Column: Sidebar Widgets */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '24px' }}>
 
-          {/* Widget 0: Mentors Available */}
-          <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'linear-gradient(135deg, rgba(243,112,33,0.06) 0%, rgba(184,39,44,0.04) 100%)', border: '1px solid rgba(243,112,33,0.15)' }}>
-            <div className="sidebar-widget-title-row">
-              <div className="widget-icon-box" style={{ background: 'var(--primary-gradient)' }}>
-                <Star size={18} />
-              </div>
-              <h3>Find a Mentor</h3>
-            </div>
-            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-              Connect with alumni who are actively available for career guidance, mock interviews, and more.
-            </p>
-            <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-              <button
-                onClick={() => { setFilterMentorship('Available'); setCurrentPage(1); }}
-                className="btn-connect-gradient"
-                style={{ width: '100%', padding: '9px 0', fontSize: '0.85rem', borderRadius: '10px' }}
-              >
-                <Star size={14} /> Open Mentors
-              </button>
-              <button
-                onClick={() => { setFilterMentorship('Limited Availability'); setCurrentPage(1); }}
-                style={{
-                  width: '100%', padding: '9px 0', fontSize: '0.85rem', borderRadius: '10px',
-                  background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-                  color: '#d97706', fontWeight: 700, cursor: 'pointer'
-                }}
-              >
-                ⚡ Limited Availability
-              </button>
-            </div>
-            {filterMentorship && (
-              <button
-                onClick={() => setFilterMentorship('')}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}
-              >
-                × Clear mentorship filter
-              </button>
-            )}
-          </div>
+
           
           {/* Widget 1: Directory Index */}
           <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

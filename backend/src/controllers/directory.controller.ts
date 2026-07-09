@@ -52,7 +52,15 @@ export const listDirectory = async (req: AuthenticatedRequest, res: Response): P
       profileConditions.house = house as string;
     }
     if (city) {
-      profileConditions.city = { contains: city as string, mode: 'insensitive' };
+      const cityValues = Array.isArray(city) ? city : [city as string];
+      if (cityValues.length === 1) {
+        profileConditions.city = { contains: cityValues[0], mode: 'insensitive' };
+      } else {
+        // Multiple city params (state + district) — match if city contains any of them
+        profileConditions.OR = (profileConditions.OR || []).concat(
+          cityValues.map(v => ({ city: { contains: v, mode: 'insensitive' } }))
+        );
+      }
     }
     if (profession) {
       profileConditions.OR = [
