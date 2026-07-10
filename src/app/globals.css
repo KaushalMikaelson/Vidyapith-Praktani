@@ -4947,17 +4947,35 @@ button:disabled {
 
 /* ─── Modern Instagram-Inspired Social Profile ──────── */
 .profile-ig-layout {
-  max-width: 935px;
-  margin: 0 auto;
-  padding: 32px 24px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   color: var(--heritage-ink, #111);
+  background: #f4f8ff;
 }
 
-@media (max-width: 768px) {
-  .profile-ig-layout {
-    padding: 16px;
-  }
+/* Desktop: profile screen uses full viewport with no extra padding */
+.screen-profile .main-viewport {
+  padding: 0 !important;
 }
+
+.screen-profile .profile-card {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  box-shadow: none;
+  margin-bottom: 8px;
+  padding: 28px 40px;
+}
+
+.screen-profile .profile-card:first-of-type {
+  padding-top: 36px;
+  border-top: none;
+}
+
+
 
 .profile-ig-header {
   display: flex;
@@ -7957,11 +7975,57 @@ button:disabled {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Profile screen mobile overrides — full bleed, no side gutters, starts from top */
+  .screen-profile .main-viewport {
+    padding: 0 !important;
+  }
+
+  .screen-profile .profile-ig-layout {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .screen-profile .profile-card {
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin-bottom: 8px !important;
+    padding: 20px 16px !important;
+  }
+
+  /* First card: push content below the floating logo toggle button */
+  .screen-profile .profile-ig-layout > .profile-card:first-child {
+    padding-top: 78px !important;
+    margin-top: 0 !important;
+  }
+
+  /* Center avatar and profile info on mobile */
+  .profile-top-card-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 16px !important;
+  }
+
+  .profile-top-card-info {
+    align-items: center !important;
+    min-width: unset !important;
+    width: 100% !important;
+  }
+
+  .profile-top-card-info > div:first-child {
+    justify-content: center !important;
+  }
+
   .heritage-page,
   .admin-layout,
   .notifications-panel,
   .mentorship-layout,
   .directory-main-container,
+  .profile-ig-layout,
   .ig-feed-layout {
     width: 100% !important;
     max-width: 100% !important;

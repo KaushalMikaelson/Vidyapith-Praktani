@@ -626,6 +626,21 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     }
   }, [activeGroupId, screenMode, forceProfileId, refreshKey]);
 
+  // Directly zero out the viewport padding on profile screen to remove the top gap
+  useEffect(() => {
+    const viewport = document.getElementById('viewport');
+    if (!viewport) return;
+    if (screenMode === 'profile') {
+      viewport.style.padding = '0';
+      viewport.style.setProperty('padding', '0', 'important');
+    } else {
+      viewport.style.removeProperty('padding');
+    }
+    return () => {
+      if (viewport) viewport.style.removeProperty('padding');
+    };
+  }, [screenMode]);
+
   const handleConnectRequest = async (id: string, name: string) => {
     // Optimistic: mark as pending immediately
     setConnectionSentIds(prev => [...prev, id]);
@@ -3164,11 +3179,11 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     const activeConnections = discoverAlumni.filter(u => u.id !== profileUser.id).slice(0, 4);
 
     return (
-      <div className="profile-ig-layout" style={{ maxWidth: '960px', margin: '0 auto', padding: '24px 16px' }}>
+      <div className="profile-ig-layout">
         
         {/* 1. TOP CARD: Header, details, and stats */}
         <div className="profile-card">
-          <div style={{ display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="profile-top-card-header" style={{ display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Avatar with colorful story gradient ring */}
             <div className="profile-avatar-gradient-ring">
               <img 
@@ -3179,7 +3194,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </div>
 
             {/* Profile Info Details */}
-            <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="profile-top-card-info" style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
                   {person.full_name || currentUser.full_name}
@@ -3412,130 +3427,123 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           );
         })()}
 
-        {/* 2. MIDDLE ROW: Layout for professional details, skills, helps, looking-for & social links */}
-        <div className="profile-middle-grid">
-
-          {/* Column A: About + Professional Info + Social Links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-            {/* About Card */}
-            <div className="profile-card" style={{ padding: '20px 24px' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={14} style={{ color: '#a855f7' }} /> About
-              </h4>
-              <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.65, margin: 0 }}>
-                {person.bio || currentUser.bio || 'No biography yet. Click Edit Profile to add a short bio.'}
-              </p>
-            </div>
-
-            {(() => {
-              const des = person.designation || currentUser.designation;
-              const prof = person.profession || currentUser.profession;
-              const comp = person.company || currentUser.company;
-              const yoe = person.years_of_experience || currentUser.years_of_experience;
-              const edu = person.education || currentUser.education;
-              if (!des && !prof && !comp && !yoe && !edu) return null;
-              return (
-                <div className="profile-card" style={{ padding: '20px 24px' }}>
-                  <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Briefcase size={14} style={{ color: '#3b82f6' }} /> Professional Info
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                    {(des || prof) && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
-                        <Briefcase size={13} style={{ color: '#8b5cf6', flexShrink: 0 }} />
-                        <span><strong>{des || prof}</strong>{comp ? ` · ${comp}` : ''}</span>
-                      </div>
-                    )}
-                    {yoe && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
-                        <TrendingUp size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                        <span>{yoe} years of experience</span>
-                      </div>
-                    )}
-                    {edu && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
-                        <GraduationCap size={13} style={{ color: '#22c55e', flexShrink: 0 }} />
-                        <span>{edu}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {(() => {
-              const linkedin = person.linkedin_url || currentUser.linkedin_url;
-              const github = person.github_url || currentUser.github_url;
-              const portfolio = person.portfolio_url || currentUser.portfolio_url;
-              const personal = person.personal_url || currentUser.personal_url;
-              if (!linkedin && !github && !portfolio && !personal) return null;
-              return (
-                <div className="profile-card" style={{ padding: '20px 24px' }}>
-                  <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Globe size={14} style={{ color: '#3b82f6' }} /> Links
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                    {linkedin && (<a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0a66c2', fontWeight: 600, textDecoration: 'none' }}><Link2 size={14} /> LinkedIn Profile</a>)}
-                    {github && (<a href={github} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#1e293b', fontWeight: 600, textDecoration: 'none' }}><Code2 size={14} /> GitHub Profile</a>)}
-                    {portfolio && (<a href={portfolio} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}><Globe size={14} /> Portfolio / Work</a>)}
-                    {personal && (<a href={personal} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}><ExternalLink size={14} /> Personal Website</a>)}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Column B: Skills + How I Can Help + Looking For + Contact */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {person.skills && person.skills.length > 0 && (
-              <div className="profile-card" style={{ padding: '20px 24px' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Star size={14} style={{ color: '#f59e0b' }} /> Skills & Expertise
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
-                  {person.skills.map((skill: string) => (
-                    <span key={skill} style={{ background: 'rgba(139,92,246,0.08)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>{skill}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {person.help_categories && person.help_categories.length > 0 && (
-              <div className="profile-card" style={{ padding: '20px 24px' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>✋ How I Can Help</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
-                  {person.help_categories.map((cat: string) => (
-                    <span key={cat} style={{ background: 'rgba(16,185,129,0.08)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>✓ {cat}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {person.looking_for && person.looking_for.length > 0 && (
-              <div className="profile-card" style={{ padding: '20px 24px' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>🔍 Looking For</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
-                  {person.looking_for.map((item: string) => (
-                    <span key={item} style={{ background: 'rgba(244,63,94,0.08)', color: '#e11d48', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>→ {item}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {(() => {
-              const emailVis = person.show_email !== false && (person.email || currentUser.email);
-              const mobileVis = person.show_mobile !== false && (person.mobile || currentUser.mobile);
-              if (!emailVis && !mobileVis) return null;
-              return (
-                <div className="profile-card" style={{ padding: '20px 24px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14} style={{ color: '#3b82f6' }} /> Contact</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {emailVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Mail size={13} style={{ color: '#3b82f6', flexShrink: 0 }} /><span>{person.email || currentUser.email}</span></div>}
-                    {mobileVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Phone size={13} style={{ color: '#22c55e', flexShrink: 0 }} /><span>{person.mobile || currentUser.mobile}</span></div>}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
+        {/* 2. MIDDLE ROW: Layout for professional details, skills, helps, looking-for & social links (single column stacked format) */}
+        {/* About Card */}
+        <div className="profile-card" style={{ padding: '20px 24px' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={14} style={{ color: '#a855f7' }} /> About
+          </h4>
+          <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.65, margin: 0 }}>
+            {person.bio || currentUser.bio || 'No biography yet. Click Edit Profile to add a short bio.'}
+          </p>
         </div>
+
+        {(() => {
+          const des = person.designation || currentUser.designation;
+          const prof = person.profession || currentUser.profession;
+          const comp = person.company || currentUser.company;
+          const yoe = person.years_of_experience || currentUser.years_of_experience;
+          const edu = person.education || currentUser.education;
+          if (!des && !prof && !comp && !yoe && !edu) return null;
+          return (
+            <div className="profile-card" style={{ padding: '20px 24px' }}>
+              <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Briefcase size={14} style={{ color: '#3b82f6' }} /> Professional Info
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                {(des || prof) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                    <Briefcase size={13} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                    <span><strong>{des || prof}</strong>{comp ? ` · ${comp}` : ''}</span>
+                  </div>
+                )}
+                {yoe && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                    <TrendingUp size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                    <span>{yoe} years of experience</span>
+                  </div>
+                )}
+                {edu && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}>
+                    <GraduationCap size={13} style={{ color: '#22c55e', flexShrink: 0 }} />
+                    <span>{edu}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {(() => {
+          const linkedin = person.linkedin_url || currentUser.linkedin_url;
+          const github = person.github_url || currentUser.github_url;
+          const portfolio = person.portfolio_url || currentUser.portfolio_url;
+          const personal = person.personal_url || currentUser.personal_url;
+          if (!linkedin && !github && !portfolio && !personal) return null;
+          return (
+            <div className="profile-card" style={{ padding: '20px 24px' }}>
+              <h4 style={{ margin: '0 0 14px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Globe size={14} style={{ color: '#3b82f6' }} /> Links
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                {linkedin && (<a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0a66c2', fontWeight: 600, textDecoration: 'none' }}><Link2 size={14} /> LinkedIn Profile</a>)}
+                {github && (<a href={github} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#1e293b', fontWeight: 600, textDecoration: 'none' }}><Code2 size={14} /> GitHub Profile</a>)}
+                {portfolio && (<a href={portfolio} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}><Globe size={14} /> Portfolio / Work</a>)}
+                {personal && (<a href={personal} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#0f172a', fontWeight: 600, textDecoration: 'none' }}><ExternalLink size={14} /> Personal Website</a>)}
+              </div>
+            </div>
+          );
+        })()}
+
+        {person.skills && person.skills.length > 0 && (
+          <div className="profile-card" style={{ padding: '20px 24px' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Star size={14} style={{ color: '#f59e0b' }} /> Skills & Expertise
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+              {person.skills.map((skill: string) => (
+                <span key={skill} style={{ background: 'rgba(139,92,246,0.08)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>{skill}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {person.help_categories && person.help_categories.length > 0 && (
+          <div className="profile-card" style={{ padding: '20px 24px' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>✋ How I Can Help</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+              {person.help_categories.map((cat: string) => (
+                <span key={cat} style={{ background: 'rgba(16,185,129,0.08)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>✓ {cat}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {person.looking_for && person.looking_for.length > 0 && (
+          <div className="profile-card" style={{ padding: '20px 24px' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>🔍 Looking For</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+              {person.looking_for.map((item: string) => (
+                <span key={item} style={{ background: 'rgba(244,63,94,0.08)', color: '#e11d48', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 700 }}>→ {item}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(() => {
+          const emailVis = person.show_email !== false && (person.email || currentUser.email);
+          const mobileVis = person.show_mobile !== false && (person.mobile || currentUser.mobile);
+          if (!emailVis && !mobileVis) return null;
+          return (
+            <div className="profile-card" style={{ padding: '20px 24px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14} style={{ color: '#3b82f6' }} /> Contact</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {emailVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Mail size={13} style={{ color: '#3b82f6', flexShrink: 0 }} /><span>{person.email || currentUser.email}</span></div>}
+                {mobileVis && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem', color: '#334155' }}><Phone size={13} style={{ color: '#22c55e', flexShrink: 0 }} /><span>{person.mobile || currentUser.mobile}</span></div>}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 3. BOTTOM CARD: Profile Tabs Navigation */}
         <div className="profile-card" style={{ padding: '24px 32px' }}>
