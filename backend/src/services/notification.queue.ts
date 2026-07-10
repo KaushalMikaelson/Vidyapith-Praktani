@@ -67,16 +67,16 @@ export const notificationQueue = new Proxy({} as Queue, {
         });
 
         realQueue.on('error', (err: Error) => {
-          console.error('[Notification Queue] Error:', err.message);
-          if (err.message.includes('EACCES') || err.message.includes('ECONNREFUSED')) {
-            console.warn('[Notification Queue] Connection failed. Switching to in-memory MockQueue.');
-            useMock = true;
-            if (realQueue) {
-              realQueue.close().catch(() => {});
-              realQueue = null;
-            }
-          }
-        });
+           console.error('[Notification Queue] Error:', err.message);
+           if (/EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EACCES/i.test(err.message)) {
+             console.warn('[Notification Queue] Connection failed. Switching to in-memory MockQueue.');
+             useMock = true;
+             if (realQueue) {
+               realQueue.close().catch(() => {});
+               realQueue = null;
+             }
+           }
+         });
       } catch (err: any) {
         console.error('[Notification Queue] Failed to initialize Queue, using fallback:', err.message);
         useMock = true;

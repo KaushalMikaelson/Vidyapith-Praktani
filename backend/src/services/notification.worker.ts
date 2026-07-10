@@ -225,7 +225,7 @@ function startWorker() {
 
     realWorker.on('error', (err: Error) => {
       console.error('[Notification Worker] Error:', err.message);
-      if (err.message.includes('EACCES') || err.message.includes('ECONNREFUSED')) {
+      if (/EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EACCES/i.test(err.message)) {
         console.warn('[Notification Worker] Connection failed. Disabling worker.');
         workerDisabled = true;
         if (realWorker) {

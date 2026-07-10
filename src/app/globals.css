@@ -7405,6 +7405,19 @@ button:disabled {
   display: none !important;
 }
 
+.directory-index-item:hover {
+  background: rgba(243, 112, 33, 0.06);
+}
+
+.directory-index-item:hover span:first-child {
+  color: var(--primary-color) !important;
+}
+
+.directory-index-item:active {
+  background: rgba(243, 112, 33, 0.12);
+  transform: scale(0.98);
+}
+
 .directory-tab-pill.active {
   background: var(--primary-gradient);
   color: white;

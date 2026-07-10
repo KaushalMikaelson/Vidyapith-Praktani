@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { User } from '../database/database';
 import { 
   Briefcase, ChevronDown, ChevronLeft, ChevronRight, Search, 
-  Users, RefreshCw, X, Bell, Home, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter,
+  Users, RefreshCw, X, Bell, MapPin, TrendingUp, LayoutGrid, List, BookOpen, Star, Filter,
   UserMinus, ShieldCheck
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
@@ -254,19 +254,31 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }
   };
 
-  // Compute alphabet index counts dynamically from matching users
-  const alphabetIndexCounts = useMemo(() => {
-    const counts = { AD: 0, EH: 0, IL: 0, MP: 0, QT: 0, UZ: 0 };
+  // Compute profession index counts dynamically from matching users
+  const professionIndexCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
     alumniList.forEach(u => {
-      const char = (u.full_name || '').trim().charAt(0).toUpperCase();
-      if (char >= 'A' && char <= 'D') counts.AD++;
-      else if (char >= 'E' && char <= 'H') counts.EH++;
-      else if (char >= 'I' && char <= 'L') counts.IL++;
-      else if (char >= 'M' && char <= 'P') counts.MP++;
-      else if (char >= 'Q' && char <= 'T') counts.QT++;
-      else if (char >= 'U' && char <= 'Z') counts.UZ++;
+      // Prefer profile-completed profession_category, fall back to profession field
+      const rawProf = (u.profile?.profession_category || u.profession_category || u.profession || '').trim();
+
+      let prof: string;
+      if (rawProf) {
+        // Normalize casing: capitalize each word
+        prof = rawProf.split(/\s+/).map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      } else if (u.role === 'student') {
+        // Students without a set profession go into the Student bucket
+        prof = 'Student';
+      } else {
+        // Everyone else without a profession goes into Not Specified
+        prof = 'Not Specified';
+      }
+
+      counts[prof] = (counts[prof] || 0) + 1;
     });
-    return counts;
+
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
   }, [alumniList]);
 
   const handleQuickBatchFind = () => {
@@ -276,35 +288,29 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
     }
   };
 
-  const houseReps = useMemo(() => {
-    const RKMV_HOUSES = [
-      "Vivekananda House",
-      "Brahmananda House",
-      "Ramakrishnananda House",
-      "Shardananda House",
-      "Premananda House",
-      "Yogananda House"
-    ];
-    
-    return RKMV_HOUSES.map(houseName => {
-      const member = alumniList.find(u => u.house === houseName || u.house === houseName.replace(' House', ''));
-      if (member) {
-        return {
-          id: member.id,
-          name: member.full_name,
-          house: houseName,
-          avatar: member.profile_photo,
-          vacant: false
-        };
-      }
-      return {
-        id: houseName,
-        name: "Vacant",
-        house: houseName,
-        avatar: "",
-        vacant: true
-      };
+  // Compute state/city index counts dynamically from matching users
+  const stateIndexCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    alumniList.forEach(u => {
+      const state = (u.profile?.city || u.city || '').trim();
+      const label = state || 'Not Specified';
+      counts[label] = (counts[label] || 0) + 1;
     });
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [alumniList]);
+
+  // Compute batch year index counts dynamically from matching users
+  const batchIndexCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    alumniList.forEach(u => {
+      const label = u.batch_year ? `Batch of ${u.batch_year}` : 'Not Specified';
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count, year: label.startsWith('Batch of') ? parseInt(label.replace('Batch of ', '')) : 0 }))
+      .sort((a, b) => b.year - a.year);
   }, [alumniList]);
 
   const getAvatarGradient = (dept?: string) => {
@@ -357,22 +363,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           </div>
         </div>
         
-        {/* Header Icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', color: '#64748b' }}>
-          <Search size={22} style={{ cursor: 'pointer' }} />
-          <div style={{ position: 'relative', cursor: 'pointer' }}>
-            <Bell size={22} />
-            <span style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444'
-            }}></span>
-          </div>
-        </div>
+
       </div>
 
       {/* Main Redesigned Layout */}
@@ -1118,94 +1109,166 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="sidebar-widget-title-row">
               <div className="widget-icon-box">
-                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>#</span>
+                <Briefcase size={18} />
               </div>
               <h3>Directory Index</h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { label: "A - D", count: alphabetIndexCounts.AD },
-                { label: "E - H", count: alphabetIndexCounts.EH },
-                { label: "I - L", count: alphabetIndexCounts.IL },
-                { label: "M - P", count: alphabetIndexCounts.MP },
-                { label: "Q - T", count: alphabetIndexCounts.QT },
-                { label: "U - Z", count: alphabetIndexCounts.UZ }
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                  <span style={{ fontWeight: 600, color: '#475569' }}>{item.label}</span>
+            <div 
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '8px', 
+                maxHeight: '260px', 
+                overflowY: 'auto',
+                paddingRight: '6px',
+                scrollbarWidth: 'thin'
+              }}
+            >
+              {professionIndexCounts.map(item => (
+                <div 
+                  key={item.label}
+                  onClick={() => {
+                    setFilterProfession(item.label);
+                    setShowFilters(true);
+                    showToast(`Filtered by profession: ${item.label}`, 'info');
+                  }}
+                  className="directory-index-item"
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontWeight: 600, color: '#475569', transition: 'color 0.2s' }}>{item.label}</span>
                   <span style={{
-                    background: '#f43f5e',
+                    background: 'var(--primary-gradient)',
                     color: 'white',
                     fontWeight: 700,
                     padding: '2px 10px',
                     borderRadius: '9999px',
-                    fontSize: '0.75rem'
+                    fontSize: '0.72rem',
+                    boxShadow: '0 2px 8px rgba(243, 112, 33, 0.15)'
                   }}>{item.count}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Widget 2: House Representatives */}
+          {/* Widget 2: State Index */}
           <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="sidebar-widget-title-row">
               <div className="widget-icon-box">
-                <Home size={18} />
+                <MapPin size={18} />
               </div>
-              <h3>House Representatives</h3>
+              <h3>State Index</h3>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {houseReps.map(rep => (
-                <div key={rep.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {rep.vacant ? (
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: '#f1f5f9',
-                      color: '#94a3b8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      flexShrink: 0
-                    }}>
-                      {rep.house.charAt(0)}
-                    </div>
-                  ) : (
-                    <img 
-                      src={rep.avatar} 
-                      alt={rep.name} 
-                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e2e8f0', cursor: 'pointer', flexShrink: 0 }} 
-                      onClick={() => onViewProfile(rep.id)}
-                    />
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <span 
-                      style={{ 
-                        fontSize: '0.78rem', 
-                        fontWeight: 700, 
-                        color: rep.vacant ? '#94a3b8' : '#1e293b', 
-                        whiteSpace: 'nowrap', 
-                        textOverflow: 'ellipsis', 
-                        overflow: 'hidden',
-                        cursor: rep.vacant ? 'default' : 'pointer'
-                      }}
-                      onClick={() => !rep.vacant && onViewProfile(rep.id)}
-                    >
-                      {rep.name}
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                      {rep.house.replace(' House', '')}
-                    </span>
-                  </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                maxHeight: '260px',
+                overflowY: 'auto',
+                paddingRight: '6px',
+                scrollbarWidth: 'thin'
+              }}
+            >
+              {stateIndexCounts.map(item => (
+                <div
+                  key={item.label}
+                  onClick={() => {
+                    setFilterState(item.label === 'Not Specified' ? '' : item.label);
+                    setShowFilters(true);
+                    if (item.label !== 'Not Specified') showToast(`Filtered by state: ${item.label}`, 'info');
+                  }}
+                  className="directory-index-item"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontWeight: 600, color: '#475569', transition: 'color 0.2s' }}>{item.label}</span>
+                  <span style={{
+                    background: 'var(--primary-gradient)',
+                    color: 'white',
+                    fontWeight: 700,
+                    padding: '2px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '0.72rem',
+                    boxShadow: '0 2px 8px rgba(243, 112, 33, 0.15)'
+                  }}>{item.count}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Widget 3: Batch Stats */}
+          {/* Widget 3: Batch Index */}
+          <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="sidebar-widget-title-row">
+              <div className="widget-icon-box">
+                <BookOpen size={18} />
+              </div>
+              <h3>Batch Index</h3>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                maxHeight: '260px',
+                overflowY: 'auto',
+                paddingRight: '6px',
+                scrollbarWidth: 'thin'
+              }}
+            >
+              {batchIndexCounts.map(item => (
+                <div
+                  key={item.label}
+                  onClick={() => {
+                    if (item.year > 0) {
+                      setFilterBatch(String(item.year));
+                      showToast(`Filtered by ${item.label}`, 'info');
+                    }
+                  }}
+                  className="directory-index-item"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '0.85rem',
+                    cursor: item.year > 0 ? 'pointer' : 'default',
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontWeight: 600, color: '#475569', transition: 'color 0.2s' }}>{item.label}</span>
+                  <span style={{
+                    background: 'var(--primary-gradient)',
+                    color: 'white',
+                    fontWeight: 700,
+                    padding: '2px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '0.72rem',
+                    boxShadow: '0 2px 8px rgba(243, 112, 33, 0.15)'
+                  }}>{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Widget 4: Batch Stats */}
           <div className="sidebar-widget-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="sidebar-widget-title-row">
               <div className="widget-icon-box">
