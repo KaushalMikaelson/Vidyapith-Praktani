@@ -3195,44 +3195,49 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
             {/* Profile Info Details */}
             <div className="profile-top-card-info" style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
-                  {person.full_name || currentUser.full_name}
-                </h2>
-                
-                {/* Badge pills */}
-                {userBadges.map((badge, idx) => {
-                  if (badge.label === 'Verified Alumni') {
-                    return (
-                      <span key={idx} className="profile-verified-badge" title={badge.label}>
-                        <ShieldCheck size={14} /> Verified Alumni
-                      </span>
-                    );
-                  }
-                  if (badge.label === 'Admin') {
-                    return (
-                      <span key={idx} className="profile-admin-badge" title={badge.label}>
-                        <ShieldAlert size={14} /> Admin
-                      </span>
-                    );
-                  }
-                  return (
-                    <span key={idx} className="profile-header-badge" title={badge.label}>
-                      <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
-                    </span>
-                  );
-                })}
+              {/* Name */}
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                {person.full_name || currentUser.full_name}
+              </h2>
 
-                <div className="profile-batch-emblem">
-                  <div className="batch-emblem-icon">
-                    <GraduationCap size={14} />
-                  </div>
-                  <div className="batch-emblem-content">
-                    <span className="batch-emblem-label">RKMV Batch</span>
-                    <span className="batch-emblem-year">Class of {person.batch_year || currentUser.batch_year}</span>
-                  </div>
+              {/* Badge pills row */}
+              {userBadges.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'inherit' }}>
+                  {userBadges.map((badge, idx) => {
+                    if (badge.label === 'Verified Alumni') {
+                      return (
+                        <span key={idx} className="profile-verified-badge" title={badge.label}>
+                          <ShieldCheck size={14} /> Verified Alumni
+                        </span>
+                      );
+                    }
+                    if (badge.label === 'Admin') {
+                      return (
+                        <span key={idx} className="profile-admin-badge" title={badge.label}>
+                          <ShieldAlert size={14} /> Admin
+                        </span>
+                      );
+                    }
+                    return (
+                      <span key={idx} className="profile-header-badge" title={badge.label}>
+                        <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Batch emblem */}
+              <div className="profile-batch-emblem" style={{ alignSelf: 'inherit' }}>
+                <div className="batch-emblem-icon">
+                  <GraduationCap size={14} />
+                </div>
+                <div className="batch-emblem-content">
+                  <span className="batch-emblem-label">RKMV Batch</span>
+                  <span className="batch-emblem-year">Class of {person.batch_year || currentUser.batch_year}</span>
                 </div>
               </div>
+
 
               {(() => {
                 const profession = person.profession || currentUser.profession;
@@ -3272,7 +3277,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               )}
 
               {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
+              <div className="profile-action-buttons" style={{ display: 'flex', gap: '10px', marginTop: '4px', flexWrap: 'wrap', justifyContent: 'inherit' }}>
                 {profileUser.id === currentUser.id ? (
                   <>
                     <button 

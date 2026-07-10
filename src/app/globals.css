@@ -8016,8 +8016,16 @@ button:disabled {
     width: 100% !important;
   }
 
-  .profile-top-card-info > div:first-child {
+  /* Keep buttons auto-width on mobile (don't stretch full width) */
+  .profile-action-buttons {
     justify-content: center !important;
+  }
+
+  .profile-action-buttons .btn-ig-black,
+  .profile-action-buttons .btn-ig-grey {
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    white-space: nowrap;
   }
 
   .heritage-page,
