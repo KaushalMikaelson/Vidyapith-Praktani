@@ -7342,6 +7342,31 @@ button:disabled {
   gap: 8px;
 }
 
+.btn-status-connected {
+  background: #e0f2fe !important;
+  color: #0b4d63 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.btn-status-pending {
+  background: #fef3c7 !important;
+  color: #78350f !important;
+  border: 1px solid #fde68a !important;
+}
+
+.badge-this-is-you {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .directory-pill-select {
   border-radius: 9999px;
   border: 1px solid #e2e8f0;
@@ -7372,6 +7397,12 @@ button:disabled {
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.2s;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.directory-tabs-scroll-container::-webkit-scrollbar {
+  display: none !important;
 }
 
 .directory-tab-pill.active {
@@ -8398,7 +8429,8 @@ button:disabled {
   .profile-tabs-pills-row,
   .events-section-head > div,
   .screen-notifications .main-viewport > div > div[style*="flex-wrap"],
-  .directory-main-container > div:first-child > div:nth-child(4) > div:first-child {
+  .directory-main-container > div:first-child > div:nth-child(4) > div:first-child,
+  .directory-tabs-scroll-container {
     display: flex !important;
     flex-wrap: nowrap !important;
     gap: 8px !important;
@@ -8417,6 +8449,17 @@ button:disabled {
 
   .directory-main-container {
     display: block !important;
+  }
+
+  .directory-filters-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .directory-filters-right {
+    justify-content: space-between !important;
+    width: 100% !important;
   }
 
   .directory-main-container > div:first-child {
@@ -10404,6 +10447,7 @@ button:disabled {
   .screen-careers .jobs-layout-grid > div:first-child > div:first-child,
   .screen-directory .directory-main-container > div:first-child > div:nth-child(4) > div:first-child,
   .screen-search .directory-main-container > div:first-child > div:nth-child(4) > div:first-child,
+  .directory-tabs-scroll-container,
   .screen-notifications .main-viewport > div > div[style*="flex-wrap"],
   .events-section-head > div {
     display: flex !important;
@@ -10418,6 +10462,7 @@ button:disabled {
   .screen-careers .jobs-layout-grid > div:first-child > div:first-child::-webkit-scrollbar,
   .screen-directory .directory-main-container > div:first-child > div:nth-child(4) > div:first-child::-webkit-scrollbar,
   .screen-search .directory-main-container > div:first-child > div:nth-child(4) > div:first-child::-webkit-scrollbar,
+  .directory-tabs-scroll-container::-webkit-scrollbar,
   .screen-notifications .main-viewport > div > div[style*="flex-wrap"]::-webkit-scrollbar,
   .events-section-head > div::-webkit-scrollbar {
     display: none;

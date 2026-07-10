@@ -748,8 +748,23 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
           )}
 
           {/* Role Filters & Found Label */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="directory-filters-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+            <div 
+              className="directory-tabs-scroll-container" 
+              style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                overflowX: 'auto', 
+                flexWrap: 'nowrap',
+                minWidth: 0,
+                flexGrow: 1,
+                flexShrink: 1,
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: '4px'
+              }}
+            >
               {[
                 { id: 'all', label: 'All Connections' },
                 { id: 'admin', label: 'Admins' },
@@ -767,7 +782,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
               ))}
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="directory-filters-right" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
               <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
                 {totalItems} members found
               </span>
@@ -972,20 +987,19 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                     {/* Connect Button */}
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
                       {isSelf ? (
-                        <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>This is You</span>
+                        <span className="badge-this-is-you">
+                          ✨ This is You
+                        </span>
                       ) : connStatus === 'accepted' ? (
                         <button
                           disabled
-                          className="btn-following-gray"
+                          className="btn-following-gray btn-status-connected"
                           style={{ 
                             padding: '8px 32px',
                             fontSize: '0.85rem',
                             fontWeight: 700,
                             width: 'auto',
-                            minWidth: '130px',
-                            borderColor: 'rgba(72,187,120,0.4)',
-                            color: '#48bb78',
-                            background: 'rgba(72,187,120,0.05)'
+                            minWidth: '130px'
                           }}
                         >
                           ✓ Connected
@@ -993,7 +1007,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({ showToast, onV
                       ) : connStatus === 'pending_sent' ? (
                         <button
                           disabled
-                          className="btn-following-gray"
+                          className="btn-following-gray btn-status-pending"
                           style={{ 
                             padding: '8px 32px',
                             fontSize: '0.85rem',
