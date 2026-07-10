@@ -16,6 +16,7 @@ import {
 import { apiFetch } from '../utils/api';
 import { uploadMedia } from '../utils/upload';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface FeedScreenProps {
   showToast: (msg: string, type: 'success' | 'danger' | 'info') => void;
@@ -3183,8 +3184,8 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         
         {/* 1. TOP CARD: Header, details, and stats */}
         <div className="profile-card">
-          <div className="profile-top-card-header" style={{ display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Avatar with colorful story gradient ring */}
+          {/* Avatar centered at top */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
             <div className="profile-avatar-gradient-ring">
               <img 
                 src={person.profile_photo || currentUser.profile_photo} 
@@ -3192,9 +3193,10 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 style={{ width: '130px', height: '130px' }}
               />
             </div>
+          </div>
 
-            {/* Profile Info Details */}
-            <div className="profile-top-card-info" style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Profile Info Details */}
+          <div className="profile-top-card-info" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
               {/* Name */}
               <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
                 {person.full_name || currentUser.full_name}
@@ -3202,7 +3204,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
               {/* Badge pills row */}
               {userBadges.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'inherit' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                   {userBadges.map((badge, idx) => {
                     if (badge.label === 'Verified Alumni') {
                       return (
@@ -3228,7 +3230,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               )}
 
               {/* Batch emblem */}
-              <div className="profile-batch-emblem" style={{ alignSelf: 'inherit' }}>
+              <div className="profile-batch-emblem" style={{ alignSelf: 'center' }}>
                 <div className="batch-emblem-icon">
                   <GraduationCap size={14} />
                 </div>
@@ -3277,7 +3279,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               )}
 
               {/* Action buttons */}
-              <div className="profile-action-buttons" style={{ display: 'flex', gap: '10px', marginTop: '4px', flexWrap: 'wrap', justifyContent: 'inherit' }}>
+              <div className="profile-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px', width: '100%', maxWidth: '280px' }}>
                 {profileUser.id === currentUser.id ? (
                   <>
                     <button 
@@ -3354,23 +3356,22 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 )}
               </div>
             </div>
-          </div>
 
           {/* Metrics/Stats Row at the bottom of the top card */}
           <div className="profile-stats-grid">
-            <div className="profile-stat-box">
+            <div className="profile-stat-box posts">
               <span className="profile-stat-number">{profilePosts.length}</span>
               <span className="profile-stat-label">Posts</span>
             </div>
             <div 
-              className="profile-stat-box" 
+              className="profile-stat-box connections" 
               style={{ cursor: 'pointer' }}
               onClick={() => setActiveRelationsTab('connections')}
             >
               <span className="profile-stat-number">{profileRelations ? profileRelations.connections.length : 0}</span>
               <span className="profile-stat-label">Connections</span>
             </div>
-            <div className="profile-stat-box">
+            <div className="profile-stat-box mentorships">
               <span className="profile-stat-number">{profileRelations ? (profileRelations as any).mentorships ?? 0 : 0}</span>
               <span className="profile-stat-label">Mentorships</span>
             </div>
@@ -3396,14 +3397,14 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           const missing = fields.filter(f => !f.done);
           if (pct === 100) return null;
           return (
-            <div className="profile-card" style={{ marginBottom: '16px', padding: '18px 24px' }}>
+            <div className="profile-card" style={{ marginBottom: '16px', padding: '18px 24px', background: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid #f59e0b' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '1rem' }}>📋</span>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Profile Strength</span>
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ef4444' }}>{pct}%</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#78350f' }}>Profile Strength</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ef4444' }}>{pct}%</span>
                 </div>
-                <button onClick={openEditProfileModal} style={{ fontSize: '0.78rem', color: '#FF7A1A', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <button onClick={openEditProfileModal} style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   Complete Profile →
                 </button>
               </div>
@@ -4913,76 +4914,165 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         {/* Feature 10: QR Code Profile Sharing Modal */}
         {qrModalOpen && (() => {
           const profileUrl = `${window.location.origin}/profile/${currentUser.id}`;
-          const qrSrc = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(profileUrl)}&choe=UTF-8`;
+          const qrRef = React.createRef<HTMLCanvasElement>();
+
+          const handleDownload = () => {
+            const canvas = document.getElementById('profile-qr-canvas') as HTMLCanvasElement | null;
+            if (!canvas) return;
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(currentUser.full_name || 'profile').replace(/\s+/g, '_')}_QR.png`;
+            a.click();
+          };
+
+          const handleShare = async () => {
+            const canvas = document.getElementById('profile-qr-canvas') as HTMLCanvasElement | null;
+            if (navigator.share) {
+              try {
+                if (canvas) {
+                  canvas.toBlob(async (blob) => {
+                    if (!blob) { navigator.share({ title: currentUser.full_name, url: profileUrl }); return; }
+                    const file = new File([blob], 'profile_qr.png', { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ title: `${currentUser.full_name}'s Profile`, text: 'Check out my alumni profile on Vidyapith!', files: [file], url: profileUrl });
+                    } else {
+                      await navigator.share({ title: `${currentUser.full_name}'s Profile`, text: 'Check out my alumni profile on Vidyapith!', url: profileUrl });
+                    }
+                  });
+                } else {
+                  await navigator.share({ title: `${currentUser.full_name}'s Profile`, text: 'Check out my alumni profile on Vidyapith!', url: profileUrl });
+                }
+              } catch (err) { /* user cancelled */ }
+            } else {
+              navigator.clipboard.writeText(profileUrl);
+              showToast('Profile link copied to clipboard!', 'success');
+            }
+          };
+
           return (
             <div
               onClick={() => setQrModalOpen(false)}
               style={{
                 position: 'fixed', inset: 0, zIndex: 9999,
-                background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '16px'
               }}
             >
               <div
                 onClick={e => e.stopPropagation()}
                 style={{
-                  background: 'linear-gradient(145deg, #1a2035 0%, #0f172a 100%)',
-                  border: '1px solid rgba(212,175,55,0.35)',
-                  borderRadius: '20px',
-                  padding: '32px 28px',
-                  width: '320px',
+                  background: 'linear-gradient(160deg, #1a2035 0%, #0d1424 100%)',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  borderRadius: '24px',
+                  padding: '36px 28px 28px',
+                  width: '100%',
+                  maxWidth: '340px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '16px',
-                  boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.1)',
+                  gap: '18px',
+                  boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.08)',
                   position: 'relative'
                 }}
               >
+                {/* Close button */}
                 <button
                   type="button"
                   onClick={() => setQrModalOpen(false)}
-                  style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                  style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8', cursor: 'pointer', borderRadius: '8px', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
 
+                {/* Header */}
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.3rem', marginBottom: '4px' }}>📱</div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', margin: 0 }}>Share Your Profile</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0' }}>Scan this QR code to connect instantly</p>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', margin: '0 0 4px' }}>Share Profile</h3>
+                  <p style={{ fontSize: '0.76rem', color: '#64748b', margin: 0 }}>Scan to visit · Share with anyone</p>
                 </div>
 
+                {/* QR Code */}
                 <div style={{
-                  background: 'white', borderRadius: '12px', padding: '12px',
-                  border: '3px solid #d4af37', boxShadow: '0 0 24px rgba(212,175,55,0.3)'
+                  background: 'white', borderRadius: '16px', padding: '14px',
+                  border: '3px solid #d4af37',
+                  boxShadow: '0 0 32px rgba(212,175,55,0.25), 0 8px 24px rgba(0,0,0,0.3)'
                 }}>
-                  <img src={qrSrc} alt="Profile QR Code" width={180} height={180} style={{ display: 'block', borderRadius: '4px' }} />
+                  <QRCodeCanvas
+                    id="profile-qr-canvas"
+                    value={profileUrl}
+                    size={190}
+                    bgColor="#ffffff"
+                    fgColor="#0f172a"
+                    level="H"
+                    imageSettings={{
+                      src: '/favicon.ico',
+                      x: undefined,
+                      y: undefined,
+                      height: 36,
+                      width: 36,
+                      excavate: true,
+                    }}
+                  />
                 </div>
 
+                {/* User identity under QR */}
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>{currentUser.full_name}</div>
-                  <div style={{ fontSize: '0.72rem', color: '#d4af37', marginTop: '2px' }}>RKMV Batch of {currentUser.batch_year}</div>
+                  <div style={{ fontWeight: 800, color: 'white', fontSize: '1rem' }}>{currentUser.full_name}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#d4af37', marginTop: '3px', letterSpacing: '0.04em' }}>RKMV Batch of {currentUser.batch_year}</div>
                 </div>
 
+                {/* URL copy bar */}
                 <div style={{
                   display: 'flex', gap: '8px', width: '100%',
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '10px', padding: '8px 12px', alignItems: 'center'
                 }}>
-                  <span style={{ fontSize: '0.68rem', color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileUrl}</span>
+                  <Link2 size={13} style={{ color: '#64748b', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.67rem', color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileUrl}</span>
                   <button
                     type="button"
                     onClick={() => { navigator.clipboard.writeText(profileUrl); showToast('Profile link copied!', 'success'); }}
-                    style={{ background: '#d4af37', border: 'none', color: '#0f172a', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    style={{ background: '#d4af37', border: 'none', color: '#0f172a', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                   >
-                    Copy Link
+                    Copy
+                  </button>
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                      padding: '12px', borderRadius: '12px', border: '1.5px solid rgba(212,175,55,0.35)',
+                      background: 'rgba(212,175,55,0.08)', color: '#d4af37',
+                      fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer'
+                    }}
+                  >
+                    <Download size={15} /> Save QR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                      padding: '12px', borderRadius: '12px', border: 'none',
+                      background: 'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)',
+                      color: '#0f172a',
+                      fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(212,175,55,0.35)'
+                    }}
+                  >
+                    <Share2 size={15} /> Share
                   </button>
                 </div>
               </div>
             </div>
           );
         })()}
+
 
         {/* Custom Remove Connection Confirmation Modal */}
         {confirmRemoveOpen && (
