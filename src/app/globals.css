@@ -10858,4 +10858,62 @@ button:disabled {
   }
 }
 
+/* Notifications Page Styling & Responsive Layouts */
+.notifications-screen-container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  animation: fadeIn 0.35s ease-out;
+}
+
+.notifications-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.notifications-header-title-block {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.notifications-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .notifications-screen-container {
+    padding: 20px 12px 36px !important;
+  }
+
+  .notifications-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    margin-top: 56px !important; /* Clears the fixed mobile toggle */
+    margin-bottom: 20px !important;
+  }
+
+  .notifications-header-title-block {
+    width: 100%;
+  }
+
+  .notifications-header-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .notifications-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+
 

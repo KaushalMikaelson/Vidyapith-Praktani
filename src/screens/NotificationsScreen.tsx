@@ -305,16 +305,17 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   if (!currentUser) return null;
 
   return (
-    <div style={{ maxWidth: '820px', margin: '0 auto', padding: '28px 16px 48px', animation: 'fadeIn 0.35s ease-out' }}>
+    <div className="notifications-screen-container">
 
       {/* ── Header ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div style={{
+      <div className="notifications-header-row">
+        <div className="notifications-header-title-block">
+          <div className="notifications-header-icon" style={{
             width: '52px', height: '52px', borderRadius: '16px',
             background: 'var(--primary-gradient)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', boxShadow: '0 8px 20px rgba(243,112,33,0.25)'
+            color: 'white', boxShadow: '0 8px 20px rgba(243,112,33,0.25)',
+            flexShrink: 0
           }}>
             <Bell size={26} strokeWidth={2.5} />
           </div>
@@ -330,7 +331,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="notifications-header-buttons" style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={loadNotifications}
             style={{
@@ -526,7 +527,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       </div>
 
       {/* ── Stats Cards ─────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+      <div className="notifications-stats-grid">
         {[
           { label: 'Total', value: notifications.length, color: '#64748b', bg: 'rgba(100,116,139,0.06)' },
           { label: 'Unread', value: unreadCount, color: 'var(--primary-color)', bg: 'rgba(243,112,33,0.07)' },
@@ -636,19 +637,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
                   const route = getRouteForNotification(notif);
                   if (route && onNavigate) onNavigate(route);
                 }}
-                style={{
-                  background: notif.read ? 'var(--heritage-card)' : '#fffcf9',
-                  border: `1px solid ${notif.read ? 'var(--heritage-line)' : 'rgba(243,112,33,0.2)'}`,
-                  borderLeft: notif.read ? '1px solid var(--heritage-line)' : '4px solid var(--primary-color)',
-                  borderRadius: '16px',
-                  padding: '20px 24px',
-                  display: 'flex', alignItems: 'flex-start', gap: '16px',
-                  cursor: 'pointer', position: 'relative',
-                  transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
-                  boxShadow: notif.read ? 'var(--heritage-shadow)' : '0 4px 14px rgba(243,112,33,0.08)'
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.06)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = notif.read ? 'var(--heritage-shadow)' : '0 4px 14px rgba(243,112,33,0.08)'; }}
+                className={`notification-card ${notif.read ? '' : 'unread'}`}
               >
                 {/* Circular Gradient Icon Badge */}
                 <div style={{
