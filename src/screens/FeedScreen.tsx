@@ -302,6 +302,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
   const [profileUser, setProfileUser] = useState<any>(null);
   const [profilePosts, setProfilePosts] = useState<Post[]>([]);
   const [profileTab, setProfileTab] = useState<'posts' | 'reels' | 'connections' | 'network' | 'career' | 'achievements' | 'saved' | 'notes'>('posts');
+  const [profileTabDropdownOpen, setProfileTabDropdownOpen] = useState(false);
   const [selectedPostForModal, setSelectedPostForModal] = useState<any | null>(null);
   const [selectedHighlightForGallery, setSelectedHighlightForGallery] = useState<string | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
@@ -3077,7 +3078,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
     };
 
     // Special badges helper
-    const userBadges: { label: string; icon: string; color: string; border: string; textColor: string }[] = [];
+    const userBadges: { label: string; icon: string; color: string; border: string; textColor: string; num?: number }[] = [];
     if (profileUser.role === 'admin') {
       userBadges.push({ label: 'Admin', icon: '🛡️', color: 'rgba(255, 122, 26, 0.1)', border: '1px solid rgba(255, 122, 26, 0.3)', textColor: 'var(--primary-color)' });
     }
@@ -3095,6 +3096,98 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
       userBadges.push({ label: 'Speaker', icon: '🎤', color: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', textColor: '#3b82f6' });
       userBadges.push({ label: 'Contributor', icon: '❤️', color: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', textColor: '#ec4899' });
     }
+
+    // ─── Achievement Badge Pipeline ───────────────────────────────────────────
+    // Each badge has: num (badge #), a condition, label, icon, and color theme
+    const profileFields = [
+      !!(person.bio && person.bio.trim().length > 10),
+      !!(person.designation && person.designation.trim().length > 1),
+      !!(person.profession_category || person.profession),
+      !!(person.company && person.company !== 'Not specified'),
+      !!(person.city && person.city !== 'Not specified'),
+      !!(person.linkedin_url || person.github_url || person.portfolio_url || person.personal_url),
+      !!(person.skills && person.skills.length > 0),
+      person.mentorship_status !== 'Not Available',
+      !!(person.open_for && person.open_for.length > 0),
+      !!(person.profile_photo && !person.profile_photo.includes('unsplash.com/photo-1535713875002')),
+    ];
+    const profilePct = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
+    const postCount = profilePosts.length;
+    const connectionCount = profileRelations ? profileRelations.connections.length : 0;
+
+    const achievementPipeline = [
+      {
+        num: 1,
+        label: 'First Post',
+        icon: '📝',
+        done: postCount >= 1,
+        color: 'rgba(59,130,246,0.08)',
+        border: '1px solid rgba(59,130,246,0.25)',
+        textColor: '#3b82f6',
+      },
+      {
+        num: 2,
+        label: 'Networker',
+        icon: '🤝',
+        done: connectionCount >= 3,
+        color: 'rgba(16,185,129,0.08)',
+        border: '1px solid rgba(16,185,129,0.25)',
+        textColor: '#10b981',
+      },
+      {
+        num: 3,
+        label: 'Story Teller',
+        icon: '📖',
+        done: postCount >= 5,
+        color: 'rgba(168,85,247,0.08)',
+        border: '1px solid rgba(168,85,247,0.25)',
+        textColor: '#a855f7',
+      },
+      {
+        num: 4,
+        label: 'Profile Builder',
+        icon: '🧱',
+        done: profilePct >= 50,
+        color: 'rgba(243,112,33,0.08)',
+        border: '1px solid rgba(243,112,33,0.25)',
+        textColor: '#F37021',
+      },
+      {
+        num: 5,
+        label: 'Connector',
+        icon: '🌐',
+        done: connectionCount >= 10,
+        color: 'rgba(14,165,233,0.08)',
+        border: '1px solid rgba(14,165,233,0.25)',
+        textColor: '#0ea5e9',
+      },
+      {
+        num: 6,
+        label: 'Prolific',
+        icon: '🔥',
+        done: postCount >= 15,
+        color: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.25)',
+        textColor: '#ef4444',
+      },
+      {
+        num: 7,
+        label: 'Profile Complete',
+        icon: '🏅',
+        done: profilePct === 100,
+        color: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(243,112,33,0.1))',
+        border: '1px solid rgba(212,175,55,0.5)',
+        textColor: '#b38b10',
+      },
+    ];
+
+    // Push earned achievement badges into userBadges
+    achievementPipeline.forEach(b => {
+      if (b.done) {
+        userBadges.push({ label: b.label, icon: b.icon, color: b.color, border: b.border, textColor: b.textColor, num: b.num });
+      }
+    });
+
 
     // Circular Highlights configuration
     const highlights = [
@@ -3186,14 +3279,118 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         <div className="profile-card">
           {/* Avatar centered at top */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-            <div className="profile-avatar-gradient-ring">
-              <img 
-                src={person.profile_photo || currentUser.profile_photo} 
-                alt={person.full_name} 
-                style={{ width: '130px', height: '130px' }}
-              />
-            </div>
+            {(() => {
+              // Compute earned achievement count
+              const earnedCount = achievementPipeline.filter(b => b.done).length;
+
+              // Color tier based on count
+              const tier = earnedCount === 0 ? 'none'
+                : earnedCount <= 2 ? 'bronze'
+                : earnedCount <= 4 ? 'silver'
+                : earnedCount <= 6 ? 'gold'
+                : 'platinum';
+
+              const tierStyles: Record<string, { filter: string; glow: string; textColor: string; numBg: string }> = {
+                none:     { filter: 'grayscale(1) brightness(0.7)', glow: 'none',                              textColor: '#94a3b8', numBg: '#64748b' },
+                bronze:   { filter: 'sepia(1) saturate(2) hue-rotate(10deg) brightness(0.9)', glow: '0 2px 10px rgba(180,100,30,0.55)', textColor: '#fff', numBg: '#a0522d' },
+                silver:   { filter: 'grayscale(0.6) brightness(1.15) saturate(0.5)', glow: '0 2px 10px rgba(160,160,180,0.6)',  textColor: '#fff', numBg: '#6b7280' },
+                gold:     { filter: 'sepia(0.3) saturate(1.8) brightness(1.1)',       glow: '0 2px 14px rgba(212,175,55,0.7)', textColor: '#fff', numBg: '#b38b10' },
+                platinum: { filter: 'hue-rotate(180deg) saturate(1.6) brightness(1.2)', glow: '0 2px 18px rgba(99,102,241,0.65)', textColor: '#fff', numBg: '#6366f1' },
+              };
+
+              const ts = tierStyles[tier];
+
+              return (
+                <div style={{ position: 'relative', display: 'inline-flex' }}>
+                  <div className="profile-avatar-gradient-ring">
+                    <img
+                      src={person.profile_photo || currentUser.profile_photo}
+                      alt={person.full_name}
+                      style={{ width: '130px', height: '130px' }}
+                    />
+                  </div>
+
+                  {/* Achievement badge — bottom-left, shown for all users */}
+                  <div
+                    title={`${earnedCount} Achievement${earnedCount !== 1 ? 's' : ''} earned — ${tier.charAt(0).toUpperCase() + tier.slice(1)} tier`}
+                    style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      left: '2px',
+                      width: '44px',
+                      height: '44px',
+                      zIndex: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <img
+                      src="/badge.png"
+                      alt="Achievement Badge"
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: ts.filter,
+                        ...(tier !== 'none' && { dropShadow: ts.glow }),
+                      }}
+                    />
+                    {/* Count number centered on badge */}
+                    <span style={{
+                      position: 'relative',
+                      zIndex: 2,
+                      fontSize: earnedCount >= 10 ? '0.6rem' : '0.75rem',
+                      fontWeight: 900,
+                      color: tier === 'none' ? '#94a3b8' : '#fff',
+                      textShadow: tier !== 'none' ? '0 1px 3px rgba(0,0,0,0.5)' : 'none',
+                      letterSpacing: '-0.5px',
+                      lineHeight: 1,
+                      marginTop: '2px',
+                    }}>
+                      {earnedCount}
+                    </span>
+                  </div>
+
+                  {/* Admin badge — bottom-right */}
+                  {profileUser.role === 'admin' && (
+                    <div
+                      title="Platform Admin"
+                      style={{
+                        position: 'absolute',
+                        bottom: '2px',
+                        right: '2px',
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        border: '3px solid #d4af37',
+                        boxShadow: '0 0 0 2px #fff, 0 4px 14px rgba(184,135,11,0.55)',
+                        zIndex: 10,
+                        background: '#1e2d5a',
+                      }}
+                    >
+                      <img
+                        src="/admin-badge.jpg"
+                        alt="Admin Badge"
+                        style={{
+                          width: '140%',
+                          height: '140%',
+                          objectFit: 'cover',
+                          objectPosition: 'center 18%',
+                          marginLeft: '-20%',
+                          marginTop: '-8%',
+                          display: 'block',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
+
 
           {/* Profile Info Details */}
           <div className="profile-top-card-info" style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', textAlign: 'center' }}>
@@ -3204,7 +3401,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
 
               {/* Badge pills row */}
               {userBadges.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                   {userBadges.map((badge, idx) => {
                     if (badge.label === 'Verified Alumni') {
                       return (
@@ -3214,12 +3411,53 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       );
                     }
                     if (badge.label === 'Admin') {
+                      // Admin badge now shown on avatar photo — skip in pills row
+                      return null;
+                    }
+                    // Achievement badge (has num) — show with number superscript
+                    if (badge.num !== undefined) {
                       return (
-                        <span key={idx} className="profile-admin-badge" title={badge.label}>
-                          <ShieldAlert size={14} /> Admin
+                        <span
+                          key={idx}
+                          title={`Achievement #${badge.num}: ${badge.label}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            position: 'relative',
+                            background: badge.color,
+                            border: badge.border,
+                            borderRadius: '10px',
+                            padding: '3px 9px 3px 7px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: badge.textColor,
+                            cursor: 'default',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {/* Number bubble */}
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            background: badge.textColor,
+                            color: '#fff',
+                            fontSize: '0.6rem',
+                            fontWeight: 800,
+                            flexShrink: 0,
+                          }}>
+                            {badge.num}
+                          </span>
+                          <span style={{ fontSize: '0.85rem' }}>{badge.icon}</span>
+                          {badge.label}
                         </span>
                       );
                     }
+                    // Generic badge
                     return (
                       <span key={idx} className="profile-header-badge" title={badge.label}>
                         <span style={{ fontSize: '0.9rem' }}>{badge.icon}</span> {badge.label}
@@ -3386,7 +3624,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             { label: 'Profession Category', done: !!(person.profession_category || person.profession) },
             { label: 'Company / Organization', done: !!(person.company && person.company !== 'Not specified') },
             { label: 'Location (City)', done: !!(person.city && person.city !== 'Not specified') },
-            { label: 'Social Profile (LinkedIn/GitHub/Portfolio/Personal Website)', done: !!(person.linkedin_url || person.github_url || person.portfolio_url || person.personal_url) },
+            { label: 'Social Profile', done: !!(person.linkedin_url || person.github_url || person.portfolio_url || person.personal_url) },
             { label: 'Skills Tags', done: !!(person.skills && person.skills.length > 0) },
             { label: 'Mentorship Preference', done: person.mentorship_status !== 'Not Available' },
             { label: 'Open For Badges', done: !!(person.open_for && person.open_for.length > 0) },
@@ -3396,34 +3634,94 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
           const pct = Math.round((done / fields.length) * 100);
           const missing = fields.filter(f => !f.done);
           if (pct === 100) return null;
+
+          const barColor = pct >= 80
+            ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+            : pct >= 50
+              ? 'linear-gradient(90deg, #F37021, #f59e0b)'
+              : 'linear-gradient(90deg, #B8272C, #ef4444)';
+          const pctColor = pct >= 80 ? '#16a34a' : pct >= 50 ? '#F37021' : '#B8272C';
+
           return (
-            <div className="profile-card" style={{ marginBottom: '16px', padding: '18px 24px', background: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid #f59e0b' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{
+              marginBottom: '16px',
+              padding: '18px 20px',
+              background: '#ffffff',
+              borderRadius: '16px',
+              border: '1px solid rgba(243,112,33,0.2)',
+              boxShadow: '0 2px 12px rgba(243,112,33,0.08)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              {/* Decorative glow */}
+              <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(243,112,33,0.12)', filter: 'blur(24px)', pointerEvents: 'none' }} />
+
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1rem' }}>📋</span>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#78350f' }}>Profile Strength</span>
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ef4444' }}>{pct}%</span>
+                  <span style={{ fontSize: '1.1rem' }}>📋</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Profile Strength</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.95rem', color: pctColor, background: 'rgba(243,112,33,0.08)', padding: '1px 8px', borderRadius: '8px' }}>{pct}%</span>
                 </div>
-                <button onClick={openEditProfileModal} style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <button
+                  onClick={openEditProfileModal}
+                  style={{
+                    fontSize: '0.78rem',
+                    color: '#F37021',
+                    fontWeight: 700,
+                    background: 'rgba(243,112,33,0.12)',
+                    border: '1px solid rgba(243,112,33,0.3)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '4px 10px',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(243,112,33,0.22)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(243,112,33,0.12)'; }}
+                >
                   Complete Profile →
                 </button>
               </div>
-              <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', marginBottom: '12px' }}>
-                <div style={{ height: '100%', width: `${pct}%`, borderRadius: '99px', background: pct >= 80 ? 'linear-gradient(90deg, #16a34a, #22c55e)' : pct >= 50 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)', transition: 'width 1s ease' }} />
+
+              {/* Progress bar */}
+              <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', marginBottom: '14px' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${pct}%`,
+                  borderRadius: '99px',
+                  background: barColor,
+                  boxShadow: pct >= 50 ? '0 0 8px rgba(243,112,33,0.5)' : '0 0 8px rgba(239,68,68,0.4)',
+                  transition: 'width 1s ease',
+                }} />
               </div>
+
+              {/* Missing fields */}
               {missing.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Click missing sections to complete them:</div>
+                  <div style={{ fontSize: '0.73rem', color: '#64748b', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Click to complete missing sections:
+                  </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {missing.map(f => (
-                      <button 
-                        key={f.label} 
+                      <button
+                        key={f.label}
                         onClick={openEditProfileModal}
-                        style={{ background: 'none', border: '1px dashed #ef4444', color: '#ef4444', borderRadius: '12px', padding: '3px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                        style={{
+                          background: 'rgba(243,112,33,0.06)',
+                          border: '1px dashed rgba(243,112,33,0.45)',
+                          color: '#F37021',
+                          borderRadius: '8px',
+                          padding: '4px 10px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          outline: 'none',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(243,112,33,0.2)'; e.currentTarget.style.borderColor = 'rgba(243,112,33,0.8)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(243,112,33,0.1)'; e.currentTarget.style.borderColor = 'rgba(243,112,33,0.45)'; }}
                       >
-                        ➕ Add {f.label}
+                        + Add {f.label}
                       </button>
                     ))}
                   </div>
@@ -3432,6 +3730,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
             </div>
           );
         })()}
+
 
         {/* 2. MIDDLE ROW: Layout for professional details, skills, helps, looking-for & social links (single column stacked format) */}
         {/* About Card */}
@@ -3552,60 +3851,137 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
         })()}
 
         {/* 3. BOTTOM CARD: Profile Tabs Navigation */}
-        <div className="profile-card" style={{ padding: '24px 32px' }}>
-          <div className="profile-tabs-header">
-            <span className="profile-tabs-title">
-              <Grid size={16} /> Profile Tabs
-            </span>
-            <span className="profile-tabs-selected-label">
-              {profileTab.charAt(0).toUpperCase() + profileTab.slice(1)} selected
-            </span>
-          </div>
+        <div className="profile-card" style={{ padding: '20px 24px' }}>
+          {/* Dropdown Tab Selector */}
+          {(() => {
+            const tabs = [
+              { key: 'posts', label: 'Posts', icon: <Grid size={14} /> },
+              { key: 'reels', label: 'Reels', icon: <Film size={14} /> },
+              { key: 'career', label: 'Career', icon: <Briefcase size={14} /> },
+              { key: 'achievements', label: 'Badges', icon: <Trophy size={14} /> },
+              { key: 'saved', label: 'Saved', icon: <Bookmark size={14} /> },
+            ] as const;
+            const current = tabs.find(t => t.key === profileTab) || tabs[0];
+            return (
+              <div style={{ position: 'relative', marginBottom: '20px' }}>
+                {/* Trigger Button */}
+                <button
+                  onClick={() => setProfileTabDropdownOpen(o => !o)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '10px 16px',
+                    background: '#ffffff',
+                    border: '1px solid rgba(243,112,33,0.25)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    color: '#0f172a',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    boxShadow: '0 1px 4px rgba(243,112,33,0.08)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(243,112,33,0.18)'; e.currentTarget.style.borderColor = 'rgba(243,112,33,0.5)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(243,112,33,0.08)'; e.currentTarget.style.borderColor = 'rgba(243,112,33,0.25)'; }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#F37021' }}>{current.icon}</span>
+                    {current.label}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    style={{
+                      color: '#F37021',
+                      transform: profileTabDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.25s ease',
+                    }}
+                  />
+                </button>
 
-          <div className="profile-tabs-pills-row">
-            <button 
-              onClick={() => setProfileTab('posts')} 
-              className={`profile-tab-pill ${profileTab === 'posts' ? 'active' : ''}`}
-            >
-              <Grid size={14} /> Posts
-            </button>
-            <button 
-              onClick={() => setProfileTab('reels')} 
-              className={`profile-tab-pill ${profileTab === 'reels' ? 'active' : ''}`}
-            >
-              <Film size={14} /> Reels
-            </button>
-            <button 
-              onClick={() => setProfileTab('connections')} 
-              className={`profile-tab-pill ${profileTab === 'connections' ? 'active' : ''}`}
-            >
-              <Users size={14} /> Connections
-            </button>
-            <button 
-              onClick={() => setProfileTab('network')} 
-              className={`profile-tab-pill ${profileTab === 'network' ? 'active' : ''}`}
-            >
-              <GraduationCap size={14} /> Network
-            </button>
-            <button 
-              onClick={() => setProfileTab('career')} 
-              className={`profile-tab-pill ${profileTab === 'career' ? 'active' : ''}`}
-            >
-              <Briefcase size={14} /> Career
-            </button>
-            <button 
-              onClick={() => setProfileTab('achievements')} 
-              className={`profile-tab-pill ${profileTab === 'achievements' ? 'active' : ''}`}
-            >
-              <Trophy size={14} /> Badges
-            </button>
-            <button 
-              onClick={() => setProfileTab('saved')} 
-              className={`profile-tab-pill ${profileTab === 'saved' ? 'active' : ''}`}
-            >
-              <Bookmark size={14} /> Saved
-            </button>
-          </div>
+                {/* Dropdown List */}
+                {profileTabDropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      left: 0,
+                      right: 0,
+                      background: '#ffffff',
+                      border: '1px solid rgba(243,112,33,0.15)',
+                      borderRadius: '14px',
+                      boxShadow: '0 12px 40px rgba(12,30,54,0.12), 0 2px 8px rgba(243,112,33,0.08)',
+                      zIndex: 50,
+                      overflow: 'hidden',
+                      padding: '6px',
+                    }}
+                  >
+                    {tabs.map((tab) => {
+                      const isActive = profileTab === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          onClick={() => { setProfileTab(tab.key as any); setProfileTabDropdownOpen(false); }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: isActive
+                              ? 'linear-gradient(90deg, rgba(243,112,33,0.08) 0%, rgba(243,112,33,0.03) 100%)'
+                              : 'transparent',
+                            border: 'none',
+                            borderRadius: '10px',
+                            borderLeft: isActive ? '3px solid #F37021' : '3px solid transparent',
+                            cursor: 'pointer',
+                            color: isActive ? '#F37021' : '#334155',
+                            fontWeight: isActive ? 700 : 500,
+                            fontSize: '0.875rem',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                            marginBottom: '2px',
+                          }}
+                          onMouseEnter={e => {
+                            if (!isActive) {
+                              e.currentTarget.style.background = 'rgba(243,112,33,0.04)';
+                              e.currentTarget.style.color = '#F37021';
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (!isActive) {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = '#334155';
+                            }
+                          }}
+                        >
+                          <span style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '8px',
+                            background: isActive ? 'rgba(243,112,33,0.12)' : 'rgba(100,116,139,0.08)',
+                            color: isActive ? '#F37021' : '#64748b',
+                            flexShrink: 0,
+                            transition: 'all 0.15s',
+                          }}>
+                            {tab.icon}
+                          </span>
+                          {tab.label}
+                          {isActive && (
+                            <Check size={14} style={{ marginLeft: 'auto', color: '#F37021' }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* DYNAMIC TAB CONTENT */}
           <div style={{ minHeight: '300px' }}>
