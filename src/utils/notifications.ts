@@ -56,7 +56,10 @@ export const enableBrowserNotifications = async (): Promise<void> => {
     throw new Error('Browser push is not configured on the server.');
   }
 
-  const registration = await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.register('/sw.js');
+  // Wait until the SW is fully active — required before PushManager.subscribe()
+  const registration = await navigator.serviceWorker.ready;
+
   const existingSubscription = await registration.pushManager.getSubscription();
   if (existingSubscription) {
     await existingSubscription.unsubscribe();

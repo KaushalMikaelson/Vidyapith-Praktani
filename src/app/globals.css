@@ -7268,6 +7268,12 @@ button:disabled {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
 /* Redesigned Directory Styles */
 .directory-main-container {
   display: grid;

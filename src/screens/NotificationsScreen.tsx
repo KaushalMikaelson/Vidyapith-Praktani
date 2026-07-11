@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Bell, CheckCheck, RefreshCw, CheckCircle2, AlertTriangle, Info, BellOff, Sparkles, Mail, MonitorCheck
+  Bell, CheckCheck, RefreshCw, CheckCircle2, AlertTriangle, Info, BellOff, Sparkles, Mail, MonitorCheck, ChevronDown
 } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -280,13 +280,17 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
   const alertCount = notifications.filter(n => n.type === 'alert').length;
   const infoCount = notifications.filter(n => n.type === 'info').length;
 
-  const filterTabs: { id: FilterType; label: string; count: number }[] = [
-    { id: 'all',     label: 'All',     count: notifications.length },
-    { id: 'unread',  label: 'Unread',  count: unreadCount },
-    { id: 'success', label: 'Success', count: successCount },
-    { id: 'alert',   label: 'Alerts',  count: alertCount },
-    { id: 'info',    label: 'Info',    count: infoCount },
+  const filterTabs: { id: FilterType; label: string; count: number; color: string; bg: string; icon: React.ReactNode }[] = [
+    { id: 'all',     label: 'All',     count: notifications.length, color: '#64748b', bg: 'rgba(100,116,139,0.1)', icon: <Bell size={14} /> },
+    { id: 'unread',  label: 'Unread',  count: unreadCount,          color: 'var(--primary-color)', bg: 'rgba(243,112,33,0.1)', icon: <BellOff size={14} /> },
+    { id: 'success', label: 'Success', count: successCount,         color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: <CheckCircle2 size={14} /> },
+    { id: 'alert',   label: 'Alerts',  count: alertCount,           color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: <AlertTriangle size={14} /> },
+    { id: 'info',    label: 'Info',    count: infoCount,            color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', icon: <Info size={14} /> },
   ];
+
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const activeTab = filterTabs.find(t => t.id === filter) ?? filterTabs[0];
 
   const browserSupported = browserPermission !== 'unsupported';
   const browserEnabled = Boolean(
@@ -490,65 +494,112 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
         </div>
       </div>
 
-      {/* ── Stats Cards ─────────────────────────────────────── */}
 
-      <div className="notifications-stats-grid">
-        {[
-          { label: 'Total', value: notifications.length, color: '#64748b', bg: 'rgba(100,116,139,0.06)' },
-          { label: 'Unread', value: unreadCount, color: 'var(--primary-color)', bg: 'rgba(243,112,33,0.07)' },
-          { label: 'Success', value: successCount, color: '#10b981', bg: 'rgba(16,185,129,0.07)' },
-          { label: 'Alerts', value: alertCount, color: '#f59e0b', bg: 'rgba(245,158,11,0.07)' },
-        ].map(s => (
-          <div key={s.label} style={{
-            padding: '20px', background: 'var(--heritage-card)',
-            border: '1px solid var(--heritage-line)',
-            borderRadius: '16px', boxShadow: 'var(--heritage-shadow)',
-            display: 'flex', flexDirection: 'column', gap: '8px',
-            transition: 'all 0.2s'
+      {/* ── Filter Dropdown ───────────────────────────────────── */}
+      <div
+        ref={filterRef}
+        style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}
+        onBlur={e => { if (!filterRef.current?.contains(e.relatedTarget as Node)) setFilterOpen(false); }}
+      >
+        {/* Trigger button */}
+        <button
+          onClick={() => setFilterOpen(o => !o)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '10px 16px', borderRadius: '14px',
+            border: filterOpen ? '1.5px solid var(--primary-color)' : '1.5px solid var(--heritage-line)',
+            background: 'var(--heritage-card)',
+            boxShadow: filterOpen ? '0 0 0 3px rgba(243,112,33,0.12), var(--heritage-shadow)' : 'var(--heritage-shadow)',
+            cursor: 'pointer', transition: 'all 0.18s', minWidth: '180px',
+            color: 'var(--heritage-ink)',
+          }}
+        >
+          {/* Active icon tinted */}
+          <span style={{
+            width: '28px', height: '28px', borderRadius: '8px',
+            background: activeTab.bg, color: activeTab.color,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
           }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--heritage-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
-            <span style={{ fontSize: '2.2rem', fontWeight: 850, color: s.color, lineHeight: 1 }}>{s.value}</span>
+            {activeTab.icon}
+          </span>
+          <span style={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '0.9rem', color: 'var(--heritage-ink)' }}>
+            {activeTab.label}
+          </span>
+          {/* Count badge */}
+          {activeTab.count > 0 && (
+            <span style={{
+              background: activeTab.bg, color: activeTab.color,
+              borderRadius: '9999px', padding: '2px 9px',
+              fontSize: '0.72rem', fontWeight: 800, flexShrink: 0
+            }}>{activeTab.count}</span>
+          )}
+          <ChevronDown
+            size={16}
+            style={{
+              color: 'var(--heritage-muted)', flexShrink: 0,
+              transform: filterOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s'
+            }}
+          />
+        </button>
+
+        {/* Dropdown panel */}
+        {filterOpen && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200,
+            background: 'var(--heritage-card)',
+            border: '1.5px solid var(--heritage-line)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.08)',
+            padding: '6px',
+            minWidth: '200px',
+            animation: 'fadeInDown 0.15s ease'
+          }}>
+            {filterTabs.map(tab => {
+              const isActive = filter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => { setFilter(tab.id); setFilterOpen(false); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '10px 12px', borderRadius: '10px', border: 'none',
+                    background: isActive ? tab.bg : 'transparent',
+                    cursor: 'pointer', transition: 'background 0.15s',
+                    color: isActive ? tab.color : 'var(--heritage-ink)',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--heritage-bg)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span style={{
+                    width: '26px', height: '26px', borderRadius: '7px',
+                    background: tab.bg, color: tab.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  }}>
+                    {tab.icon}
+                  </span>
+                  <span style={{ flex: 1, fontWeight: isActive ? 800 : 600, fontSize: '0.88rem' }}>
+                    {tab.label}
+                  </span>
+                  {tab.count > 0 && (
+                    <span style={{
+                      background: isActive ? 'rgba(255,255,255,0.35)' : tab.bg,
+                      color: tab.color,
+                      borderRadius: '9999px', padding: '2px 8px',
+                      fontSize: '0.7rem', fontWeight: 800, flexShrink: 0
+                    }}>{tab.count}</span>
+                  )}
+                  {isActive && (
+                    <CheckCircle2 size={14} style={{ color: tab.color, flexShrink: 0 }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
 
-      {/* ── Filter Tabs ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        {filterTabs.map(tab => {
-          const isActive = filter === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              style={{
-                padding: '9px 20px',
-                borderRadius: '9999px',
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: isActive ? 'none' : '1.5px solid var(--heritage-line)',
-                background: isActive ? 'var(--primary-gradient)' : 'var(--heritage-card)',
-                color: isActive ? 'white' : 'var(--heritage-ink)',
-                transition: 'all 0.2s',
-                boxShadow: isActive ? '0 4px 12px rgba(243,112,33,0.2)' : 'none',
-                display: 'flex', alignItems: 'center', gap: '6px'
-              }}
-              onMouseOver={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--primary-color)'; e.currentTarget.style.color = 'var(--primary-color)'; } }}
-              onMouseOut={(e) => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--heritage-line)'; e.currentTarget.style.color = 'var(--heritage-ink)'; } }}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span style={{
-                  background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(243,112,33,0.1)',
-                  color: isActive ? 'white' : 'var(--primary-color)',
-                  borderRadius: '9999px', padding: '1px 8px',
-                  fontSize: '0.72rem', fontWeight: 800
-                }}>{tab.count}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
 
       {/* ── Notification List ─────────────────────────────── */}
       {loading ? (
