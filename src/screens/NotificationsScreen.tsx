@@ -370,88 +370,70 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
         </div>
       </div>
 
+      {/* ── Settings Cards ───────────────────────────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
         gap: '14px',
         marginBottom: '28px'
       }}>
+        {/* Browser Notifications */}
         <div style={{
           background: 'var(--heritage-card)',
           border: '1px solid var(--heritage-line)',
           borderRadius: '14px',
-          padding: '18px',
+          padding: '14px 18px',
           boxShadow: 'var(--heritage-shadow)',
           display: 'flex',
           alignItems: 'center',
           gap: '14px'
         }}>
           <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '12px',
+            width: '40px', height: '40px', borderRadius: '12px',
             background: browserEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
             color: browserEnabled ? '#10b981' : '#3b82f6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
           }}>
             <MonitorCheck size={20} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
+              <h3 style={{ margin: 0, fontSize: '0.92rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
                 Browser Notifications
               </h3>
               <span style={{
-                fontSize: '0.72rem',
-                fontWeight: 800,
+                fontSize: '0.7rem', fontWeight: 800,
                 color: browserEnabled ? '#10b981' : 'var(--heritage-muted)',
                 background: browserEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.1)',
-                padding: '3px 8px',
-                borderRadius: '9999px'
+                padding: '2px 8px', borderRadius: '9999px'
               }}>
                 {browserStatusLabel}
               </span>
             </div>
-            <p style={{ margin: '5px 0 0', color: 'var(--heritage-muted)', fontSize: '0.82rem', lineHeight: 1.45 }}>
-              Get messages, requests, approvals, and important actions while this tab is in the background.
-            </p>
           </div>
           {browserEnabled ? (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleDisableBrowserNotifications}
-                disabled={updatingBrowser}
-                style={{
-                  padding: '9px 14px',
-                  borderRadius: '10px',
-                  border: '1.5px solid var(--heritage-line)',
-                  background: 'var(--heritage-card)',
-                  color: 'var(--heritage-ink)',
-                  cursor: updatingBrowser ? 'default' : 'pointer',
-                  fontWeight: 800,
-                  fontSize: '0.82rem',
-                  opacity: updatingBrowser ? 0.65 : 1
-                }}
-              >
-                Disable
-              </button>
-            </div>
+            <button
+              onClick={handleDisableBrowserNotifications}
+              disabled={updatingBrowser}
+              style={{
+                padding: '8px 14px', borderRadius: '10px',
+                border: '1.5px solid var(--heritage-line)',
+                background: 'var(--heritage-card)', color: 'var(--heritage-ink)',
+                cursor: updatingBrowser ? 'default' : 'pointer',
+                fontWeight: 800, fontSize: '0.82rem', flexShrink: 0,
+                opacity: updatingBrowser ? 0.65 : 1
+              }}
+            >
+              Disable
+            </button>
           ) : (
             <button
               onClick={handleEnableBrowserNotifications}
               disabled={updatingBrowser || !browserSupported || browserPermission === 'denied' || notificationSettings?.browser_configured === false}
               style={{
-                padding: '9px 14px',
-                borderRadius: '10px',
-                border: 'none',
-                background: 'var(--primary-gradient)',
-                color: 'white',
-                cursor: updatingBrowser ? 'default' : 'pointer',
-                fontWeight: 800,
-                fontSize: '0.82rem',
+                padding: '8px 14px', borderRadius: '10px', border: 'none',
+                background: 'var(--primary-gradient)', color: 'white', flexShrink: 0,
+                cursor: updatingBrowser ? 'default' : 'pointer', fontWeight: 800, fontSize: '0.82rem',
                 opacity: updatingBrowser || !browserSupported || browserPermission === 'denied' || notificationSettings?.browser_configured === false ? 0.65 : 1,
                 boxShadow: '0 4px 12px rgba(243,112,33,0.22)'
               }}
@@ -461,65 +443,47 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
           )}
         </div>
 
+        {/* Crucial Email Alerts */}
         <div style={{
           background: 'var(--heritage-card)',
           border: '1px solid var(--heritage-line)',
           borderRadius: '14px',
-          padding: '18px',
+          padding: '14px 18px',
           boxShadow: 'var(--heritage-shadow)',
           display: 'flex',
           alignItems: 'center',
           gap: '14px'
         }}>
           <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '12px',
-            background: 'rgba(245,158,11,0.1)',
-            color: '#f59e0b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
+            width: '40px', height: '40px', borderRadius: '12px',
+            background: 'rgba(245,158,11,0.1)', color: '#f59e0b',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
           }}>
             <Mail size={20} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
+            <h3 style={{ margin: 0, fontSize: '0.92rem', color: 'var(--heritage-ink)', fontWeight: 800 }}>
               Crucial Email Alerts
             </h3>
-            <p style={{ margin: '5px 0 0', color: 'var(--heritage-muted)', fontSize: '0.82rem', lineHeight: 1.45 }}>
-              Email is reserved for approvals, job updates, donations, mentorship, and other crucial notices.
-            </p>
           </div>
           <button
-            type="button"
-            role="switch"
+            type="button" role="switch"
             aria-checked={notificationSettings?.email_crucial_enabled ?? true}
             onClick={handleToggleCrucialEmail}
             disabled={updatingEmail || !notificationSettings}
             style={{
-              width: '48px',
-              height: '28px',
-              borderRadius: '9999px',
-              border: 'none',
+              width: '48px', height: '28px', borderRadius: '9999px', border: 'none',
               background: notificationSettings?.email_crucial_enabled ?? true ? '#10b981' : '#cbd5e1',
               cursor: updatingEmail ? 'default' : 'pointer',
-              position: 'relative',
-              transition: 'background 0.2s',
-              flexShrink: 0,
+              position: 'relative', transition: 'background 0.2s', flexShrink: 0,
               opacity: updatingEmail || !notificationSettings ? 0.65 : 1
             }}
           >
             <span style={{
-              position: 'absolute',
-              top: '4px',
+              position: 'absolute', top: '4px',
               left: notificationSettings?.email_crucial_enabled ?? true ? '24px' : '4px',
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              background: '#fff',
-              transition: 'left 0.2s',
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: '#fff', transition: 'left 0.2s',
               boxShadow: '0 1px 4px rgba(15,23,42,0.25)'
             }} />
           </button>
@@ -527,6 +491,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ showTo
       </div>
 
       {/* ── Stats Cards ─────────────────────────────────────── */}
+
       <div className="notifications-stats-grid">
         {[
           { label: 'Total', value: notifications.length, color: '#64748b', bg: 'rgba(100,116,139,0.06)' },
