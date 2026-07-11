@@ -10821,3 +10821,41 @@ button:disabled {
   background: #f4f8ff !important;
 }
 
+/* Responsive Profile Modal Layout */
+.profile-modal-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profile-modal-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profile-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #475569;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 6px;
+}
+
+@media (max-width: 600px) {
+  .profile-modal-grid-2,
+  .profile-modal-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+

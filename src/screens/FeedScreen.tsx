@@ -4291,15 +4291,17 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
               }}
             >
               {/* Modal Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 20px', borderBottom: '1px solid #f1f5f9', position: 'relative' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#0f172a', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
                   Edit / Complete Profile
                 </h3>
                 <button 
-                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', outline: 'none' }} 
+                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none', borderRadius: '50%', transition: 'background-color 0.2s' }} 
                   onClick={() => setEditProfileOpen(false)}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
@@ -4308,7 +4310,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                 <form onSubmit={handleSaveEditProfile}>
                   
                   {/* Photo Upload Section */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary-color)', flexShrink: 0 }}>
                       <img 
                         src={editPhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&q=80'} 
@@ -4325,9 +4327,9 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <label className="btn-ig-grey" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', margin: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1 1 200px' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <label className="btn-ig-grey" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', margin: 0, background: '#ffffff', transition: 'all 0.2s' }}>
                           <Camera size={14} />
                           Upload Photo
                           <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
@@ -4337,7 +4339,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                             type="button"
                             onClick={handleAdjustExistingPhoto}
                             className="btn-ig-grey"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', cursor: 'pointer', background: '#f1f5f9' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontWeight: 600, color: '#334155', cursor: 'pointer', background: '#f1f5f9', transition: 'all 0.2s' }}
                             title="Crop and Rotate Photo"
                           >
                             <RotateCw size={14} />
@@ -4349,8 +4351,13 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Personal details grid */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  {/* Section: Personal Profile */}
+                  <div className="profile-section-title">
+                    <UserIcon size={16} style={{ color: 'var(--primary-color)' }} />
+                    <span>Personal Profile</span>
+                  </div>
+                  
+                  <div className="profile-modal-grid-2">
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Full Name *</label>
                       <input 
@@ -4373,8 +4380,30 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Biography */}
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <div className="profile-modal-grid-2" style={{ marginTop: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>City</label>
+                      <input 
+                        type="text" 
+                        value={editCity} 
+                        onChange={(e) => setEditCity(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Deoghar, Bangalore"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Country</label>
+                      <input 
+                        type="text" 
+                        value={editCountry} 
+                        onChange={(e) => setEditCountry(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. India, USA"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '16px', marginBottom: '16px' }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Biography / Bio</label>
                     <textarea 
                       rows={3} 
@@ -4385,145 +4414,78 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                     />
                   </div>
 
-                  {/* Vidyapith Details */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '8px' }}>
-                        Leaving / Pass Out Class & Year *
-                      </label>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
-                        {/* Class Selector */}
-                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                          {(['X', 'XII'] as const).map((cls) => (
-                            <button
-                              key={cls}
-                              type="button"
-                              onClick={() => setEditLeavingClass(cls)}
-                              style={{
-                                padding: '8px 14px',
-                                borderRadius: '8px',
-                                border: editLeavingClass === cls
-                                  ? '2px solid #f97316'
-                                  : '1px solid #cbd5e1',
-                                background: editLeavingClass === cls
-                                  ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
-                                  : '#f8fafc',
-                                color: editLeavingClass === cls ? '#c2410c' : '#64748b',
-                                fontWeight: editLeavingClass === cls ? 800 : 500,
-                                fontSize: '0.88rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                boxShadow: editLeavingClass === cls ? '0 2px 8px rgba(249,115,22,0.2)' : 'none',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              <span>Class {cls}</span>
-                              <span style={{ fontSize: '0.65rem', opacity: 0.75, fontWeight: 500 }}>
-                                {cls === 'X' ? '10th' : '12th'}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                        {/* Year Input */}
-                        <div style={{ flex: 1 }}>
-                          <input 
-                            type="number" 
-                            value={editBatch} 
-                            onChange={(e) => setEditBatch(e.target.value)} 
-                            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '100%', boxSizing: 'border-box' }}
-                            placeholder={editLeavingClass === 'X' ? "Pass out year (e.g. 2008)" : "Pass out year (e.g. 2010)"}
-                            required 
-                          />
-                        </div>
+                  {/* Section: Vidyapith Heritage */}
+                  <div className="profile-section-title">
+                    <GraduationCap size={16} style={{ color: 'var(--primary-color)' }} />
+                    <span>Vidyapith Heritage</span>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '8px' }}>
+                      Leaving / Pass Out Class & Year *
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+                      {/* Class Selector */}
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        {(['X', 'XII'] as const).map((cls) => (
+                          <button
+                            key={cls}
+                            type="button"
+                            onClick={() => setEditLeavingClass(cls)}
+                            style={{
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              border: editLeavingClass === cls
+                                ? '2px solid #f97316'
+                                : '1px solid #cbd5e1',
+                              background: editLeavingClass === cls
+                                ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
+                                : '#f8fafc',
+                              color: editLeavingClass === cls ? '#c2410c' : '#64748b',
+                              fontWeight: editLeavingClass === cls ? 800 : 500,
+                              fontSize: '0.88rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: editLeavingClass === cls ? '0 2px 8px rgba(249,115,22,0.2)' : 'none',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            <span>Class {cls}</span>
+                            <span style={{ fontSize: '0.65rem', opacity: 0.75, fontWeight: 500 }}>
+                              {cls === 'X' ? '10th' : '12th'}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                      {editBatch && parseInt(editBatch) >= 1950 && parseInt(editBatch) <= 2026 && (
-                        <p style={{ marginTop: '6px', fontSize: '0.74rem', color: '#f97316', fontWeight: 600 }}>
-                          🎓 Class {editLeavingClass} Pass Out: {editBatch}
-                        </p>
-                      )}
+                      {/* Year Input */}
+                      <div style={{ flex: '1 1 120px', minWidth: '100px' }}>
+                        <input 
+                          type="number" 
+                          value={editBatch} 
+                          onChange={(e) => setEditBatch(e.target.value)} 
+                          style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '100%', boxSizing: 'border-box' }}
+                          placeholder={editLeavingClass === 'X' ? "Year (e.g. 2008)" : "Year (e.g. 2010)"}
+                          required 
+                        />
+                      </div>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Vidyapith House</label>
-                      <select 
-                        value={editHouse} 
-                        onChange={(e) => setEditHouse(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
-                      >
-                        <option value="Vivekananda House">Vivekananda House</option>
-                        <option value="Brahmananda House">Brahmananda House</option>
-                        <option value="Shivananda House">Shivananda House</option>
-                        <option value="Turiyananda House">Turiyananda House</option>
-                        <option value="Niranjananda House">Niranjananda House</option>
-                        <option value="Saradananda House">Saradananda House</option>
-                        <option value="Premananda House">Premananda House</option>
-                        <option value="Akhandananda House">Akhandananda House</option>
-                      </select>
-                    </div>
+                    {editBatch && parseInt(editBatch) >= 1950 && parseInt(editBatch) <= 2026 && (
+                      <p style={{ marginTop: '6px', fontSize: '0.74rem', color: '#f97316', fontWeight: 600 }}>
+                        🎓 Class {editLeavingClass} Pass Out: {editBatch}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Professional Details */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Profession Category</label>
-                      <input 
-                        type="text" 
-                        value={editProfession} 
-                        onChange={(e) => setEditProfession(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Software Development"
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Designation / Title</label>
-                      <input 
-                        type="text" 
-                        value={editDesignation} 
-                        onChange={(e) => setEditDesignation(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Senior Architect"
-                      />
-                    </div>
+                  {/* Section: Professional Journey */}
+                  <div className="profile-section-title">
+                    <Briefcase size={16} style={{ color: 'var(--primary-color)' }} />
+                    <span>Professional Journey</span>
                   </div>
 
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Company / Institution</label>
-                      <input 
-                        type="text" 
-                        value={editCompany} 
-                        onChange={(e) => setEditCompany(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. Google, AIIMS"
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Years of Experience</label>
-                      <input 
-                        type="number" 
-                        value={editYearsOfExperience} 
-                        onChange={(e) => setEditYearsOfExperience(e.target.value)} 
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                        placeholder="e.g. 5"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Education</label>
-                    <input 
-                      type="text" 
-                      value={editEducation} 
-                      onChange={(e) => setEditEducation(e.target.value)} 
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
-                      placeholder="e.g. B.Tech, Stanford University"
-                    />
-                  </div>
-
-                  {/* Industry & Mentorship Dropdown */}
-                  <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div className="profile-modal-grid-2">
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Industry</label>
                       <select
@@ -4538,117 +4500,120 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({
                       </select>
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Mentorship Status</label>
-                      <select
-                        value={editMentorshipStatus}
-                        onChange={(e) => setEditMentorshipStatus(e.target.value)}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
-                      >
-                        <option value="Available">✅ Available</option>
-                        <option value="Limited Availability">⚡ Limited Availability</option>
-                        <option value="Not Available">❌ Not Available</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Skill & Open For Badges */}
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Skills (Press Enter or comma to add)</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px 12px', border: '1px solid #cbd5e1', background: '#f8fafc', borderRadius: '8px', minHeight: '44px', alignItems: 'center' }}>
-                      {editSkills.map(skill => (
-                        <span key={skill} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)', color: 'white', padding: '3px 8px', borderRadius: '16px', fontSize: '0.78rem', fontWeight: 600 }}>
-                          {skill}
-                          <button
-                            type="button"
-                            onClick={() => setEditSkills(editSkills.filter(s => s !== skill))}
-                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', fontSize: '0.85rem', outline: 'none' }}
-                          >
-                            <X size={10} />
-                          </button>
-                        </span>
-                      ))}
-                      <input
-                        type="text"
-                        value={editSkillInput}
-                        onChange={e => setEditSkillInput(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' || e.key === ',') {
-                            e.preventDefault();
-                            const val = editSkillInput.trim().replace(/,$/, '');
-                            if (val && !editSkills.includes(val)) {
-                              setEditSkills([...editSkills, val]);
-                            }
-                            setEditSkillInput('');
-                          }
-                        }}
-                        placeholder={editSkills.length === 0 ? "e.g. Java, React, Finance" : "Add more..."}
-                        style={{ border: 'none', background: 'transparent', color: '#0f172a', outline: 'none', flexGrow: 1, padding: '2px 4px', fontSize: '0.88rem', minWidth: '100px' }}
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Profession Category</label>
+                      <input 
+                        type="text" 
+                        value={editProfession} 
+                        onChange={(e) => setEditProfession(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Software Development"
                       />
                     </div>
                   </div>
 
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Open For Badges</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                      {["Mentorship", "Networking", "Referrals", "Hiring", "Collaborations", "Career Guidance"].map(opt => (
-                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.83rem', margin: 0, textTransform: 'none', color: '#334155', fontWeight: 600 }}>
-                          <input
-                            type="checkbox"
-                            checked={editOpenFor.includes(opt)}
-                            onChange={() => setEditOpenFor(editOpenFor.includes(opt) ? editOpenFor.filter(x => x !== opt) : [...editOpenFor, opt])}
-                            style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#10b981' }}
-                          />
-                          <span>{opt}</span>
-                        </label>
-                      ))}
+                  <div className="profile-modal-grid-2" style={{ marginTop: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Designation / Title</label>
+                      <input 
+                        type="text" 
+                        value={editDesignation} 
+                        onChange={(e) => setEditDesignation(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Senior Architect"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Company / Institution</label>
+                      <input 
+                        type="text" 
+                        value={editCompany} 
+                        onChange={(e) => setEditCompany(e.target.value)} 
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                        placeholder="e.g. Google, AIIMS"
+                      />
                     </div>
                   </div>
 
-                  {/* Social Links */}
-                  <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginBottom: '8px' }}>
-                    <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#475569', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🔗 Social Profiles</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>LinkedIn URL</label>
-                        <input
-                          type="text"
-                          value={editLinkedinUrl}
-                          onChange={(e) => setEditLinkedinUrl(e.target.value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
-                          placeholder="https://linkedin.com/in/username"
-                        />
-                      </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>GitHub URL</label>
-                        <input
-                          type="text"
-                          value={editGithubUrl}
-                          onChange={(e) => setEditGithubUrl(e.target.value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
-                          placeholder="https://github.com/username"
-                        />
-                      </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Portfolio Website</label>
-                        <input
-                          type="text"
-                          value={editPortfolioUrl}
-                          onChange={(e) => setEditPortfolioUrl(e.target.value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
-                          placeholder="https://yourwebsite.com"
-                        />
-                      </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Personal Website</label>
-                        <input
-                          type="text"
-                          value={editPersonalUrl}
-                          onChange={(e) => setEditPersonalUrl(e.target.value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
-                          placeholder="https://personalwebsite.com"
-                        />
-                      </div>
+                  <div className="form-group" style={{ marginTop: '16px', marginBottom: 0 }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Mentorship Status</label>
+                    <select
+                      value={editMentorshipStatus}
+                      onChange={(e) => setEditMentorshipStatus(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none', height: '42px', cursor: 'pointer' }}
+                    >
+                      <option value="Available">✅ Available</option>
+                      <option value="Limited Availability">⚡ Limited Availability</option>
+                      <option value="Not Available">❌ Not Available</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '16px', marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>Education</label>
+                    <input 
+                      type="text" 
+                      value={editEducation} 
+                      onChange={(e) => setEditEducation(e.target.value)} 
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.92rem', outline: 'none' }}
+                      placeholder="e.g. B.Tech, Stanford University"
+                    />
+                  </div>
+
+                  {/* Section: Social Profiles */}
+                  <div className="profile-section-title">
+                    <Link size={16} style={{ color: 'var(--primary-color)' }} />
+                    <span>Social Profiles</span>
+                  </div>
+
+                  <div className="profile-modal-grid-2">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>LinkedIn URL</label>
+                      <input
+                        type="text"
+                        value={editLinkedinUrl}
+                        onChange={(e) => setEditLinkedinUrl(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                        placeholder="https://linkedin.com/in/username"
+                      />
                     </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>GitHub URL</label>
+                      <input
+                        type="text"
+                        value={editGithubUrl}
+                        onChange={(e) => setEditGithubUrl(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                        placeholder="https://github.com/username"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="profile-modal-grid-2" style={{ marginTop: '16px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Portfolio Website</label>
+                      <input
+                        type="text"
+                        value={editPortfolioUrl}
+                        onChange={(e) => setEditPortfolioUrl(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Personal Website</label>
+                      <input
+                        type="text"
+                        value={editPersonalUrl}
+                        onChange={(e) => setEditPersonalUrl(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontSize: '0.88rem', outline: 'none' }}
+                        placeholder="https://personalwebsite.com"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section: Privacy Settings */}
+                  <div className="profile-section-title">
+                    <ShieldCheck size={16} style={{ color: 'var(--primary-color)' }} />
+                    <span>Privacy & Settings</span>
                   </div>
 
                   {/* Visibility & Privacy checkboxes */}
