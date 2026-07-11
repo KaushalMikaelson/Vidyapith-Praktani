@@ -10889,19 +10889,26 @@ button:disabled {
 
 @media (max-width: 768px) {
   .notifications-screen-container {
-    padding: 20px 12px 36px !important;
+    padding: 20px 4px 36px 4px !important;
   }
 
   .notifications-header-row {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 16px !important;
-    margin-top: 56px !important; /* Clears the fixed mobile toggle */
     margin-bottom: 20px !important;
+  }
+
+  .notifications-header-icon {
+    display: flex !important;
   }
 
   .notifications-header-title-block {
     width: 100%;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 18px !important;
   }
 
   .notifications-header-buttons {
